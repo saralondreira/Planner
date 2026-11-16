@@ -617,6 +617,16 @@ a.btn.pri { background: var(--accent); color: var(--accent-ink); border-color: v
 a.btn:hover { border-color: var(--accent); }
 
 
+/* telemóvel (iPhone): os campos de data e hora não passam do cartão; cabeçalho com mais respiro; botão "+" mais pequeno */
+@media (max-width: 600px) {
+  .field, .fields > *, .nf-grid > *, .comb > * { min-width: 0; }
+  input[type=date], input[type=time], input[type=month], input[type=datetime-local] { -webkit-appearance: none; appearance: none; display: block; width: 100%; min-width: 0; max-width: 100%; min-height: var(--ctl); text-align: left; }
+  .comb input[type=date] { width: auto; flex: 1 1 0; }
+  header.top { padding-bottom: 8px; box-shadow: 0 8px 10px -9px rgba(0, 0, 0, .5); }
+  nav.tabs.sub { margin-top: 6px; }
+  .fab { width: 50px; height: 50px; font-size: 26px; }
+}
+
 </style>
 </head>
 <body>
