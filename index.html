@@ -92,7 +92,7 @@ table.sticky td:first-child, table.sticky th:first-child { position: sticky; lef
 table.sticky th:first-child { background: var(--head); z-index: 4; }
 tr.tot td { font-weight: 700; background: var(--head); }
 tr.neg td.neg { color: var(--bad); }
-td.neg-v { color: var(--bad); }
+.neg-v, .kpi .v.neg-v { color: var(--bad); }
 input, select { font: inherit; color: var(--in-ink); background: var(--in-bg); border: 1px solid var(--in-line); border-radius: 5px; padding: 4px 6px; min-width: 0; max-width: 100%; }
 input[type=number] { width: 92px; text-align: right; }
 input[type=text] { width: 100%; min-width: 120px; }
@@ -660,6 +660,14 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
 .grid + details.ajuda { margin-top: 16px; }
 .btn.pri .muted { color: inherit; opacity: .92; }
 
+/* Janela de boas-vindas: ícone e texto alinhados à esquerda, todos os botões iguais */
+button.btn.op-boas { display: flex; align-items: center; justify-content: flex-start; gap: 14px; width: 100%; padding: 14px 16px; margin-top: 10px; text-align: left; }
+.op-boas .op-ico { flex: 0 0 32px; width: 32px; text-align: center; font-size: 24px; line-height: 1; }
+.op-boas .op-txt { flex: 1; min-width: 0; display: grid; gap: 2px; justify-items: start; }
+.op-boas .op-txt .muted { font-weight: 400; }
+
+.ritmo { display: block; margin-top: 4px; }
+
 </style>
 </head>
 <body>
@@ -1049,13 +1057,14 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
       if (o.data) { const t = parse(o.data); meses = Math.max(1, (t.y - hp.y) * 12 + t.m - hp.m); }
       return Object.assign({}, o, { falta, meses, porMes: falta !== null && meses ? falta / meses : null, prog: num(o.meta) ? Math.min(1, num(o.poupado) / num(o.meta)) : null });
     });
+    const reservaMin = Math.max(0, num(pr.reservaMin));
     const necessarioMes = objetivos.reduce((a, o) => a + (o.porMes || 0), 0);
 
     const horas = horasCalc(S, months);
     return { cb, months, horas, extras: extrasRes, fases, tot, rotuloIni: fases[0].fase, rotuloFim: fases[fases.length - 1].fase, cenarios, propostas, contas, minPrincipal, deslocMes: deslocMes(num(pI.km), num(pI.portagens)),
       fixasMensal, fixasPorConta, fixasPorCat, fixasSoMensais: S.fixas.reduce((a, f) => a + (f.period === 'Mensal' && f.ativa !== 'Não' ? num(f.valor) : 0), 0),
       fixasAnuais: S.fixas.reduce((a, f) => a + (f.period === 'Anual' && f.ativa !== 'Não' ? num(f.valor) : 0), 0),
-      objetivos, necessarioMes, cabe: tot.media >= necessarioMes, poupancaPrevista: months[N - 1].acum, horizonte: N, poupancaReal: num(pr.revolut) + months.reduce((a, x) => a + num(x.man.transf), 0) };
+      reservaMin, poupancaLivre: Math.max(0, months[N - 1].acum - reservaMin), objetivos, necessarioMes, cabe: tot.media >= necessarioMes, poupancaPrevista: months[N - 1].acum, horizonte: N, poupancaReal: num(pr.revolut) + months.reduce((a, x) => a + num(x.man.transf), 0) };
   }
 
   /* ---------- Feriados e pontes que se repetem; horas, banco de horas e férias ---------- */
@@ -1467,6 +1476,13 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
   /* Previsão a longo prazo (até 10 anos): o plano de sempre, estendido, mais três premissas opcionais (por omissão 0, ou seja, nada inventado):
      press.prevSalario = aumento anual do que entra (%), press.prevDespesas = aumento anual do que sai (%), press.prevPoupanca = rendimento anual do dinheiro poupado (%).
      Para além do último período definido, repete-se o último (é o que periodoAt já faz). */
+  function semRendimento(S, R) {
+    const months = R.months || [], m = months[0];
+    const poupanca = (m ? num(m.acum) - num(m.saldo) - num(m.juros) : 0) + num(((S || {}).press || {}).saldoPrincipal);
+    const despesaMensal = months.length ? months.reduce((a, x) => a + num(x.totalDesp), 0) / months.length : 0;
+    return { poupanca, despesaMensal, meses: despesaMensal > 0 ? poupanca / despesaMensal : null };
+  }
+
   const previsao = (S, meses) => {
     const M = Math.max(6, Math.min(120, Math.round(meses) || 120));
     const S2 = JSON.parse(JSON.stringify(S)); S2.press = Object.assign({}, S2.press, { horizonte: M });
@@ -1481,7 +1497,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     });
     const marcos = [6, 12, 24, 36, 60, 120].filter(n => n <= out.length).map(n => { const m = out[n - 1]; return Object.assign({ meses: n, vermelhos: out.slice(0, n).filter(x => x.saldo < 0).length }, m); });
     const anos = []; out.forEach(m => { const a = m.ym.slice(0, 4); let x = anos[anos.length - 1]; if (!x || x.ano !== a) { x = { ano: a, meses: 0, entra: 0, sai: 0, juros: 0, saldo: 0, fim: 0 }; anos.push(x); } x.meses++; x.entra += m.entra; x.sai += m.sai; x.juros += m.juros; x.saldo += m.saldo; x.fim = m.acum; });
-    const objetivos = R.objetivos.map(o => { let quando = null; if (o.falta !== null && o.falta !== undefined) { if (o.falta <= 0) quando = out.length ? out[0].ym : null; else { const alvo = base + o.falta; const h = out.find(x => x.acum >= alvo); quando = h ? h.ym : null; } } return { nome: o.nome, falta: o.falta, quando, data: o.data || '' }; });
+    const objetivos = R.objetivos.map(o => { let quando = null; if (o.falta !== null && o.falta !== undefined) { if (o.falta <= 0) quando = out.length ? out[0].ym : null; else { const alvo = base + o.falta + R.reservaMin; const h = out.find(x => x.acum >= alvo); quando = h ? h.ym : null; } } return { nome: o.nome, falta: o.falta, quando, data: o.data || '' }; });
     const primeiroVermelho = out.find(x => x.saldo < 0) || null;
     return { meses: out, marcos, anos, objetivos, primeiroVermelho, base, ultimoPeriodo: R.months.length ? R.months[R.months.length - 1].fase : '', primeiroSemReserva: out.find(x => x.acum < 0) || null,
       premissas: { salario: num(pr.prevSalario), despesas: num(pr.prevDespesas), poupanca: num(pr.prevPoupanca), definidas: has(pr.prevSalario) || has(pr.prevDespesas) || has(pr.prevPoupanca) } };
@@ -1526,7 +1542,75 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     out.proximoMes = ultimo ? addM(ultimo.slice(0, 7) + '-01', 1) : '';
     return out;
   };
-  root.PlannerEngine = { calc, previsao, taxaPoupanca, sugestoesExtrato, apoios, simularApoio, horizonte, abaixoDoMinimo, combustivel, addM, mk, num, has, parse, fixaEquiv, ocorrencias, periodoAt, salMinAno, ymd, pad, limiteMensal, orcMes, PERIODOS_ORC, irsRetencao, irsTaxa, irsAplicado, IRS_TABELA_I_2026, pascoa, feriadosNacionais, feriadosSet, expandir, expandirPontes, horaDe, horasDias, bancoHoras, saldoFerias, TIPOS_DIA, estudanteAtivo,
+  /* Conferência e reservas: não alteram os valores do plano. */
+  function fechoMes(S, R, ym) {
+    const key = mk(ym), m = (R.months || []).find(m => mk(m.ym) === key);
+    const gastos = (S.gastos || []).filter(g => mk(g.data) === key), extras = (S.extras || []).filter(e => mk(e.data) === key && (!e.freq || e.freq === 'Única'));
+    const temReal = gastos.length + extras.length > 0, desp = gastos.reduce((a, g) => a + num(g.valor), 0), rend = extras.reduce((a, e) => a + num(e.valor), 0);
+    const previstoSaldo = m ? num(m.saldo) : null, previstoDesp = m ? num(m.totalDesp) : null, ct = (R.contas || []).find(c => c.key === key);
+    return { ym: key, previstoSaldo, previstoDesp, previstoRend: m ? num(previstoSaldo + previstoDesp) : null,
+      contasPrev: ct ? num(ct.J) : null, contasReal: ct && ct.E !== null && ct.E !== undefined ? num(ct.E) : null, realSaldo: gastos.length && extras.length ? rend - desp : null, realDesp: gastos.length ? desp : null, realRend: extras.length ? rend : null, nota: temReal ? 'Dados reais parciais: só o que registou ou importou. O salário dos contratos não entra no real.' : 'sem dados reais' };
+  }
+  function reservaAnuais(S, R) {
+    const agora = new Date(), de = (R.hoje || ymd(agora.getFullYear(), agora.getMonth() + 1, agora.getDate())).slice(0, 10), ate = addDays(addM(de, 12), parse(de).d - 2);
+    const base = Object.assign({}, S, { fixas: S.fixas || [], gastos: S.gastos || [] });
+    const proximos = ocorrencias(base, de, ate).filter(o => o.estado !== 'saltado' && base.fixas[o.idx].period && base.fixas[o.idx].period !== 'Mensal').map(o => ({ desc: base.fixas[o.idx].desc || 'Sem nome', valor: o.valor, mes: o.data }));
+    const semData = base.fixas.filter(f => f.ativa !== 'Não' && ['Anual', 'Semestral', 'Trimestral'].includes(f.period) && !has(f.mes) && (!f.fim || f.fim >= de) && (!f.inicio || f.inicio <= ate));
+    const totalAno = proximos.reduce((a, o) => a + o.valor, 0) + semData.reduce((a, f) => a + fixaEquiv(f) * 12, 0);
+    return { totalAno, porMes: totalAno / 12, proximos };
+  }
+  function extrasDia(S, R, key) {
+    const m = (R.months || []).find(m => mk(m.ym) === key), p = parse(key), out = [];
+    (S.extras || []).forEach(e => {
+      if (!e.data || e.contar !== 'Sim') return;
+      const first = mk(e.data), hit = e.freq === 'Mensal' ? first <= key : e.freq === 'Anual' ? first <= key && first.slice(5) === key.slice(5) : first === key;
+      const data = ymd(p.y, p.m, Math.min(parse(e.data).d, dim(p.y, p.m)));
+      if (hit && (!e.ate || data <= e.ate)) out.push({ data, desc: e.desc || e.tipo || 'Rendimento', valor: has(e.valor) ? num(e.valor) : num(m && m.liq), conta: e.conta });
+    });
+    return out;
+  }
+  function liquidezMes(S, R, ym, saldoIni) {
+    const key = mk(ym); if (!/^\d{4}-\d{2}$/.test(key) || parse(key).m < 1 || parse(key).m > 12) return { dias: [], temSalario: false, minimo: null };
+    const p = parse(key), de = key + '-01', ate = ymd(p.y, p.m, dim(p.y, p.m)), pr = S.press || {}, base = Object.assign({}, S, { fixas: S.fixas || [], gastos: S.gastos || [] });
+    const movimentos = ocorrencias(base, de, ate).filter(o => o.estado !== 'saltado' && (!base.fixas[o.idx].conta || base.fixas[o.idx].conta === 'Principal')).map(o => ({ data: o.data, desc: base.fixas[o.idx].desc || 'Pagamento', valor: -o.valor }));
+    (S.gastos || []).filter(g => !g.fixa && mk(g.data) === key && (!g.conta || g.conta === 'Principal')).forEach(g => movimentos.push({ data: g.data, desc: g.desc || 'Gasto', valor: -num(g.valor) }));
+    extrasDia(S, R, key).filter(e => !e.conta || e.conta === 'Principal').forEach(e => movimentos.push(e));
+    const m = (R.months || []).find(m => mk(m.ym) === key), dia = num((m && m.per && m.per.diaSalario) || pr.diaSalario);
+    if (m && dia >= 1 && dia <= 31 && num(m.liq) > 0 && (!m.contaX || m.contaX === 'Principal')) movimentos.push({ data: ymd(p.y, p.m, Math.min(dim(p.y, p.m), Math.max(1, Math.round(dia)))), desc: 'Salário previsto', valor: num(m.liq) });
+    const anterior = mk(addM(de, -1)), c = (S.contas || {})[anterior] || {};
+    let saldo = saldoIni != null && isFinite(saldoIni) ? +saldoIni : has(c.principal) ? num(c.principal) : num(pr.saldoPrincipal);
+    const dias = []; eachDay(de, ate, data => { const movs = movimentos.filter(o => o.data === data); saldo += movs.reduce((a, o) => a + o.valor, 0); dias.push({ d: parse(data).d, saldo, movs }); });
+    return { dias, temSalario: !!(m && dia >= 1 && dia <= 31), minimo: dias.reduce((a, d) => !a || d.saldo < a.saldo ? { d: d.d, saldo: d.saldo } : a, null) };
+  }
+  function subidasPreco(movs, S) {
+    const grupos = {}, vistos = new Set();
+    (movs || []).forEach(m => {
+      if (!m || !/^\d{4}-\d{2}-\d{2}$/.test(String(m.data)) || num(m.valor) >= 0) return;
+      const k = chaveDesc(m.desc), id = m.data + '|' + normalizaDesc(m.desc) + '|' + num(m.valor);
+      if (!k || vistos.has(id) || /revolut|conta propria|entre contas/.test(normalizaDesc(m.desc))) return;
+      vistos.add(id); (grupos[k] = grupos[k] || []).push(m);
+    });
+    const out = [];
+    Object.keys(grupos).forEach(k => {
+      const g = grupos[k].sort((a, b) => a.data.localeCompare(b.data)), meses = g.map(m => mk(m.data));
+      if (g.length < 2 || new Set(meses).size !== g.length) return;
+      if (g.some((m, i) => i && (diffDays(g[i - 1].data, m.data) < 20 || diffDays(g[i - 1].data, m.data) > 45))) return;
+      const ultimo = g[g.length - 1], vals = g.slice(0, -1).map(m => -num(m.valor)).sort((a, b) => a - b), h = vals.length >> 1, antes = vals.length % 2 ? vals[h] : (vals[h - 1] + vals[h]) / 2, agora = -num(ultimo.valor);
+      if (antes <= 0 || vals.some(v => Math.abs(v - antes) > Math.max(0.5, antes * 0.15)) || agora <= antes * 1.03) return;
+      const fixaIdx = ((S || {}).fixas || []).findIndex(f => f.ativa !== 'Não' && (!f.period || f.period === 'Mensal') && chaveDesc(f.desc) === k && (!ultimo.conta || !f.conta || ultimo.conta === f.conta));
+      out.push({ nome: ultimo.desc, antes, agora, subidaPct: num((agora / antes - 1) * 100), fixaIdx });
+    });
+    return out;
+  }
+  function ritmoObjetivo(o, hojeFull, inicio) {
+    const valida = s => /^\d{4}-\d{2}-\d{2}$/.test(String(s)) && Number.isFinite(Date.parse(s));
+    if (num(o.meta) <= 0 || !valida(o.data) || !valida(hojeFull)) return null;
+    let de = valida(o.inicio) ? o.inicio : [inicio, o.criadoEm, o.dataEntrada].filter(valida).sort()[0];
+    if (!de || de >= o.data) { const p = parse(o.data); de = ymd(p.y - 1, p.m, Math.min(p.d, dim(p.y - 1, p.m))); }
+    const esperado = num(o.meta) * Math.max(0, Math.min(1, diffDays(de, hojeFull) / Math.max(1, diffDays(de, o.data)))), real = num(o.poupado), diff = real - esperado;
+    return { esperado, real, diff, estado: Math.abs(diff) < 0.01 ? 'no ritmo' : diff > 0 ? 'adiantado' : 'atrasado' };
+  }
+  root.PlannerEngine = { fechoMes, reservaAnuais, liquidezMes, subidasPreco, ritmoObjetivo, calc, previsao, semRendimento, taxaPoupanca, sugestoesExtrato, apoios, simularApoio, horizonte, abaixoDoMinimo, combustivel, addM, mk, num, has, parse, fixaEquiv, ocorrencias, periodoAt, salMinAno, ymd, pad, limiteMensal, orcMes, PERIODOS_ORC, irsRetencao, irsTaxa, irsAplicado, IRS_TABELA_I_2026, pascoa, feriadosNacionais, feriadosSet, expandir, expandirPontes, horaDe, horasDias, bancoHoras, saldoFerias, TIPOS_DIA, estudanteAtivo,
     parseNumero, parseData, parseCSV, detectarColunas, movimentosDeCSV, movimentosDeTexto, movimentosDePdf, conferirSaldos, normalizaDesc, chaveDesc, categorizar, aprender, jaRegistado, duplicados };
   if (typeof module !== 'undefined') module.exports = root.PlannerEngine;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -2186,7 +2270,8 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
   }
 
   /* ---------- registo rápido: o "+" abre uma folha no próprio sítio, sem mudar de página ---------- */
-  let rapido = null;   // { tipo: 'g' | 'r', valor, desc, data, cat, novo, catEscolhida }
+  let rapido = null;   // { tipo: 'g' | 'r', valor, desc, data, cat, conta, novo, catEscolhida }
+  const rapidoDefaults = { g: { conta: 'Principal' }, r: { conta: 'Principal' } };
   const chaveUltCat = t => 'planner-ultcat-' + t;
   const ultimaCat = t => { try { const c = localStorage.getItem(chaveUltCat(t)) || ''; return (t === 'g' ? catNomes() : LISTAS.tipos).indexOf(c) >= 0 ? c : ''; } catch (e) { return ''; } };
   const sugestoesDesc = t => { const vistos = new Set(), out = []; (t === 'g' ? S.gastos : S.extras).slice().reverse().forEach(x => { const d = String(x.desc || '').trim(), k = d.toLowerCase(); if (d && !x.fixa && !vistos.has(k) && out.length < 40) { vistos.add(k); out.push(d); } }); return out; };
@@ -2194,6 +2279,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     if (!rapido) return;
     const v = document.getElementById('q-valor'), d = document.getElementById('q-desc'), t = document.getElementById('q-data');
     if (v) rapido.valor = String(v.value == null ? '' : v.value); if (d) rapido.desc = String(d.value == null ? '' : d.value); if (t) rapido.data = String(t.value || '');
+    const c = document.getElementById('q-conta'); if (c && LISTAS.contas.indexOf(c.value) >= 0) rapidoDefaults[rapido.tipo].conta = rapido.conta = c.value;
   }
   function rapidoHtml() {
     if (!rapido) return '';
@@ -2204,7 +2290,8 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
       '<div class="row sh-topo"><h2>' + (g ? '💸 Novo gasto' : '💰 Novo rendimento') + '</h2><button class="x" data-act="rapido-fechar" aria-label="Fechar">×</button></div>' +
       '<div class="valorbox"><span aria-hidden="true">€</span><input type="number" inputmode="decimal" step="any" min="-10000000" max="10000000" id="q-valor" placeholder="0,00" aria-label="Valor em euros" value="' + esc(rapido.valor) + '"></div>' +
       '<div class="fields fx-campos q-campos">' + field('Descrição', '<input type="text" id="q-desc" maxlength="120" list="q-sug" autocomplete="off" placeholder="' + (g ? 'ex.: supermercado' : 'ex.: prenda de anos') + '" value="' + esc(rapido.desc) + '"><datalist id="q-sug">' + sugestoesDesc(rapido.tipo).map(d => '<option value="' + esc(d) + '">').join('') + '</datalist>') +
-      field('Data', '<div class="comb"><input type="date" id="q-data" min="1990-01-01" max="2100-12-31" value="' + esc(rapido.data) + '"><button type="button" class="btn" data-act="q-data:0">Hoje</button><button type="button" class="btn" data-act="q-data:1">Ontem</button></div>') + '</div>' +
+      field('Data', '<div class="comb"><input type="date" id="q-data" min="1990-01-01" max="2100-12-31" value="' + esc(rapido.data) + '"><button type="button" class="btn" data-act="q-data:0">Hoje</button><button type="button" class="btn" data-act="q-data:1">Ontem</button></div>') +
+      field('Conta', '<select id="q-conta">' + LISTAS.contas.map(c => '<option value="' + esc(c) + '"' + (rapido.conta === c ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</select>') + '</div>' +
       '<div class="field"><label>' + (g ? 'Categoria' : 'Tipo') + '</label><div class="catchips grelha" role="group" aria-label="' + (g ? 'Categoria' : 'Tipo') + '">' + chips + '</div></div>' +
       '<div class="row sh-fim"><span id="q-msg" class="muted" role="status"></span><button type="button" class="btn pri" data-act="rapido-ok">' + (g ? 'Registar gasto' : 'Registar rendimento') + '</button></div></div></div>';
   }
@@ -2213,8 +2300,8 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     const erro = (!desc || !isFinite(v)) ? 'Falta a descrição ou o valor.' : desc.length > 120 ? 'A descrição tem de ter no máximo 120 caracteres.' : (v === 0 || Math.abs(v) > 1e7) ? 'O valor tem de ser diferente de 0 e até 10 000 000 €.' : !d ? 'Falta a data.' : !dataOk(d) ? 'Data inválida.' : '';
     if (erro) { if (msg) msg.textContent = erro; return; }
     const antes = JSON.stringify(S), g = q.tipo === 'g';
-    if (g) { S.gastos.push({ data: d, desc: limpaTexto(desc, 120), cat: catNomes().indexOf(q.cat) >= 0 ? q.cat : '', valor: v, conta: 'Principal', notas: '' }); gastoMes = (d || '').slice(0, 7) || hojeYm; }
-    else S.extras.push({ data: d, tipo: LISTAS.tipos.indexOf(q.cat) >= 0 ? q.cat : 'Outro', desc: limpaTexto(desc, 120), origem: '', valor: v, freq: 'Única', ate: '', conta: 'Principal', contar: 'Sim', notas: '' });
+    if (g) { S.gastos.push({ data: d, desc: limpaTexto(desc, 120), cat: catNomes().indexOf(q.cat) >= 0 ? q.cat : '', valor: v, conta: q.conta, notas: '' }); gastoMes = (d || '').slice(0, 7) || hojeYm; }
+    else S.extras.push({ data: d, tipo: LISTAS.tipos.indexOf(q.cat) >= 0 ? q.cat : 'Outro', desc: limpaTexto(desc, 120), origem: '', valor: v, freq: 'Única', ate: '', conta: q.conta, contar: 'Sim', notas: '' });
     try { localStorage.setItem(chaveUltCat(q.tipo), (q.tipo === 'g' ? catNomes() : LISTAS.tipos).indexOf(q.cat) >= 0 ? q.cat : ''); } catch (e) { }   // da próxima vez a categoria já vem escolhida
     rapido = null; queueSave(); render();
     aviso((g ? 'Gasto' : 'Rendimento') + ' de ' + eur(v) + ' registado.', () => { S = merge(DEFAULTS, JSON.parse(antes)); queueSave(); render(); });
@@ -2282,9 +2369,9 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
       '<div class="row sh-topo"><h2>' + esc(o.nome || 'Novo objetivo') + '</h2><button class="x" data-act="obj-fechar" aria-label="Fechar">×</button></div>' +
       '<div class="fx-topo"><span class="ico" style="--c:#F48FB1" aria-hidden="true">🎯</span>' + field('Nome', inp(b + 'nome', { t: 'text', aria: 'Objetivo', ph: 'ex.: carta de condução' })) + '</div>' +
       '<div class="fields fx-campos">' + field('Meta (€)', inp(b + 'meta', { aria: 'Meta' })) + field('Já poupado (€)', inp(b + 'poupado', { aria: 'Já poupado' })) +
-      field('Data alvo', inp(b + 'data', { t: 'date', aria: 'Data alvo' }), 'Opcional') + field('Conta', inp(b + 'conta', { t: 'sel', list: LISTAS.contas, aria: 'Conta' })) + '</div>' +
+      field('Data alvo', inp(b + 'data', { t: 'date', aria: 'Data alvo' }), 'Opcional') + field('Começou a poupar em', inp(b + 'inicio', { t: 'date', aria: 'Data em que começou a poupar' }), 'Opcional. Serve para ver se está no ritmo.') + field('Conta', inp(b + 'conta', { t: 'sel', list: LISTAS.contas, aria: 'Conta' })) + '</div>' +
       '<div class="bar ' + (pc >= 100 ? 'ok' : '') + '" role="progressbar" aria-label="Progresso" aria-valuenow="' + pc + '" aria-valuemin="0" aria-valuemax="100" style="margin-top:12px"><i style="width:' + pc + '%"></i></div><p class="note" style="margin-top:8px">' + pc + ' % poupado. ' + resumo + '</p>' +
-      '<div class="field"><label for="somar-' + i + '">Registar poupança</label><div class="comb"><input type="number" step="any" inputmode="decimal" id="somar-' + i + '" placeholder="€" aria-label="Valor a somar a ' + esc(o.nome || 'objetivo') + '"><button type="button" class="btn" data-act="somar:' + i + '">Somar</button></div><span class="hint">Soma ao que já poupou.</span></div>' +
+      ritmoHtml(o) + '<div class="field"><label for="somar-' + i + '">Registar poupança</label><div class="comb"><input type="number" step="any" inputmode="decimal" id="somar-' + i + '" placeholder="€" aria-label="Valor a somar a ' + esc(o.nome || 'objetivo') + '"><button type="button" class="btn" data-act="somar:' + i + '">Somar</button></div><span class="hint">Soma ao que já poupou.</span></div>' +
       '<div class="row sh-fim"><button type="button" class="btn danger" data-act="del:objetivos:' + i + '">Apagar</button><button type="button" class="btn pri" data-act="obj-ok">Feito</button></div></div></div>';
   }
   const anosContas = () => { const out = []; R.contas.forEach(c => { const a = c.key.slice(0, 4); let g = out[out.length - 1]; if (!g || g.ano !== a) { g = { ano: a, cs: [] }; out.push(g); } g.cs.push(c); }); return out; };
@@ -2297,9 +2384,9 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     const ab = contaAberto(g.ano), regs = g.cs.filter(c => c.E !== null), ult = regs[regs.length - 1];
     const cartao = c => '<button type="button" class="pay ct' + (c.E === null ? ' done' : '') + (c.key === hojeYm ? ' hoje' : '') + '" data-act="conta-mes:' + c.key + '">' + chipIco('🏦', '#90CAF9') +
       '<span class="pt"><span class="sr">Editar </span><b>' + mesLongo(c.ym) + '</b><span class="muted">' + (c.E !== null ? 'Principal ' + eur(num(c.c.principal), 0) + ' · Revolut ' + eur(num(c.c.revolut), 0) + (E.has(c.c.cartao) ? ' · Cartão ' + eur(num(c.c.cartao), 0) : '') : 'Sem saldo registado') + '</span></span>' +
-      '<span class="pv">' + (c.E !== null ? eur(c.E, 0) + (c.K !== null ? '<small class="' + (c.K < 0 ? 'neg-v' : '') + '">' + (c.K > 0 ? '+' : '') + eur(c.K, 0) + ' face ao previsto</small>' : '') : eur(c.J, 0) + '<small>previsto</small>') + '</span><span class="chev" aria-hidden="true">›</span></button>';
+      '<span class="pv"><span class="' + cls(c.E !== null ? c.E : c.J) + '">' + eur(c.E !== null ? c.E : c.J, 0) + '</span>' + (c.E !== null ? (c.K !== null ? '<small class="' + cls(c.K) + '">' + (c.K > 0 ? '+' : '') + eur(c.K, 0) + ' face ao previsto</small>' : '') : '<small>previsto</small>') + '</span><span class="chev" aria-hidden="true">›</span></button>';
     return '<div class="ano' + (ab ? ' aberto' : '') + '"><button type="button" class="ano-h" data-act="conta-ano:' + g.ano + '" aria-expanded="' + ab + '"><span class="ano-t">' + g.ano + '<small>' + regs.length + ' de ' + g.cs.length + (g.cs.length === 1 ? ' mês com saldo' : ' meses com saldo') + '</small></span>' +
-      '<span class="ano-n"><small>Último saldo registado</small>' + (ult ? eur(ult.E, 0) : '—') + '</span><span class="chev" aria-hidden="true">›</span></button>' +
+      '<span class="ano-n' + (ult ? cls(ult.E) : '') + '"><small>Último saldo registado</small>' + (ult ? eur(ult.E, 0) : '—') + '</span><span class="chev" aria-hidden="true">›</span></button>' +
       (ab ? '<div class="paylist duas">' + g.cs.map(cartao).join('') + '</div>' : '') + '</div>';
   }
   function contaHtml() {
@@ -2461,7 +2548,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
   const boasFechar = () => { boas = false; try { localStorage.setItem(LS_BOAS, '1'); } catch (e) { } };
   function boasHtml() {
     if (!boas) return '';
-    const op = (a, ico, t, d, pri) => '<button type="button" class="btn' + (pri ? ' pri' : '') + '" data-act="boas:' + a + '" style="display:flex;gap:12px;align-items:center;text-align:left;width:100%;padding:14px 16px;margin-top:10px"><span aria-hidden="true" style="font-size:24px">' + ico + '</span><span><b>' + t + '</b><br><span class="muted" style="font-weight:400">' + d + '</span></span></button>';
+    const op = (a, ico, t, d, pri) => '<button type="button" class="btn op-boas' + (pri ? ' pri' : '') + '" data-act="boas:' + a + '"><span class="op-ico" aria-hidden="true">' + ico + '</span><span class="op-txt"><b>' + t + '</b><span class="muted">' + d + '</span></span></button>';
     return '<div class="modal baixo" data-act="boas-fechar"><div class="sheet larga" role="dialog" aria-modal="true" aria-label="Começar a usar a app">' +
       '<div class="row sh-topo"><h2>👋 Vamos começar</h2><button class="x" data-act="boas-fechar" aria-label="Fechar">×</button></div>' +
       '<p class="lead">A app está vazia. Escolha a forma mais rápida de a preencher. Pode sempre fazer o resto mais tarde.</p>' +
@@ -2481,6 +2568,14 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     const dc = diasDesdeCopia(); if (dc != null && dc < 14) return '';
     return '<section class="card sec"><h2>🗂️ Cópia em ficheiro</h2><p class="note">' + (dc == null ? 'Ainda não guardou nenhuma cópia em ficheiro.' : 'A última cópia em ficheiro foi há ' + dc + ' dias.') + ' Guarde uma no iCloud Drive ou no OneDrive: fica fora do Claude e protege-o de qualquer imprevisto.</p><div class="row"><button type="button" class="btn" data-act="export">Guardar cópia agora</button><button type="button" class="btn" data-act="ir:definicoes:def-sincronizacao">Sincronização e cópias</button></div></section>';
   }
+  function lembretesHtml() {
+    const hi = hojeIso(), pagamentos = E.ocorrencias(S, hojeYm + '-01', addDiasIso(hi, 7)).filter(o => o.estado === 'pendente');
+    const mo = R.months.find(m => m.key === hojeYm), falta = mo && num(mo.man.transf) <= 0 && mo.saldo > 0;
+    if (!pagamentos.length && !falta) return '';
+    const atras = pagamentos.filter(o => o.data < hi), prox = pagamentos.filter(o => o.data >= hi);
+    return '<section class="card"><h2>Lembretes</h2>' + (atras.length ? '<p class="neg-v">' + (atras.length === 1 ? 'Tem 1 pagamento em atraso' : 'Tem ' + atras.length + ' pagamentos em atraso') + ' este mês (' + eur(atras.reduce((x, o) => x + o.valor, 0)) + '): ' + esc(atras.slice(0, 3).map(o => (S.fixas[o.idx] || {}).desc || 'Sem nome').join(', ')) + (atras.length > 3 ? '…' : '') + '.</p>' : '') + (prox.length ? '<p>' + (prox.length === 1 ? '1 pagamento vence' : prox.length + ' pagamentos vencem') + ' nos próximos 7 dias (' + eur(prox.reduce((x, o) => x + o.valor, 0)) + ').</p>' : '') + (pagamentos.length ? '<button type="button" class="btn" data-act="ir:recorrentes">Ver os pagamentos</button>' : '') +
+      (falta ? '<p>Você ainda não registou a transferência para a poupança de ' + esc(mesLongo(mo.ym)) + '. O saldo previsto disponível é ' + eur(mo.saldo) + '.</p><button type="button" class="btn" data-act="plano-mes:' + esc(mo.key) + '">Registar transferência</button>' : '') + '</section>';
+  }
   function tabInicio() {
     const a = AP, mesAtual = R.months.find(m => m.key === hojeYm) || R.months[0];
     const k = (l, v, s, extra, go) => '<div class="kpi' + (go ? ' go' : '') + '"' + (go ? ' data-act="ir:' + go + '" role="link" tabindex="0" title="Abrir"' : '') + '><div class="l">' + l + '</div><div class="v' + (extra || '') + '">' + v + '</div><div class="s">' + s + '</div></div>';
@@ -2493,11 +2588,11 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
         '<div class="chartbox on pizza" data-chart="ini-' + (t === 'd' ? 'despesas' : 'receitas') + '" role="img" aria-label="' + titulo + ', ' + pr[1].toLowerCase() + '"></div>' +
         '<p class="note center">' + esc(d.nota) + ' · total ' + eur(tot, 0) + '</p>' + listaGraf('ini-' + (t === 'd' ? 'despesas' : 'receitas')) + '<div class="dots" aria-hidden="true">' + PER_INI.map((x, i) => '<i' + (i === iniPer[t] ? ' class="on"' : '') + '></i>').join('') + '</div></div>';
     };
-    const kRend = k('Rendimento de ' + S.apoios.ano + ' (com previsão)', eur(a.totalLedger, 0), 'Recebido até hoje: ' + eur(a.recebidoAteHoje, 0), '', 'apoios'), kApoio = k('Apoio carro elétrico (Fundo Ambiental)', chip, a.pendente ? 'Adicione os membros do agregado' : a.rotulo + ': ' + eur(a.valor, 0) + ' · limite ' + eur(num(S.apoios.limite), 0), '', 'apoios'), kSaldo = k('Saldo do mês (' + mesTxt(mesAtual.ym) + ')', eur(mesAtual.saldo), 'Receitas menos despesas previstas', cls(mesAtual.saldo), 'plano'), kConta = k('Dinheiro em contas', eur(contaUlt ? contaUlt.E : num(S.press.saldoPrincipal) + num(S.press.revolut)), contaUlt ? 'Último saldo registado (' + mesTxt(contaUlt.ym) + ')' : 'Saldo inicial: principal + Revolut', '', 'poupanca'), kMin = k('Mínimo a manter na principal', eur(R.minPrincipal), 'Despesas fixas + deslocações do mês', '', 'poupanca'), kOrc = (mesAtual.orc.totalLimite > 0 ? k('Orçamento de ' + mesTxt(mesAtual.ym), eur(mesAtual.orc.totalGasto, 0) + ' / ' + eur(mesAtual.orc.totalLimite, 0), mesAtual.orc.totalGasto > mesAtual.orc.totalLimite ? 'Acima do limite total' : 'Gasto face ao limite, em categorias com limite', mesAtual.orc.totalGasto > mesAtual.orc.totalLimite ? ' neg-v' : '', 'orcamento') : k('Orçamento do mês', 'Por definir', 'Defina os limites no separador Orçamento', '', 'orcamento'));
+    const kRend = k('Rendimento de ' + S.apoios.ano + ' (com previsão)', eur(a.totalLedger, 0), 'Recebido até hoje: ' + eur(a.recebidoAteHoje, 0), '', 'apoios'), kApoio = k('Apoio carro elétrico (Fundo Ambiental)', chip, a.pendente ? 'Adicione os membros do agregado' : a.rotulo + ': ' + eur(a.valor, 0) + ' · limite ' + eur(num(S.apoios.limite), 0), '', 'apoios'), kSaldo = k('Saldo do mês (' + mesTxt(mesAtual.ym) + ')', eur(mesAtual.saldo), 'Receitas menos despesas previstas', cls(mesAtual.saldo), 'plano'), kConta = k('Dinheiro em contas', eur(contaUlt ? contaUlt.E : num(S.press.saldoPrincipal) + num(S.press.revolut)), contaUlt ? 'Último saldo registado (' + mesTxt(contaUlt.ym) + ')' : 'Saldo inicial: principal + Revolut', cls(contaUlt ? contaUlt.E : num(S.press.saldoPrincipal) + num(S.press.revolut)), 'poupanca'), kMin = k('Mínimo a manter na principal', eur(R.minPrincipal), 'Despesas fixas + deslocações do mês', '', 'poupanca'), kOrc = (mesAtual.orc.totalLimite > 0 ? k('Orçamento de ' + mesTxt(mesAtual.ym), eur(mesAtual.orc.totalGasto, 0) + ' / ' + eur(mesAtual.orc.totalLimite, 0), mesAtual.orc.totalGasto > mesAtual.orc.totalLimite ? 'Acima do limite total' : 'Gasto face ao limite, em categorias com limite', mesAtual.orc.totalGasto > mesAtual.orc.totalLimite ? ' neg-v' : '', 'orcamento') : k('Orçamento do mês', 'Por definir', 'Defina os limites no separador Orçamento', '', 'orcamento'));
     return '<section><h2>Visão geral</h2><p class="lead resumo">' + esc(resumoInicio(mesAtual, prox)) + ' Os números principais estão em baixo; edite os valores nos outros separadores e tudo atualiza.</p>' +
       '<div class="grid">' + kSaldo + kConta + kOrc + '</div>' +
       '<details class="ajuda"><summary>Mais indicadores</summary><div class="grid" style="margin-top:10px">' + kRend + kApoio + kMin + '</div></details></section>' +
-      primeiraVezHtml() + podeHtml(mesAtual) +
+      primeiraVezHtml() + lembretesHtml() + podeHtml(mesAtual) +
       '<section><h2>Próximos pagamentos</h2><p class="lead">Os mais próximos por pagar. Toque em "Pago" quando sair da conta e fica registado nos gastos. No telemóvel, também pode deslizar um pagamento para a direita (pago) ou para a esquerda (saltar).</p>' + payRows(prox.slice(0, 4)) +
       '<div class="row" style="margin-top:12px"><button class="btn" data-act="ir:recorrentes">Ver todos os recorrentes' + (prox.length > 4 ? ' (mais ' + (prox.length - 4) + ' por pagar)' : '') + '</button></div></section>' +
       (window.Chart ? '<section><h2>Em gráficos</h2><p class="lead">As setas (ou deslizar o gráfico para o lado) mudam o período: hoje, esta semana, este mês, 3, 6 ou 12 meses. Hoje e esta semana mostram o que registou; os outros, a previsão do plano. Toque numa fatia para ver o detalhe.</p><div class="grid two">' +
@@ -2602,6 +2697,38 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
       field('Carros apoiados', inp('apoios.vagas', {})) + '</div></details>';
   }
 
+  function ritmoHtml(o) {
+    const r = E.ritmoObjetivo(o, hojeIso()); if (!r) return '';
+    return '<span class="chip">' + esc(r.estado) + '</span><span class="muted ritmo">' + esc('Você tem ' + eur(r.real) + ' poupados; o ritmo previsto até hoje é ' + eur(r.esperado) + ' (diferença: ' + eur(r.diff) + ').') + '</span>';
+  }
+  function fechoHtml() {
+    const ym = E.mk(E.addM(hojeYm + '-01', -1)), f = E.fechoMes(S, R, ym), hist = Array.isArray(S.fechos) ? S.fechos : [];
+    const linha = (nome, prev, real) => '<tr><td class="l">' + esc(nome) + '</td><td>' + esc(prev == null ? 'Sem previsão' : eur(prev)) + '</td><td>' + esc(real == null ? 'sem dados reais' : eur(real)) + '</td></tr>';
+    return '<section class="card"><h2>Fecho do mês</h2><p class="lead">' + esc(mesLongo(ym + '-01')) + ': o que estava previsto e o que registou. Guarde o fecho para ficar com o histórico.</p><table class="mini"><thead><tr><th></th><th>Previsto</th><th>Real registado</th></tr></thead><tbody>' + linha('Rendimentos', f.previstoRend, f.realRend) + linha('Despesas', f.previstoDesp, f.realDesp) + linha('Saldo do mês', f.previstoSaldo, f.realSaldo) + linha('Contas no fim do mês', f.contasPrev, f.contasReal) + (f.contasReal == null ? '<tr><td class="l" colspan="3"><span class="muted">Para comparar o saldo das contas, escreva o saldo real desse mês em <a href="#" data-act="ir:poupanca">Poupança e contas</a>.</span></td></tr>' : '') + '</tbody></table><p class="note">' + esc(f.nota) + '</p><button type="button" class="btn" data-act="fecho-guardar">Guardar fecho</button><h3>Histórico</h3>' + (hist.length ? hist.slice().sort((a, b) => b.ym.localeCompare(a.ym)).map(x => {
+      const tem = x.realDesp != null && x.previstoDesp != null, dif = num(x.realDesp) - num(x.previstoDesp);
+      return '<p>' + esc(mesLongo(x.ym + '-01') + ' · ' + (tem ? 'Despesas: ' + (dif > 0 ? '+' : '') + eur(dif) + ' face ao previsto' + (num(x.previstoDesp) ? ' (' + pctTxt(dif / Math.abs(num(x.previstoDesp))) + ')' : '') : 'sem dados reais ou previsão') + (x.contasReal != null && x.contasPrev != null ? ' · Contas: ' + (num(x.contasReal) - num(x.contasPrev) > 0 ? '+' : '') + eur(num(x.contasReal) - num(x.contasPrev)) + ' face ao previsto' : '') + (x.nota ? ' · ' + x.nota : '')) + '</p>';
+    }).join('') : '<p class="note">Ainda não há fechos guardados.</p>') + '</section>';
+  }
+  function reservaHtml() {
+    const r = E.reservaAnuais(S, { hoje: hojeIso() }), ult = R.contas.filter(c => c.key < hojeYm && E.has(c.c.revolut)).pop(), poupado = ult ? num(ult.c.revolut) : num(S.press.revolut);
+    return '<section class="card"><h2>Reserva para despesas anuais</h2>' + (r.totalAno > 0 ? '<div class="grid">' + kpi('A reservar por mês', esc(eur(r.porMes)), '') + kpi('Próximos 12 meses', esc(eur(r.totalAno)), '') + '</div><p class="note">' + esc('Você tem ' + eur(poupado) + ' na última poupança registada' + (R.reservaMin > 0 ? ', dos quais ' + eur(Math.max(0, poupado - R.reservaMin)) + ' acima da reserva mínima protegida' : '') + ': ' + (Math.max(0, poupado - R.reservaMin) >= r.totalAno ? 'cobre' : 'não cobre') + ' estas despesas dos próximos 12 meses.') + '</p><p class="note">Estas despesas já estão no plano e na previsão nos meses em que vencem, por isso não são descontadas outra vez dos objetivos.' + '</p>' + r.proximos.slice(0, 8).map(o => '<p>' + esc(dataPt(o.mes) + ' · ' + o.desc + ' · ' + eur(o.valor)) + '</p>').join('') : '<p class="note">Ainda não há despesas não mensais com vencimento definido nos próximos 12 meses.</p>') + '</section>';
+  }
+  let liqMes = '';
+  function liquidezHtml() {
+    const ms = R.months.filter(m => m.key >= hojeYm).slice(0, 12).map(m => m.key), sel = ms.indexOf(liqMes) >= 0 ? liqMes : (ms[0] || hojeYm);
+    let r = null, ini = null; ms.slice(0, ms.indexOf(sel) + 1).forEach(k => { r = E.liquidezMes(S, R, k, ini); if (r.dias.length) ini = r.dias[r.dias.length - 1].saldo; }); if (!r) r = E.liquidezMes(S, R, sel);
+    const rows = r.dias.filter(d => d.movs.length);
+    return '<section class="card"><h2>Calendário de liquidez</h2>' + (ms.length > 1 ? '<div class="field"><label for="liq-mes">Mês</label><select id="liq-mes" data-local="liqMes">' + ms.map(k => '<option value="' + esc(k) + '"' + (k === sel ? ' selected' : '') + '>' + esc(mesLongo(k + '-01')) + '</option>').join('') + '</select></div>' : '<p>' + esc(mesLongo(sel + '-01')) + '</p>') + (rows.length ? kpi('Menor saldo diário', esc(eur(r.minimo.saldo)), esc('Dia ' + r.minimo.d), cls(r.minimo.saldo)) + (!r.temSalario ? '<p class="note">O salário não está incluído porque falta o dia em que o recebe. Escreva-o em <a href="#" data-act="ir:definicoes:def-pressupostos">Definições, Pressupostos</a>.</p>' : r.minimo.saldo < 0 ? '<p class="neg-v">Você tem dias com saldo previsto abaixo de zero.</p>' : '') + '<div class="tablewrap"><table class="mini"><thead><tr><th>Dia</th><th class="l">Movimentos</th><th>Saldo</th></tr></thead><tbody>' + rows.map(d => '<tr><td>' + esc(d.d) + '</td><td class="l">' + esc(d.movs.map(m => m.desc + ' ' + eur(m.valor)).join(' · ')) + '</td><td class="' + cls(d.saldo) + '">' + esc(eur(d.saldo)) + '</td></tr>').join('') + '</tbody></table></div><p class="note">Estimativa da conta principal: parte do saldo real do mês anterior ou do saldo inicial; nos meses seguintes parte do fim do mês anterior previsto. Inclui apenas movimentos com data; o salário exige um dia de pagamento definido. Não inclui despesas sem dia nem transferências previstas.</p>' : '<p class="note">Ainda não há movimentos com data para estimar a liquidez deste mês.</p>') + '</section>';
+  }
+  function movimentosPreco() {
+    const salvos = S.gastos.filter(g => g.notas === 'Importado do extrato').map(g => ({ data: g.data, desc: g.desc, valor: -num(g.valor), conta: g.conta }));
+    return salvos.concat(imp && imp.movs ? imp.movs.map(m => Object.assign({}, m, { conta: imp.conta })) : []);
+  }
+  function precosHtml(soFixas) {
+    const lista = E.subidasPreco(movimentosPreco(), S).filter(x => !soFixas || x.fixaIdx >= 0);
+    if (!lista.length) return '';
+    return '<section class="card"><h2>Alerta de subida de preço</h2>' + lista.map(x => '<p>' + esc(x.nome + ': de ' + eur(x.antes) + ' para ' + eur(x.agora) + ' (+' + pctTxt(x.subidaPct / 100) + ').') + '</p>' + (x.fixaIdx >= 0 && num(S.fixas[x.fixaIdx].valor) !== x.agora ? '<button type="button" class="btn" data-act="preco-atualizar:' + esc(x.fixaIdx) + '">Atualizar o valor do recorrente</button>' : '')).join('') + '<p class="note">Você pode rever os valores antes de atualizar o pagamento.</p></section>';
+  }
   function tabPlano() {
     const head = ['Mês', 'Período', 'Dias de trabalho', 'Km/dia', 'Salário bruto', 'Salário líquido', 'Rendimento manual (líq.)', 'Conta onde entra', 'Subsídios férias/Natal', 'Outros extras', 'Subsídio alimentação', 'Preço combustível €/L', 'Combustível', 'Portagens', 'Manutenção carro', 'Despesas fixas', 'Extras / imprevistos', 'Gastos registados', 'Gastos variáveis (plano)', 'Total despesas', 'Saldo do mês', 'Poupança acumulada (prevista)', 'Transferido para a Revolut (real)', 'Saldo Revolut (real)', 'Notas'];
     const linhasTudo = () => R.months.map(m => {
@@ -2614,8 +2741,8 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
         '<td>' + inp(base + 'preco', { ph: f2.format(m.preco), aria: 'Preço combustível ' + k }) + '</td>' +
         '<td>' + eur(m.comb) + '</td><td>' + eur(m.port) + '</td><td>' + eur(m.manut) + '</td><td>' + eur(m.fixas) + '</td>' +
         '<td>' + inp(base + 'extras', { aria: 'Extras ' + k }) + '</td><td>' + eur(m.gastosMes) + '</td><td>' + eur(m.varPlano) + '</td><td>' + eur(m.totalDesp) + '</td>' +
-        '<td class="' + (m.saldo < 0 ? 'neg-v' : '') + '"><b>' + eur(m.saldo) + '</b></td><td class="' + (m.acum < 0 ? 'neg-v' : '') + '">' + eur(m.acum) + '</td>' +
-        '<td>' + inp(base + 'transf', { aria: 'Transferido para a Revolut ' + k }) + '</td><td>' + eur(m.revolutReal) + '</td>' +
+        '<td class="' + cls(m.saldo) + '"><b>' + eur(m.saldo) + '</b></td><td class="' + cls(m.acum) + '">' + eur(m.acum) + '</td>' +
+        '<td>' + inp(base + 'transf', { aria: 'Transferido para a Revolut ' + k }) + '</td><td class="' + cls(m.revolutReal) + '">' + eur(m.revolutReal) + '</td>' +
         '<td class="l">' + inp(base + 'notas', { t: 'text', aria: 'Notas ' + k }) + '</td></tr>';
     }).join('');
     const sum = k => R.months.reduce((a, m) => a + m[k], 0);
@@ -2625,9 +2752,9 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     const ultSub = subs.filter(e => e.freq !== 'Anual').map(e => e.data.slice(0, 4)).sort().pop(), temAnual = subs.some(e => e.freq === 'Anual');
     const horizHtml = '<div class="row" style="margin-top:14px"><span class="muted">Até onde vai o plano</span><div class="seg" role="group" aria-label="Horizonte do plano">' + HORIZ.map(h => '<button type="button" data-act="horiz:' + h[0] + '" aria-pressed="' + (R.horizonte === h[0]) + '">' + h[1] + '</button>').join('') + '</div><span class="muted">Acaba em ' + mesLongo(fimPlano.ym) + '</span></div>' +
       (ultSub && !temAnual && fimPlano.key.slice(0, 4) > ultSub ? '<p class="note" style="margin-top:10px">Os subsídios de férias e de Natal estão escritos só até ' + ultSub + '. Para os anos seguintes, acrescente-os em Rendimentos com "Repete?" em Anual. Sem isso, o plano conta menos rendimento do que vai ter.</p>' : '');
-    const kpisP = '<div class="grid">' + kpi('Poupança prevista', eur(R.poupancaPrevista, 0), 'No fim de ' + mesLongo(R.months[R.months.length - 1].ym), cls(R.poupancaPrevista)) + kpi('Real na Revolut', eur(R.poupancaReal, 0), 'O que já registou') +
+    const kpisP = '<div class="grid">' + kpi('Poupança prevista', eur(R.poupancaPrevista, 0), 'No fim de ' + mesLongo(R.months[R.months.length - 1].ym), cls(R.poupancaPrevista)) + kpi('Real na Revolut', eur(R.poupancaReal, 0), 'O que já registou', cls(R.poupancaReal)) +
       kpi('Saldo médio por mês', eur(R.tot.media, 0), 'Média dos ' + R.months.length + ' meses', cls(R.tot.media)) + kpi('Meses no vermelho', String(neg.length), neg.length ? 'O primeiro é ' + mesLongo(neg[0].ym) : 'Nenhum mês com saldo negativo', neg.length ? ' bad' : ' good') + '</div>';
-    const fase = R.fases.concat([R.tot]).map(f => '<tr' + (f === R.tot ? ' class="tot"' : '') + '><td>' + esc(f.fase) + '</td><td>' + f.meses + '</td><td>' + eur(f.rend, 0) + '</td><td>' + eur(f.subs, 0) + '</td><td>' + eur(f.desp, 0) + '</td><td class="' + (f.saldo < 0 ? 'neg-v' : '') + '">' + eur(f.saldo, 0) + '</td><td>' + eur(f.media, 0) + '</td></tr>').join('');
+    const fase = R.fases.concat([R.tot]).map(f => '<tr' + (f === R.tot ? ' class="tot"' : '') + '><td>' + esc(f.fase) + '</td><td>' + f.meses + '</td><td>' + eur(f.rend, 0) + '</td><td>' + eur(f.subs, 0) + '</td><td>' + eur(f.desp, 0) + '</td><td class="' + cls(f.saldo) + '">' + eur(f.saldo, 0) + '</td><td class="' + cls(f.media) + '">' + eur(f.media, 0) + '</td></tr>').join('');
     return '<section><h2>Plano mensal</h2><p class="lead">O plano todo de uma vez: o que entra, o que sai e quanto sobra em cada mês. Escolha até onde quer ver. Em baixo estão o resumo por período de trabalho e o plano ano a ano, onde se edita.</p>' + kpisP + horizHtml +
       '<div class="row" style="margin-top:12px"><button type="button" class="btn" data-act="sim">🔮 E se…? Simular mudanças</button><span class="muted">Sem mexer nos seus dados.</span></div></section>' +
       (window.Chart ? '<section><h2>Saldo mês a mês</h2><div class="chartbox on tall" data-chart="plano-saldo" role="img" aria-label="Saldo de cada mês e poupança acumulada"></div><p class="note center">Toque numa barra para abrir as contas desse mês.</p></section>' : '') +
@@ -2640,7 +2767,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
         '<p class="note" style="margin-top:10px">Nos ' + R.months.length + ' meses: entra <b>' + eur(sum('saldo') + sum('totalDesp'), 0) + '</b>, sai <b>' + eur(sum('totalDesp'), 0) + '</b>, sobra <b>' + eur(sum('saldo'), 0) + '</b>.</p></section>' :
       '<p class="lead">Os campos com texto azul podem ser alterados. Dias de trabalho e preço do combustível seguem o cálculo se ficarem vazios. O rendimento manual serve para meses em que o valor vem junto, como a bolsa do IEFP. Se deixar em branco, usa a bolsa que indicou em Apoios.</p>' +
       '<div class="tablewrap tall"><table class="sticky"><thead><tr class="grp"><th colspan="2"></th><th colspan="9">O que entra</th><th colspan="9">O que sai</th><th colspan="4">Resultado</th><th></th></tr><tr>' + head.map((h, i) => '<th' + (i < 2 || i === 24 ? ' class="l"' : '') + '>' + h + '</th>').join('') + '</tr></thead><tbody>' + linhasTudo() +
-      '<tr class="tot"><td>Total</td><td></td><td>' + f0.format(sum('dias')) + '</td><td></td><td></td><td>' + eur(sum('liq'), 0) + '</td><td></td><td></td><td>' + eur(sum('G'), 0) + '</td><td>' + eur(sum('H'), 0) + '</td><td>' + eur(sum('subs'), 0) + '</td><td></td><td>' + eur(sum('comb'), 0) + '</td><td>' + eur(sum('port'), 0) + '</td><td>' + eur(sum('manut'), 0) + '</td><td>' + eur(sum('fixas'), 0) + '</td><td>' + eur(sum('extra'), 0) + '</td><td>' + eur(sum('gastosMes'), 0) + '</td><td>' + eur(sum('varPlano'), 0) + '</td><td>' + eur(sum('totalDesp'), 0) + '</td><td>' + eur(sum('saldo'), 0) + '</td><td></td><td>' + eur(R.months.reduce((a, m) => a + num(m.man.transf), 0), 0) + '</td><td></td><td></td></tr></tbody></table></div></section>');
+      '<tr class="tot"><td>Total</td><td></td><td>' + f0.format(sum('dias')) + '</td><td></td><td></td><td>' + eur(sum('liq'), 0) + '</td><td></td><td></td><td>' + eur(sum('G'), 0) + '</td><td>' + eur(sum('H'), 0) + '</td><td>' + eur(sum('subs'), 0) + '</td><td></td><td>' + eur(sum('comb'), 0) + '</td><td>' + eur(sum('port'), 0) + '</td><td>' + eur(sum('manut'), 0) + '</td><td>' + eur(sum('fixas'), 0) + '</td><td>' + eur(sum('extra'), 0) + '</td><td>' + eur(sum('gastosMes'), 0) + '</td><td>' + eur(sum('varPlano'), 0) + '</td><td>' + eur(sum('totalDesp'), 0) + '</td><td class="' + cls(sum('saldo')) + '">' + eur(sum('saldo'), 0) + '</td><td></td><td>' + eur(R.months.reduce((a, m) => a + num(m.man.transf), 0), 0) + '</td><td></td><td></td></tr></tbody></table></div></section>') + fechoHtml();
   }
 
   /* ---------- plano: um ano de cada vez, e a folha de um mês ---------- */
@@ -2648,14 +2775,17 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
   let sintAnos = 3;
   function tabSintese() {
     const P = E.previsao(S, 120), pr = 'press.', n = P.meses.length, vis = P.meses.slice(0, sintAnos * 12);
+    const sem = E.semRendimento(S, R);
+    const reserva = R.reservaMin > 0 ? '<p class="note">' + esc('Você tem uma reserva protegida de ' + eur(R.reservaMin) + ' que não conta para os objetivos.') + '</p>' : '';
+    const semCard = '<section class="card"><h2>E se perdesse o rendimento?</h2>' + kpi('Duração da poupança atual', sem.meses !== null && sem.poupanca > 0 && Number.isFinite(sem.meses) ? esc(f2.format(sem.meses) + ' meses') : '—', '') + '<p class="note">' + esc(sem.despesaMensal <= 0 ? 'Você ainda não tem despesas mensais positivas no plano para estimar a duração da poupança.' : sem.poupanca <= 0 ? 'Você não tem poupança líquida positiva nos saldos de abertura registados.' : 'Se você deixasse de receber rendimentos, esta estimativa indica quanto tempo a poupança de abertura cobriria a média mensal das despesas do plano.') + '</p></section>';
     const prem = P.premissas, tem = prem.definidas;
     const subsOk = S.extras.filter(e => /^Subsídio/.test(e.tipo || '') && e.contar === 'Sim' && e.data);
     const ultSub = subsOk.filter(e => e.freq !== 'Anual').map(e => e.data.slice(0, 4)).sort().pop(), temAnual = subsOk.some(e => e.freq === 'Anual');
     const fim = P.meses[n - 1];
     const rot = m => m < 12 ? m + ' meses' : (m / 12) + (m === 12 ? ' ano' : ' anos');
-    const marcos = P.marcos.map(m => '<tr><td class="l">' + rot(m.meses) + '</td><td>' + esc(mesLongo(m.ym)) + '</td><td>' + eur(m.entraAcum, 0) + '</td><td>' + eur(m.saiAcum, 0) + '</td><td class="' + (m.acum < 0 ? 'neg-v' : '') + '"><b>' + eur(m.acum, 0) + '</b></td><td>' + eur((m.acum - P.base) / m.meses, 0) + '</td><td>' + m.vermelhos + '</td></tr>').join('');
-    const anos = P.anos.map(a => '<tr><td class="l">' + a.ano + (a.meses < 12 ? ' (' + a.meses + ' meses)' : '') + '</td><td>' + eur(a.entra, 0) + '</td><td>' + eur(a.sai, 0) + '</td><td class="' + (a.saldo < 0 ? 'neg-v' : '') + '">' + eur(a.saldo, 0) + '</td><td class="' + (a.fim < 0 ? 'neg-v' : '') + '">' + eur(a.fim, 0) + '</td></tr>').join('');
-    const obj = P.objetivos.filter(o => o.falta !== null && o.falta !== undefined).map(o => '<tr><td class="l">' + esc(o.nome || 'Sem nome') + '</td><td>' + (o.falta > 0 ? eur(o.falta, 0) : 'Já atingido') + '</td><td>' + (o.data ? esc(mesLongo(o.data.slice(0, 7) + '-01')) : '—') + '</td><td>' + (o.falta <= 0 ? '—' : o.quando ? esc(mesLongo(o.quando)) : 'Não chega em ' + (n / 12) + ' anos') + '</td></tr>').join('');
+    const marcos = P.marcos.map(m => '<tr><td class="l">' + rot(m.meses) + '</td><td>' + esc(mesLongo(m.ym)) + '</td><td>' + eur(m.entraAcum, 0) + '</td><td>' + eur(m.saiAcum, 0) + '</td><td class="' + cls(m.acum) + '"><b>' + eur(m.acum, 0) + '</b></td><td class="' + cls((m.acum - P.base) / m.meses) + '">' + eur((m.acum - P.base) / m.meses, 0) + '</td><td>' + m.vermelhos + '</td></tr>').join('');
+    const anos = P.anos.map(a => '<tr><td class="l">' + a.ano + (a.meses < 12 ? ' (' + a.meses + ' meses)' : '') + '</td><td>' + eur(a.entra, 0) + '</td><td>' + eur(a.sai, 0) + '</td><td class="' + cls(a.saldo) + '">' + eur(a.saldo, 0) + '</td><td class="' + cls(a.fim) + '">' + eur(a.fim, 0) + '</td></tr>').join('');
+    const obj = P.objetivos.filter(o => o.falta !== null && o.falta !== undefined).map(o => '<tr><td class="l">' + esc(o.nome || 'Sem nome') + ritmoHtml(o) + '</td><td>' + (o.falta > 0 ? eur(o.falta, 0) : 'Já atingido') + '</td><td>' + (o.data ? esc(mesLongo(o.data.slice(0, 7) + '-01')) : '—') + '</td><td>' + (o.falta <= 0 ? '—' : o.quando ? esc(mesLongo(o.quando)) : 'Não chega em ' + (n / 12) + ' anos') + '</td></tr>').join('');
     const a1 = P.marcos.find(m => m.meses === 12), a3 = P.marcos.find(m => m.meses === 36), a5 = P.marcos.find(m => m.meses === 60);
     const kp = '<div class="grid">' + (a1 ? kpi('Daqui a 1 ano', eur(a1.acum, 0), 'Poupança em ' + mesLongo(a1.ym), cls(a1.acum)) : '') + (a3 ? kpi('Daqui a 3 anos', eur(a3.acum, 0), 'Poupança em ' + mesLongo(a3.ym), cls(a3.acum)) : '') + (a5 ? kpi('Daqui a 5 anos', eur(a5.acum, 0), 'Poupança em ' + mesLongo(a5.ym), cls(a5.acum)) : '') +
       kpi('Gasta mais do que recebe', P.primeiroVermelho ? esc(mesLongo(P.primeiroVermelho.ym)) : 'Nunca', P.primeiroVermelho ? 'Primeiro mês com saldo negativo: ' + eur(P.primeiroVermelho.saldo, 0) : 'Em ' + (n / 12) + ' anos', P.primeiroVermelho ? ' bad' : ' good') +
@@ -2663,7 +2793,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     const ps = S.periodos.filter(p => p.inicio).slice().sort((a, b) => a.inicio < b.inicio ? -1 : 1), ult = ps[ps.length - 1];
     const avisoPer = !ult ? '' : /^\d{4}-\d{2}-\d{2}$/.test(String(ult.fim || '')) ? '<p class="note" style="margin-top:10px">O último período (' + esc(ult.desc || ult.tipo || 'sem nome') + ') termina em ' + esc(dataPt(ult.fim)) + '. Depois dessa data a previsão não conta salário nem deslocações.</p>' : '<p class="note" style="margin-top:10px">O último período (' + esc(ult.desc || ult.tipo || 'sem nome') + ') não tem data de fim, por isso a previsão repete-o até ao fim dos ' + (n / 12) + ' anos. Se o contrato acaba, escreva o <b>Fim</b> dele em <a href="#" data-act="ir:definicoes:def-contratos">Contratos e períodos</a>.</p>';
     const seg = '<div class="row" style="margin:0 0 12px"><span class="muted">Gráfico até</span><div class="seg" role="group" aria-label="Até quando mostrar a previsão">' + [1, 2, 3, 5, 10].map(a => '<button type="button" data-act="sint-anos:' + a + '" aria-pressed="' + (sintAnos === a) + '">' + a + (a === 1 ? ' ano' : ' anos') + '</button>').join('') + '</div></div>';
-    return '<section><h2>Síntese e previsão</h2><p class="lead">Tudo num só sítio: onde vai estar a sua poupança daqui a 1, 2, 3, 5 e 10 anos. Parte do plano mensal e, depois do último período que definiu (' + esc(P.ultimoPeriodo) + '), continua com os mesmos valores desse período. Não inventa aumentos nem fases: só entram as premissas que escrever em baixo.</p>' + kp + avisoPer + '</section>' +
+    return '<section><h2>Síntese e previsão</h2><p class="lead">Tudo num só sítio: onde vai estar a sua poupança daqui a 1, 2, 3, 5 e 10 anos. Parte do plano mensal e, depois do último período que definiu (' + esc(P.ultimoPeriodo) + '), continua com os mesmos valores desse período. Não inventa aumentos nem fases: só entram as premissas que escrever em baixo.</p>' + kp + reserva + avisoPer + '</section>' + semCard +
       '<section><h2>Premissas (opcionais)</h2><p class="lead">Deixe em branco para uma previsão sem ajustes. São percentagens por ano (por exemplo 2 = 2%) e aplicam-se de ano para ano, a partir do segundo.</p><div class="form">' +
       field('Aumento anual do que entra (%)', inp(pr + 'prevSalario', { ph: '0' }), 'Salário e outros rendimentos.') + field('Aumento anual do que sai (%)', inp(pr + 'prevDespesas', { ph: '0' }), 'Inflação nas despesas.') + field('Rendimento anual da poupança (%)', inp(pr + 'prevPoupanca', { ph: '0' }), 'Em branco usa a taxa da Revolut (Poupança e contas).') + '</div>' +
       (tem ? '<p class="note" style="margin-top:8px">Com estas premissas, a poupança em ' + esc(mesLongo(fim.ym)) + ' é <b>' + eur(fim.acum, 0) + '</b> (sem premissas seria <b>' + eur(fim.acumSemPremissas, 0) + '</b>).</p>' : '') +
@@ -2671,7 +2801,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
       '<section><h2>Poupança ao longo do tempo</h2>' + seg + '<div class="chartbox">' + chart(vis.map(m => m.acum), vis.map(m => m.acumSemPremissas), vis.map(m => mesTxt(m.ym)), 'Poupança acumulada prevista nos próximos ' + sintAnos + (sintAnos === 1 ? ' ano' : ' anos')) + '</div>' + (tem ? '<p class="note center">Linha cheia: com premissas. Linha mais fraca: sem premissas.</p>' : '') + '</section>' +
       '<section><h2>Marcos</h2><div class="tablewrap"><table><thead><tr><th class="l">Daqui a</th><th>Mês</th><th>Entra (acumulado)</th><th>Sai (acumulado)</th><th>Poupança</th><th>Sobra média por mês</th><th>Meses no vermelho</th></tr></thead><tbody>' + marcos + '</tbody></table></div></section>' +
       '<section><h2>Ano a ano</h2><div class="tablewrap"><table><thead><tr><th class="l">Ano</th><th>Entra</th><th>Sai</th><th>Sobra no ano</th><th>Poupança no fim</th></tr></thead><tbody>' + anos + '</tbody></table></div></section>' +
-      (obj ? '<section><h2>Objetivos de poupança</h2><p class="lead">Quando a previsão chega ao que falta para cada objetivo, se toda a poupança fosse para ele.</p><div class="tablewrap"><table><thead><tr><th class="l">Objetivo</th><th>Falta</th><th>Data que definiu</th><th>Previsão chega em</th></tr></thead><tbody>' + obj + '</tbody></table></div></section>' : '');
+      (obj ? '<section><h2>Objetivos de poupança</h2><p class="lead">Quando a previsão chega ao que falta para cada objetivo, se toda a poupança fosse para ele.</p><div class="tablewrap"><table><thead><tr><th class="l">Objetivo</th><th>Falta</th><th>Data que definiu</th><th>Previsão chega em</th></tr></thead><tbody>' + obj + '</tbody></table></div></section>' : '') + liquidezHtml();
   }
 
   let planoVista = 'resumo', planoAnos = {}, planoSheet = null;   // vista escolhida, anos abertos ou fechados à mão, mês aberto na folha
@@ -2690,7 +2820,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
   function blocoAno(g) {
     const s = f => g.ms.reduce((a, m) => a + f(m), 0), ab = anoAberto(g.ano), sal = s(m => m.saldo), ult = g.ms[g.ms.length - 1];
     const linha = m => '<tr class="clic' + (m.key === hojeYm ? ' hoje' : '') + '" data-act="plano-mes:' + m.key + '"><td class="l"><button type="button" class="lnk" aria-label="Ver e alterar ' + mesLongo(m.ym) + '">' + MES[+m.key.slice(5) - 1] + '</button>' + (editadoMes(m) ? '<span class="pto" title="Tem valores escritos à mão"></span>' : '') + '</td>' +
-      '<td>' + eur(entraMes(m), 0) + '</td><td>' + eur(m.totalDesp, 0) + '</td><td class="' + (m.saldo < 0 ? 'neg-v' : '') + '"><b>' + eur(m.saldo, 0) + '</b></td><td class="so-largo' + cls(m.acum) + '">' + eur(m.acum, 0) + '</td></tr>';
+      '<td>' + eur(entraMes(m), 0) + '</td><td>' + eur(m.totalDesp, 0) + '</td><td class="' + cls(m.saldo) + '"><b>' + eur(m.saldo, 0) + '</b></td><td class="so-largo' + cls(m.acum) + '">' + eur(m.acum, 0) + '</td></tr>';
     return '<div class="ano' + (ab ? ' aberto' : '') + '"><button type="button" class="ano-h" data-act="plano-ano:' + g.ano + '" aria-expanded="' + ab + '"><span class="ano-t">' + g.ano + '<small>' + g.ms.length + (g.ms.length === 1 ? ' mês' : ' meses') + '</small></span>' +
       '<span class="ano-n"><small>Entra</small>' + eur(s(entraMes), 0) + '</span><span class="ano-n"><small>Sai</small>' + eur(s(m => m.totalDesp), 0) + '</span><span class="ano-n' + cls(sal) + '"><small>Saldo</small><b>' + eur(sal, 0) + '</b></span>' +
       '<span class="ano-n so-largo' + cls(ult.acum) + '"><small>Poupança no fim</small>' + eur(ult.acum, 0) + '</span><span class="chev" aria-hidden="true">›</span></button>' +
@@ -2721,8 +2851,8 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
       lin('Gastos variáveis (plano)' + peq('Gastos já registados: ' + eur(m.gastosMes)), eur(m.varPlano)) +
       lin('Total que sai', eur(m.totalDesp), 'tot') + '</tbody></table></div>' +
       '<h3>Resultado</h3><div class="tablewrap"><table class="mini def"><tbody>' +
-      lin('Saldo do mês', '<b>' + eur(m.saldo) + '</b>', m.saldo < 0 ? 'neg-v' : '') + lin('Poupança acumulada (prevista)', eur(m.acum), m.acum < 0 ? 'neg-v' : '') +
-      lin('Transferido para a Revolut (real)', inp(base + 'transf', { aria: 'Transferido para a Revolut ' + k })) + lin('Saldo Revolut (real)', eur(m.revolutReal)) + '</tbody></table></div>' +
+      lin('Saldo do mês', '<b>' + eur(m.saldo) + '</b>', cls(m.saldo)) + lin('Poupança acumulada (prevista)', eur(m.acum), cls(m.acum)) +
+      lin('Transferido para a Revolut (real)', inp(base + 'transf', { aria: 'Transferido para a Revolut ' + k })) + lin('Saldo Revolut (real)', eur(m.revolutReal), cls(m.revolutReal)) + '</tbody></table></div>' +
       '<div style="margin-top:12px">' + field('Notas', inp(base + 'notas', { t: 'text', aria: 'Notas ' + k })) + '</div>' +
       '<div class="row sh-fim"><span></span><button type="button" class="btn pri" data-act="plano-ok">Feito</button></div></div></div>';
   }
@@ -3173,7 +3303,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
       const nSaidas = I.movs.filter(m => m.valor < 0).length, nDup = I.movs.filter((m, i) => I.dup[i]).length;
       const kpisI = '<div class="grid">' + kpi('Movimentos lidos', String(I.movs.length), nSaidas + ' saídas e ' + (I.movs.length - nSaidas) + ' entradas') + kpi('A importar', String(sel.length), 'Marcados na lista') +
         kpi('Valor selecionado', eur(total), '', cls(total)) + kpi('Duplicados', String(nDup), nDup ? 'Ficam de fora (mesma data e valor, ou data próxima e mesma descrição)' : 'Nenhum') + '</div>';
-      rev = impSugestoesHtml(I) + '<section><h2>Movimentos' + (I.nome ? ' de ' + esc(I.nome) : '') + '</h2>' + kpisI + mapa +
+      rev = precosHtml(false) + impSugestoesHtml(I) + '<section><h2>Movimentos' + (I.nome ? ' de ' + esc(I.nome) : '') + '</h2>' + kpisI + mapa +
         '<div class="row" style="margin:12px 0"><label class="muted" for="imp-conta">Conta</label><select id="imp-conta" data-imp="conta">' + LISTAS.contas.map(c => '<option' + (c === I.conta ? ' selected' : '') + '>' + c + '</option>').join('') + '</select><button class="btn" data-act="imp-todos">Marcar ou desmarcar tudo</button></div>' +
         '<div class="tablewrap tall"><table class="sticky"><thead><tr><th></th><th>Data</th><th class="l">Descrição</th><th>Valor</th><th class="l">Categoria</th><th class="l">Origem</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
         '<div class="row" style="margin-top:12px"><button class="btn pri" data-act="imp-ok"' + (sel.length ? '' : ' disabled') + '>Importar ' + sel.length + ' movimento' + (sel.length === 1 ? '' : 's') + '</button><button class="btn" data-act="imp-cancelar">Cancelar</button><span class="muted">Selecionado: <b>' + eur(total) + '</b>. Os que já parecem registados (mesma data e valor) vêm desmarcados. Receitas entram em Rendimentos, sem contar no plano. Pagamentos iguais a um recorrente por pagar ficam ligados a ele, como pagos.</span></div>' +
@@ -3210,7 +3340,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
       '<div class="grid">' + k('A pagar este mês', eur(pendMes), 'Ainda por marcar como pago') + k('Já pago este mês', eur(pagoMes)) + k('Nos próximos 7 dias', eur(em7)) + k('Equivalente mensal', eur(R.fixasMensal), 'Média por mês de todos os recorrentes') + '</div></section>' +
       (window.Chart ? '<section><h2>Para onde vai o dinheiro fixo</h2><div class="chartbox on pizza" data-chart="rec-cats" role="img" aria-label="Pagamentos recorrentes por categoria, em equivalente mensal"></div><p class="note center">Toque numa fatia para ver os pagamentos dessa categoria.</p>' + listaGraf('rec-cats') + '</section>' : '') +
       '<section><h2>Próximos pagamentos</h2><p class="lead">Desde o início do mês até daqui a 45 dias.</p>' + payRows(prox) + '</section>' +
-      '<section><h2>Os seus pagamentos recorrentes</h2><p class="lead">Toque num pagamento para o alterar: valor, dia, categoria, ícone ou conta. Para deixar de contar um pagamento sem o apagar, ponha "Ativa" em Não.</p>' +
+      precosHtml(true) + '<section><h2>Os seus pagamentos recorrentes</h2><p class="lead">Toque num pagamento para o alterar: valor, dia, categoria, ícone ou conta. Para deixar de contar um pagamento sem o apagar, ponha "Ativa" em Não.</p>' +
       (cartoesF ? '<div class="paylist duas" id="fx-lista">' + cartoesF + '</div>' : '<div class="empty">Ainda sem pagamentos recorrentes. Acrescente o primeiro, por exemplo a renda ou o telemóvel.</div>') +
       '<div class="row" style="margin-top:12px">' + addBtn('fixas', 'Novo pagamento recorrente') + '<span class="muted">Equivalente mensal de todos: <b>' + eur(R.fixasMensal) + '</b> · Só mensais: <b>' + eur(R.fixasSoMensais) + '</b> · Total anual das anuais: <b>' + eur(R.fixasAnuais) + '</b></span></div>' +
       '<div class="split" style="margin-top:14px"><div><h3>Por categoria (mensal)</h3><div class="tablewrap"><table class="mini"><tbody>' + porCat + '</tbody></table></div></div><div><h3>Por conta (mensal)</h3><div class="tablewrap"><table class="mini"><tbody>' + porConta + '</tbody></table></div></div></div></section>' +
@@ -3221,7 +3351,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
   function poupancaHtml() {
     const tx = E.taxaPoupanca(S.press), ym = hojeIso().slice(0, 7), mo = R.months.find(m => m.ym.slice(0, 7) === ym) || null;
     const jurosTot = R.months.reduce((a, m) => a + m.jurosR, 0);
-    const res = tx.tanl > 0 ? '<div class="grid">' + (mo ? kpi('Revolut prevista este mês', eur(mo.revolutReal), 'Saldo inicial + transferências + juros') + kpi('Juros deste mês (líquidos)', eur(mo.jurosR), 'TAN líquida ' + pctTxt(tx.tanl)) : '') + kpi('Juros em todo o plano', eur(jurosTot, 0), 'Sobre o que está na Revolut', '') + '</div><p class="note" style="margin-top:8px">Os juros contam-se todos os meses sobre o saldo do mês anterior, já sem imposto. É uma estimativa: cada banco tem o seu modo de contar e creditar os juros.</p>' : '<p class="note">Escreva a TANB para o plano passar a contar os juros da Revolut.</p>';
+    const res = tx.tanl > 0 ? '<div class="grid">' + (mo ? kpi('Revolut prevista este mês', eur(mo.revolutReal), 'Saldo inicial + transferências + juros', cls(mo.revolutReal)) + kpi('Juros deste mês (líquidos)', eur(mo.jurosR), 'TAN líquida ' + pctTxt(tx.tanl)) : '') + kpi('Juros em todo o plano', eur(jurosTot, 0), 'Sobre o que está na Revolut', '') + '</div><p class="note" style="margin-top:8px">Os juros contam-se todos os meses sobre o saldo do mês anterior, já sem imposto. É uma estimativa: cada banco tem o seu modo de contar e creditar os juros.</p>' : '<p class="note">Escreva a TANB para o plano passar a contar os juros da Revolut.</p>';
     return '<section class="card"><h2 id="poup-conta">Revolut (conta poupança)</h2><p class="lead">A Revolut é a sua conta poupança e a conta principal é a normal. Escreva a taxa do banco e o plano passa a juntar os juros ao que está poupado. O saldo de partida está em Definições, e o que transfere cada mês, no Plano mensal.</p><div class="form">' +
       field('TANB da Revolut (% ao ano)', inp('press.revolutTanb', { ph: '0' }), 'Taxa anual nominal bruta, como vem no contrato.') + field('Imposto sobre os juros (%)', inp('press.revolutImposto', { ph: '28' }), 'Em branco usa 28%.') + '</div>' + res +
       '<h3 style="margin-top:16px">Atualizar com o saldo do banco</h3><p class="lead">Escreva o saldo real que vê na Revolut. A app compara com o esperado para o fim deste mês (o melhor dia para conferir é o último do mês) e guarda-o em "Contas no fim de cada mês".</p><div class="form">' +
@@ -3246,12 +3376,12 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     { const cm0 = R.contas.filter(c => c.E !== null), cm = cm0.length ? cm0 : R.contas.slice(0, 6), g = (c, k) => num((S.contas[c.key] || {})[k]); contasDados = cm.length ? { labels: cm.map(c => mesTxt(c.ym)), p: cm.map(c => g(c, 'principal')), r: cm.map(c => g(c, 'revolut')), c: cm.map(c => g(c, 'cartao')) } : null; }
     const cartoes = R.objetivos.length ? '<div class="paylist duas" id="ob-lista">' + R.objetivos.map((o, i) => {
       const so = S.objetivos[i] || {}, pc = Math.min(100, Math.round((o.prog || 0) * 100));
-      return '<button type="button" class="pay ob" data-act="obj:' + i + '">' + chipIco('🎯', '#F48FB1') + '<span class="pt"><span class="sr">Editar </span><b>' + esc(so.nome || 'Sem nome') + '</b><span class="muted">' + eur(num(so.poupado), 0) + ' de ' + eur(num(so.meta), 0) + (o.falta > 0 ? ' · faltam ' + eur(o.falta, 0) : o.falta === 0 ? ' · meta atingida' : '') + (o.meses != null && o.falta > 0 ? ' · ' + eur(o.porMes) + ' por mês' : '') + '</span>' +
+      return '<button type="button" class="pay ob" data-act="obj:' + i + '">' + chipIco('🎯', '#F48FB1') + '<span class="pt"><span class="sr">Editar </span><b>' + esc(so.nome || 'Sem nome') + '</b>' + ritmoHtml(so) + '<span class="muted">' + eur(num(so.poupado), 0) + ' de ' + eur(num(so.meta), 0) + (o.falta > 0 ? ' · faltam ' + eur(o.falta, 0) : o.falta === 0 ? ' · meta atingida' : '') + (o.meses != null && o.falta > 0 ? ' · ' + eur(o.porMes) + ' por mês' : '') + '</span>' +
         '<span class="bar ' + (pc >= 100 ? 'ok' : '') + '" role="progressbar" aria-label="' + esc(so.nome || 'Objetivo') + '" aria-valuenow="' + pc + '" aria-valuemin="0" aria-valuemax="100"><i style="width:' + pc + '%"></i></span></span><span class="pv">' + pc + ' %</span><span class="chev" aria-hidden="true">›</span></button>';
     }).join('') + '</div>' : '<div class="empty">Ainda sem objetivos. Acrescente o primeiro em baixo.</div>';
-    return poupancaHtml() + '<section><h2>Objetivos de poupança</h2><p class="lead">Defina a meta e a data. O planner calcula quanto tem de pôr de lado por mês.</p>' + cartoes +
+    return poupancaHtml() + reservaHtml() + '<section><h2>Objetivos de poupança</h2><p class="lead">Defina a meta e a data. O planner calcula quanto tem de pôr de lado por mês.</p>' + cartoes +
       '<div class="row" style="margin-top:12px">' + addBtn('objetivos', 'Novo objetivo') + '<span class="muted">Toque num objetivo para o alterar ou para registar uma poupança.</span></div>' +
-      '<div class="grid" style="margin-top:14px"><div class="kpi"><div class="l">Total necessário por mês</div><div class="v">' + eur(R.necessarioMes) + '</div></div><div class="kpi"><div class="l">Saldo médio previsto por mês</div><div class="v">' + eur(R.tot.media) + '</div></div><div class="kpi"><div class="l">Cabe no orçamento?</div><div class="v ' + (R.cabe ? 'good' : 'bad') + '">' + (R.cabe ? 'Sim' : 'Não') + '</div><div class="s">' + (R.cabe ? '' : 'Ajuste metas ou prazos.') + '</div></div></div></section>' +
+      '<div class="grid" style="margin-top:14px"><div class="kpi"><div class="l">Total necessário por mês</div><div class="v">' + eur(R.necessarioMes) + '</div></div><div class="kpi"><div class="l">Saldo médio previsto por mês</div><div class="v' + cls(R.tot.media) + '">' + eur(R.tot.media) + '</div></div><div class="kpi"><div class="l">Cabe no orçamento?</div><div class="v ' + (R.cabe ? 'good' : 'bad') + '">' + (R.cabe ? 'Sim' : 'Não') + '</div><div class="s">' + (R.cabe ? '' : 'Ajuste metas ou prazos.') + '</div></div></div></section>' +
       '<section><h2>Contas no fim de cada mês</h2><p class="lead">Anote o saldo real da principal, da Revolut e do cartão refeição. O total em dinheiro não inclui o cartão refeição. O saldo previsto parte do último saldo real.</p>' +
       '<div class="grid" style="margin-bottom:12px"><div class="kpi"><div class="l">Débitos fixos na principal</div><div class="v">' + eur(R.fixasPorConta['Principal'] || 0) + '</div></div><div class="kpi"><div class="l">Deslocações estimadas</div><div class="v">' + eur(R.deslocMes) + '</div></div><div class="kpi"><div class="l">Mínimo a manter na principal</div><div class="v">' + eur(R.minPrincipal) + '</div></div></div>' +
       (window.Chart ? '<div class="chartbox on tall" data-chart="poup-contas" role="img" aria-label="Saldo em cada conta no fim de cada mês" style="margin-bottom:14px"></div>' : '') +
@@ -3389,8 +3519,10 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
       field('Manutenção do carro (€/km)', inp(pr + 'manut'), 'Pneus, óleo, travões.') +
       field('Dias de trabalho por mês (padrão)', inp(pr + 'dias'), 'Só para cenários e comparações.') +
       field('Mês inicial do plano', inp(pr + 'mesInicial', { t: 'date' })) +
+      field('Dia em que recebe o salário', '<input type="number" inputmode="numeric" min="1" max="31" step="1" data-p="press.diaSalario" data-t="num" value="' + esc(S.press.diaSalario == null ? '' : S.press.diaSalario) + '" placeholder="ex.: 28" aria-label="Dia em que recebe o salário">', 'De 1 a 31. Usado no calendário de liquidez (Síntese).') +
       field('Dias de férias por ano', inp(pr + 'diasFerias'), 'Mínimo legal: 22 dias úteis.') +
       field('Calcular os feriados nacionais?', inp(pr + 'feriadosAuto', { t: 'sel', list: LISTAS.simnao }), 'Sim: Páscoa, Sexta-feira Santa, Corpo de Deus e os fixos, em qualquer ano. A lista manual serve para o feriado municipal e extras.') +
+      field('Reserva mínima protegida (€)', inp(pr + 'reservaMin', { ph: '0' }), 'Dinheiro que não conta para os objetivos.') + 
       field('Saldo atual, conta principal (€)', inp(pr + 'saldoPrincipal')) +
       field('Poupança atual na Revolut (€)', inp(pr + 'revolut'), 'Ponto de partida da poupança.') + '</div>' +
       '<p class="note" style="margin-top:10px">O preço e o consumo do combustível ficam no separador Combustível.</p></section>' +
@@ -3480,7 +3612,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
   /* A app sem nenhuma informação da pessoa: ficam só as regras (IRS, salário mínimo, acréscimos) e as categorias, sem limites */
   function dadosVazios() {
     const v = clone(DEFAULTS);
-    ['fixas', 'gastos', 'extras', 'objetivos', 'feriados', 'pontes', 'ferias', 'saltadas', 'periodos', 'propostas'].forEach(k => { v[k] = []; });
+    ['fechos', 'fixas', 'gastos', 'extras', 'objetivos', 'feriados', 'pontes', 'ferias', 'saltadas', 'periodos', 'propostas'].forEach(k => { v[k] = []; });
     v.plano = {}; v.contas = {}; v.horas = { saldoInicial: 0, meses: {}, registo: [] };
     v.combustivel.abast = []; v.importacao = { regras: [] };
     v.apoios.ledger = {}; v.apoios.outrosAdultos = ''; v.apoios.sims = [];
@@ -3609,12 +3741,13 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
   const novoId = () => 'f' + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
   function merge(base, saved) {
     saved = seguro(saved == null ? {} : clone(saved));   // os dados recebidos da conta vêm congelados (só de leitura): trabalha-se sempre sobre uma cópia
-    ['fixas', 'gastos', 'extras', 'periodos', 'categorias', 'feriados', 'pontes', 'ferias', 'objetivos', 'propostas', 'salMin', 'saltadas'].forEach(k => { if (k in saved && !Array.isArray(saved[k])) delete saved[k]; else if (k in saved && k !== 'saltadas') saved[k] = saved[k].filter(x => x && typeof x === 'object' && !Array.isArray(x)); });
+    ['fechos', 'fixas', 'gastos', 'extras', 'periodos', 'categorias', 'feriados', 'pontes', 'ferias', 'objetivos', 'propostas', 'salMin', 'saltadas'].forEach(k => { if (k in saved && !Array.isArray(saved[k])) delete saved[k]; else if (k in saved && k !== 'saltadas') saved[k] = saved[k].filter(x => x && typeof x === 'object' && !Array.isArray(x)); });
     const out = clone(base);
     Object.keys(saved || {}).forEach(k => { out[k] = saved[k]; });
     out.press = Object.assign(clone(base.press), seguro(saved.press));
     out.combustivel = Object.assign(clone(base.combustivel), seguro(saved.combustivel));
     out.apoios = Object.assign(clone(base.apoios), seguro(saved.apoios));
+    if ('fechos' in out) out.fechos = (Array.isArray(out.fechos) ? out.fechos : []).filter((x, i, l) => typeof x.ym === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(x.ym) && l.findIndex(y => y.ym === x.ym) === i).slice(-240).map(x => ({ ym: x.ym, previstoSaldo: x.previstoSaldo == null ? null : num(x.previstoSaldo), realSaldo: x.realSaldo == null ? null : num(x.realSaldo), previstoDesp: x.previstoDesp == null ? null : num(x.previstoDesp), realDesp: x.realDesp == null ? null : num(x.realDesp), previstoRend: x.previstoRend == null ? null : num(x.previstoRend), realRend: x.realRend == null ? null : num(x.realRend), contasPrev: x.contasPrev == null ? null : num(x.contasPrev), contasReal: x.contasReal == null ? null : num(x.contasReal), nota: limpaTexto(x.nota, 200) }));
     out.apoios.ano = Math.round(num(out.apoios.ano)) || 2026;   // o ano entra no HTML: tem de ser um número
     out.apoios.sim = Object.assign(clone(base.apoios.sim), seguro(seguro(saved.apoios).sim));
     if (!Array.isArray(out.apoios.sims)) out.apoios.sims = [];
@@ -3785,7 +3918,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     extras: () => ({ data: '', tipo: 'Prenda', desc: '', origem: '', valor: '', freq: 'Única', ate: '', conta: 'Principal', contar: 'Sim', notas: '' }),
     fixas: () => ({ id: novoId(), cat: '', desc: '', icone: '', valor: '', period: 'Mensal', dia: '', mes: '', inicio: '', fim: '', ativa: 'Sim', conta: 'Principal', notas: '' }),
     categorias: () => ({ nome: 'Nova categoria', icone: '📦', cor: '#6B7C87', limite: '', periodo: 'Mensal' }),
-    objetivos: () => ({ nome: '', meta: '', data: '', poupado: 0, conta: 'Revolut' }),
+    objetivos: () => ({ inicio: hojeIso(), nome: '', meta: '', data: '', poupado: 0, conta: 'Revolut' }),
     'importacao.regras': () => ({ padrao: '', cat: '', n: 0 }),
     propostas: () => ({ nome: 'Nova opção', tipo: 'Contrato', bruto: 920, irs: 0, irsModo: 'Automático', subs: 0, km: 0, port: 0, dias: 22 }),
     periodos: () => ({ inicio: '', tipo: 'Contrato', desc: '', salMin: 'Não', bruto: '', irsModo: 'Automático', irs: 0, subs: '', cartao: 'Sim', km: '', portagens: '', notas: '' }),
@@ -3799,12 +3932,15 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     if (el.dataset && el.dataset.local === 'gastoMes') { gastoMes = el.value; renderKeep(); return; }
     if (el.dataset && el.dataset.local === 'orcSel') { orcSel = el.value; renderKeep(); return; }
     if (el.dataset && el.dataset.local === 'horaMes') { horaMes = el.value; renderKeep(); return; }
+    if (el.dataset && el.dataset.local === 'liqMes') { liqMes = /^\d{4}-\d{2}$/.test(el.value) ? el.value : ''; renderKeep(); return; }
     if (el.dataset && el.dataset.local === 'calAno') { calAno = el.value; renderKeep(); return; }
     if (!el.dataset || !el.dataset.p) return;
     const t = el.dataset.t; let v;
     if (t === 'chk') v = el.checked; else if (t === 'num') v = el.value === '' ? '' : parseFloat(el.value); else v = el.value;
     if (t === 'num' && v !== '' && (!isFinite(v) || Math.abs(v) > LIM.num)) { aviso('Valor fora do intervalo permitido (até 1 000 000 000). Ficou o valor anterior.'); renderKeep(); return; }
     if (t === 'text' && typeof v === 'string') { v = limpaTexto(v); if (/^\d{4}-\d{2}(-\d{2})?$/.test(v) && !dataOk(v)) { aviso('Data inválida: use um ano entre 1990 e 2100 e um dia que exista. Ficou o valor anterior.'); renderKeep(); return; } }
+    if (el.dataset.p === 'press.diaSalario' && v !== '' && (v < 1 || v > 31 || v !== Math.round(v))) { aviso('O dia do salário tem de ser um número inteiro de 1 a 31. Ficou o valor anterior.'); renderKeep(); return; }
+    if (el.dataset.p === 'press.reservaMin' && v !== '' && v < 0) { aviso('A reserva mínima não pode ser negativa. Ficou o valor anterior.'); renderKeep(); return; }
     const mr = /^categorias\.(\d+)\.nome$/.exec(el.dataset.p), antigo = mr ? S.categorias[+mr[1]].nome : null;
     if (mr && typeof v === 'string') {
       v = v.trim();
@@ -3885,6 +4021,17 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     else if (act === 'fixa-fechar') { if (ev.target === b || b.classList.contains('x')) { fixaSheet = null; renderKeep(); } }
     else if (act === 'fixa-ok') { fixaSheet = null; renderKeep(); }
     else if (act === 'sint-anos') { const a = +a1; if ([1, 2, 3, 5, 10].indexOf(a) >= 0) { sintAnos = a; renderKeep(); } }
+    else if (act === 'fecho-guardar') {
+      if (!Array.isArray(S.fechos)) S.fechos = [];
+      const antes = clone(S.fechos), f = E.fechoMes(S, R, E.mk(E.addM(hojeYm + '-01', -1))), i = S.fechos.findIndex(x => x.ym === f.ym);
+      if (f.previstoDesp == null && f.realDesp == null && f.realRend == null && f.contasReal == null) { aviso('Não há nada para fechar: o mês anterior não está no plano nem tem movimentos registados.'); return; }
+      if (i >= 0) S.fechos[i] = f; else S.fechos.push(f);
+      queueSave(); render(); aviso('Fecho do mês guardado.', () => { S.fechos = antes; queueSave(); render(); });
+    }
+    else if (act === 'preco-atualizar') {
+      const x = E.subidasPreco(movimentosPreco(), S).find(x => x.fixaIdx === +a1), f = S.fixas[+a1];
+      if (x && f) { const antes = f.valor; f.valor = x.agora; queueSave(); render(); aviso('Valor do recorrente atualizado.', () => { f.valor = antes; queueSave(); render(); }); }
+    }
     else if (act === 'po-atualizar') poupancaAtualizar();
     else if (act === 'plano-vista') { if (a1 === 'resumo' || a1 === 'tudo') { planoVista = a1; renderKeep(); } }
     else if (act === 'plano-ano') { if (R.months.some(m => m.key.slice(0, 4) === a1)) { planoAnos[a1] = !anoAberto(a1); renderKeep(); } }
@@ -3909,7 +4056,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
       if (ir) { if (ir.tab === 'despesas' && ir.mes) { gastoMes = ir.mes; filtroAtual.g = ir.cat ? (ir.cat === 'Sem categoria' ? SEM : ir.cat) : ''; } vaiPara(ir.tab); } else renderKeep();
     }
     else if (act === 'rapido') {
-      if (a1 === 'g' || a1 === 'r') { menu = null; rapido = { tipo: a1, valor: '', desc: '', data: hojeIso(), cat: ultimaCat(a1), novo: true, catEscolhida: false }; renderKeep(); setTimeout(() => { const e = document.getElementById('q-valor'); if (e && e.focus) e.focus(); }, 0); }
+      if (a1 === 'g' || a1 === 'r') { menu = null; rapido = { tipo: a1, valor: '', desc: '', data: hojeIso(), cat: ultimaCat(a1), conta: rapidoDefaults[a1].conta, novo: true, catEscolhida: false }; renderKeep(); setTimeout(() => { const e = document.getElementById('q-valor'); if (e && e.focus) e.focus(); }, 0); }
     }
     else if (act === 'boas-fechar') { if (ev.target === b || b.classList.contains('x')) { boasFechar(); renderKeep(); } }
     else if (act === 'boas') { boasFechar(); if (a1 === 'extrato') vaiPara('importar'); else if (a1 === 'copia') { menu = 'lateral'; renderKeep(); } else if (a1 === 'nuvem') vaiPara('definicoes', 'def-sincronizacao'); else if (a1 === 'mao') vaiPara('definicoes', 'def-contratos'); else renderKeep(); }
