@@ -748,6 +748,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     if (!ps.length) return PERIODO_VAZIO;
     let best = null;
     ps.forEach(p => { if (p.inicio <= dateStr) best = p; });
+    if (best && /^\d{4}-\d{2}-\d{2}$/.test(String(best.fim || '')) && best.fim < dateStr) return PERIODO_VAZIO;   // o período terminou e não há outro a seguir
     return best || ps[0];
   }
   function salMinAno(S, ano) {
@@ -1208,12 +1209,12 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     }
     const nomes = h >= 0 ? rows[h].map(c => semAcentos(c).toLowerCase()) : [];
     const acha = (re, nao) => nomes.findIndex(n => re.test(n) && !(nao && nao.test(n)));
-    const m = { header: h, data: -1, desc: -1, valor: -1, debito: -1, credito: -1 };
+    const m = { header: h, data: -1, desc: -1, valor: -1, debito: -1, credito: -1, saldo: -1 };
     if (h >= 0) {
       m.data = acha(/data/, /valor/); if (m.data < 0) m.data = acha(/data/);
       m.desc = acha(/descri|movimento|detalhe|historico|referencia|observ/);
       m.debito = acha(/debito|saida/); m.credito = acha(/credito|entrada/);
-      m.valor = acha(/^(montante|valor|quantia|importe)/, /saldo/);
+      m.valor = acha(/^(montante|valor|quantia|importe)/, /saldo/); m.saldo = acha(/saldo/);
     }
     const dados = rows.slice(h + 1, h + 40), ncol = Math.max.apply(null, rows.slice(0, 40).map(r => r.length).concat([0]));
     if (m.data < 0) { let best = 0; for (let c = 0; c < ncol; c++) { const n = dados.filter(r => ehData(r[c])).length; if (n > best) { best = n; m.data = c; } } }
@@ -1237,7 +1238,8 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
         if (d) valor = -Math.abs(d); else if (c) valor = Math.abs(c);
       }
       if (valor === null || valor === 0) return;
-      out.push({ data, desc: String(map.desc >= 0 ? r[map.desc] || '' : '').replace(/\s+/g, ' ').trim(), valor, linha: map.header + 2 + i });
+      const sd = map.saldo >= 0 ? parseNumero(r[map.saldo]) : null;
+      out.push({ data, desc: String(map.desc >= 0 ? r[map.desc] || '' : '').replace(/\s+/g, ' ').trim(), valor, linha: map.header + 2 + i, saldo: sd !== null && isFinite(sd) ? sd : undefined });
     });
     return out;
   }
@@ -1273,7 +1275,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
       if (cadeia && ent[k] && par(i, k, a.valor, melhor.d)) a.valor = sal(i, melhor.d) - sal(k, melhor.d);
       else if (opts.despesasPositivas && !a.explicito && !entradaSemSinal) a.valor = -Math.abs(a.valor);
     });
-    return ent.filter(a => a.valor !== 0).map(a => ({ data: a.data, desc: a.desc, valor: Math.round(a.valor * 100) / 100, linha: a.linha }));
+    return ent.filter(a => a.valor !== 0).map(a => ({ data: a.data, desc: a.desc, valor: Math.round(a.valor * 100) / 100, linha: a.linha, saldo: melhor.d === 0 && a.saldo !== null && isFinite(a.saldo) ? a.saldo : undefined }));
   }
 
   // PDF lido com o pdf.js: paginas = [[{ str, x, y, w }]] (posição e largura de cada pedaço de texto). Junta os pedaços por linha (y) e
@@ -1477,11 +1479,50 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     const anos = []; out.forEach(m => { const a = m.ym.slice(0, 4); let x = anos[anos.length - 1]; if (!x || x.ano !== a) { x = { ano: a, meses: 0, entra: 0, sai: 0, juros: 0, saldo: 0, fim: 0 }; anos.push(x); } x.meses++; x.entra += m.entra; x.sai += m.sai; x.juros += m.juros; x.saldo += m.saldo; x.fim = m.acum; });
     const objetivos = R.objetivos.map(o => { let quando = null; if (o.falta !== null && o.falta !== undefined) { if (o.falta <= 0) quando = out.length ? out[0].ym : null; else { const alvo = base + o.falta; const h = out.find(x => x.acum >= alvo); quando = h ? h.ym : null; } } return { nome: o.nome, falta: o.falta, quando, data: o.data || '' }; });
     const primeiroVermelho = out.find(x => x.saldo < 0) || null;
-    return { meses: out, marcos, anos, objetivos, primeiroVermelho, base, ultimoPeriodo: R.months.length ? R.months[R.months.length - 1].fase : '', premissas: { salario: num(pr.prevSalario), despesas: num(pr.prevDespesas), poupanca: num(pr.prevPoupanca) } };
+    return { meses: out, marcos, anos, objetivos, primeiroVermelho, base, ultimoPeriodo: R.months.length ? R.months[R.months.length - 1].fase : '', primeiroSemReserva: out.find(x => x.acum < 0) || null,
+      premissas: { salario: num(pr.prevSalario), despesas: num(pr.prevDespesas), poupanca: num(pr.prevPoupanca), definidas: has(pr.prevSalario) || has(pr.prevDespesas) || has(pr.prevPoupanca) } };
   };
   /* A Revolut é a conta poupança: taxa anual (TANB), imposto sobre os juros (28% se em branco) e a taxa líquida. */
   const taxaPoupanca = pr => { pr = pr || {}; const tanb = Math.max(0, num(pr.revolutTanb)) / 100, imp = has(pr.revolutImposto) ? Math.min(100, Math.max(0, num(pr.revolutImposto))) / 100 : 0.28; return { tanb, imp, tanl: tanb * (1 - imp) }; };
-  root.PlannerEngine = { calc, previsao, taxaPoupanca, apoios, simularApoio, horizonte, abaixoDoMinimo, combustivel, addM, mk, num, has, parse, fixaEquiv, ocorrencias, periodoAt, salMinAno, ymd, pad, limiteMensal, orcMes, PERIODOS_ORC, irsRetencao, irsTaxa, irsAplicado, IRS_TABELA_I_2026, pascoa, feriadosNacionais, feriadosSet, expandir, expandirPontes, horaDe, horasDias, bancoHoras, saldoFerias, TIPOS_DIA, estudanteAtivo,
+  /* Arranque pelo extrato: o que se pode preencher sozinho a partir dos movimentos. O saldo é o do movimento mais recente; os recorrentes e os rendimentos mensais são
+     os que aparecem em 2 ou mais meses com valores parecidos (até 15% de diferença). */
+  const sugestoesExtrato = (movs, S) => {
+    movs = (movs || []).filter(m => m && /^\d{4}-\d{2}-\d{2}$/.test(String(m.data || '')) && isFinite(m.valor));
+    let saldo = null;
+    const cs = movs.filter(m => m.saldo != null && isFinite(m.saldo));
+    if (cs.length) {
+      const max = cs.reduce((a, m) => m.data > a ? m.data : a, ''), mesmos = cs.filter(m => m.data === max);
+      const desc = movs[0].data >= movs[movs.length - 1].data;   // o extrato vem do mais recente para o mais antigo?
+      saldo = { valor: (desc ? mesmos[0] : mesmos[mesmos.length - 1]).saldo, data: max };
+    }
+    const grupos = {};
+    const PROPRIA = /revolut|poupanc|conta propria|contas proprias|entre contas|mesmo titular|transf\w* interna/;   // transferências entre contas da própria pessoa
+    movs.forEach(m => {
+      if (PROPRIA.test(normalizaDesc(m.desc))) return;
+      const k = (m.valor < 0 ? 's|' : 'e|') + (chaveDesc(m.desc) || normalizaDesc(m.desc).slice(0, 14));
+      if (k.length <= 2) return;
+      (grupos[k] = grupos[k] || []).push(m);
+    });
+    const med = a => { const b = a.slice().sort((x, y) => x - y), h = b.length >> 1; return b.length % 2 ? b[h] : (b[h - 1] + b[h]) / 2; };
+    const out = { saldo, recorrentes: [], rendimentos: [] };
+    const ultimo = movs.reduce((a, m) => m.data > a ? m.data : a, '');
+    Object.keys(grupos).forEach(k => {
+      const g = grupos[k], saida = k[0] === 's', vals = g.map(m => Math.abs(m.valor)), md = med(vals);
+      if (md < (saida ? 1 : 5)) return;
+      const bons = g.filter(m => Math.abs(Math.abs(m.valor) - md) <= Math.max(0.5, 0.15 * md)), meses = new Set(bons.map(m => m.data.slice(0, 7)));
+      if (meses.size < 2) return;
+      const nomes = {}; bons.forEach(m => { const n = String(m.desc || '').trim().slice(0, 60); nomes[n] = (nomes[n] || 0) + 1; });
+      const nome = Object.keys(nomes).sort((a, b) => nomes[b] - nomes[a])[0] || '';
+      const dia = Math.min(28, Math.max(1, Math.round(med(bons.map(m => +m.data.slice(8, 10))))));
+      const cj = S && (saida ? (S.fixas || []).some(f => chaveDesc(f.desc) === chaveDesc(nome)) : (S.extras || []).some(e => e.freq === 'Mensal' && chaveDesc(e.desc) === chaveDesc(nome)));
+      if (cj) return;
+      (saida ? out.recorrentes : out.rendimentos).push({ nome, valor: Math.round(md * 100) / 100, dia, meses: meses.size });
+    });
+    ['recorrentes', 'rendimentos'].forEach(l => { out[l].sort((a, b) => b.valor - a.valor); out[l] = out[l].slice(0, 15); });
+    out.proximoMes = ultimo ? addM(ultimo.slice(0, 7) + '-01', 1) : '';
+    return out;
+  };
+  root.PlannerEngine = { calc, previsao, taxaPoupanca, sugestoesExtrato, apoios, simularApoio, horizonte, abaixoDoMinimo, combustivel, addM, mk, num, has, parse, fixaEquiv, ocorrencias, periodoAt, salMinAno, ymd, pad, limiteMensal, orcMes, PERIODOS_ORC, irsRetencao, irsTaxa, irsAplicado, IRS_TABELA_I_2026, pascoa, feriadosNacionais, feriadosSet, expandir, expandirPontes, horaDe, horasDias, bancoHoras, saldoFerias, TIPOS_DIA, estudanteAtivo,
     parseNumero, parseData, parseCSV, detectarColunas, movimentosDeCSV, movimentosDeTexto, movimentosDePdf, conferirSaldos, normalizaDesc, chaveDesc, categorizar, aprender, jaRegistado, duplicados };
   if (typeof module !== 'undefined') module.exports = root.PlannerEngine;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -2411,7 +2452,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
   function primeiraVezHtml() {   // app sem dados: diz como começar
     if (S.periodos.length || S.fixas.length || S.gastos.length || S.extras.length) return '';
     return '<section class="card sec"><h2>👋 Por onde começar</h2><p>A app está vazia. Pode <b>carregar uma cópia</b> (.json) que já tenha guardado, ou preencher os dados à mão, a começar pelos contratos nas Definições.' + (nuvemDisponivel() ? ' Para o iPhone e o PC partilharem os dados, ligue o OneDrive.' : '') + '</p>' +
-      '<div class="row"><button type="button" class="btn pri" data-act="menu:lateral">Abrir o menu (Carregar uma cópia…)</button><button type="button" class="btn" data-act="ir:definicoes:def-contratos">Contratos</button><button type="button" class="btn" data-act="ir:definicoes:def-sincronizacao">Sincronização</button></div></section>';
+      '<div class="row"><button type="button" class="btn pri" data-act="ir:importar">⚡ Começar com o extrato</button><button type="button" class="btn" data-act="menu:lateral">Carregar uma cópia…</button><button type="button" class="btn" data-act="ir:definicoes:def-contratos">Contratos</button><button type="button" class="btn" data-act="ir:definicoes:def-sincronizacao">Sincronização</button></div></section>';
   }
   function lembreteCopia() {   // de 14 em 14 dias, ou enquanto nunca houve uma cópia em ficheiro
     const dc = diasDesdeCopia(); if (dc != null && dc < 14) return '';
@@ -2542,7 +2583,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     const head = ['Mês', 'Período', 'Dias de trabalho', 'Km/dia', 'Salário bruto', 'Salário líquido', 'Rendimento manual (líq.)', 'Conta onde entra', 'Subsídios férias/Natal', 'Outros extras', 'Subsídio alimentação', 'Preço combustível €/L', 'Combustível', 'Portagens', 'Manutenção carro', 'Despesas fixas', 'Extras / imprevistos', 'Gastos registados', 'Gastos variáveis (plano)', 'Total despesas', 'Saldo do mês', 'Poupança acumulada (prevista)', 'Transferido para a Revolut (real)', 'Saldo Revolut (real)', 'Notas'];
     const linhasTudo = () => R.months.map(m => {
       const k = m.key, base = 'plano.' + k + '.';
-      return '<tr' + (m.key === hojeYm ? ' style="outline:2px solid var(--accent);outline-offset:-2px"' : '') + '><td>' + mesLongo(m.ym) + '</td><td class="l">' + m.fase + '</td>' +
+      return '<tr' + (m.key === hojeYm ? ' style="outline:2px solid var(--accent);outline-offset:-2px"' : '') + '><td>' + mesLongo(m.ym) + '</td><td class="l">' + esc(m.fase) + '</td>' +
         '<td>' + inp(base + 'dias', { ph: String(m.dias), aria: 'Dias de trabalho ' + k }) + '</td><td>' + f0.format(m.km) + '</td><td>' + eur(m.bruto) + '</td><td>' + eur(m.liq) + '</td>' +
         '<td>' + inp(base + 'rendManual', { ph: m.X !== null ? String(m.X) : '', aria: 'Rendimento manual ' + k }) + '</td>' +
         '<td>' + inp(base + 'contaManual', { t: 'sel', list: LISTAS.contas, blank: true, aria: 'Conta ' + k }) + '</td>' +
@@ -2563,7 +2604,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
       (ultSub && !temAnual && fimPlano.key.slice(0, 4) > ultSub ? '<p class="note" style="margin-top:10px">Os subsídios de férias e de Natal estão escritos só até ' + ultSub + '. Para os anos seguintes, acrescente-os em Rendimentos com "Repete?" em Anual. Sem isso, o plano conta menos rendimento do que vai ter.</p>' : '');
     const kpisP = '<div class="grid">' + kpi('Poupança prevista', eur(R.poupancaPrevista, 0), 'No fim de ' + mesLongo(R.months[R.months.length - 1].ym), cls(R.poupancaPrevista)) + kpi('Real na Revolut', eur(R.poupancaReal, 0), 'O que já registou') +
       kpi('Saldo médio por mês', eur(R.tot.media, 0), 'Média dos ' + R.months.length + ' meses', cls(R.tot.media)) + kpi('Meses no vermelho', String(neg.length), neg.length ? 'O primeiro é ' + mesLongo(neg[0].ym) : 'Nenhum mês com saldo negativo', neg.length ? ' bad' : ' good') + '</div>';
-    const fase = R.fases.concat([R.tot]).map(f => '<tr' + (f === R.tot ? ' class="tot"' : '') + '><td>' + f.fase + '</td><td>' + f.meses + '</td><td>' + eur(f.rend, 0) + '</td><td>' + eur(f.subs, 0) + '</td><td>' + eur(f.desp, 0) + '</td><td class="' + (f.saldo < 0 ? 'neg-v' : '') + '">' + eur(f.saldo, 0) + '</td><td>' + eur(f.media, 0) + '</td></tr>').join('');
+    const fase = R.fases.concat([R.tot]).map(f => '<tr' + (f === R.tot ? ' class="tot"' : '') + '><td>' + esc(f.fase) + '</td><td>' + f.meses + '</td><td>' + eur(f.rend, 0) + '</td><td>' + eur(f.subs, 0) + '</td><td>' + eur(f.desp, 0) + '</td><td class="' + (f.saldo < 0 ? 'neg-v' : '') + '">' + eur(f.saldo, 0) + '</td><td>' + eur(f.media, 0) + '</td></tr>').join('');
     return '<section><h2>Plano mensal</h2><p class="lead">O plano todo de uma vez: o que entra, o que sai e quanto sobra em cada mês. Escolha até onde quer ver. Em baixo estão o resumo por período de trabalho e o plano ano a ano, onde se edita.</p>' + kpisP + horizHtml +
       '<div class="row" style="margin-top:12px"><button type="button" class="btn" data-act="sim">🔮 E se…? Simular mudanças</button><span class="muted">Sem mexer nos seus dados.</span></div></section>' +
       (window.Chart ? '<section><h2>Saldo mês a mês</h2><div class="chartbox on tall" data-chart="plano-saldo" role="img" aria-label="Saldo de cada mês e poupança acumulada"></div><p class="note center">Toque numa barra para abrir as contas desse mês.</p></section>' : '') +
@@ -2584,7 +2625,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
   let sintAnos = 3;
   function tabSintese() {
     const P = E.previsao(S, 120), pr = 'press.', n = P.meses.length, vis = P.meses.slice(0, sintAnos * 12);
-    const prem = P.premissas, tem = prem.salario || prem.despesas || prem.poupanca;
+    const prem = P.premissas, tem = prem.definidas;
     const subsOk = S.extras.filter(e => /^Subsídio/.test(e.tipo || '') && e.contar === 'Sim' && e.data);
     const ultSub = subsOk.filter(e => e.freq !== 'Anual').map(e => e.data.slice(0, 4)).sort().pop(), temAnual = subsOk.some(e => e.freq === 'Anual');
     const fim = P.meses[n - 1];
@@ -2594,9 +2635,12 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     const obj = P.objetivos.filter(o => o.falta !== null && o.falta !== undefined).map(o => '<tr><td class="l">' + esc(o.nome || 'Sem nome') + '</td><td>' + (o.falta > 0 ? eur(o.falta, 0) : 'Já atingido') + '</td><td>' + (o.data ? esc(mesLongo(o.data.slice(0, 7) + '-01')) : '—') + '</td><td>' + (o.falta <= 0 ? '—' : o.quando ? esc(mesLongo(o.quando)) : 'Não chega em ' + (n / 12) + ' anos') + '</td></tr>').join('');
     const a1 = P.marcos.find(m => m.meses === 12), a3 = P.marcos.find(m => m.meses === 36), a5 = P.marcos.find(m => m.meses === 60);
     const kp = '<div class="grid">' + (a1 ? kpi('Daqui a 1 ano', eur(a1.acum, 0), 'Poupança em ' + mesLongo(a1.ym), cls(a1.acum)) : '') + (a3 ? kpi('Daqui a 3 anos', eur(a3.acum, 0), 'Poupança em ' + mesLongo(a3.ym), cls(a3.acum)) : '') + (a5 ? kpi('Daqui a 5 anos', eur(a5.acum, 0), 'Poupança em ' + mesLongo(a5.ym), cls(a5.acum)) : '') +
-      kpi('Primeiro mês no vermelho', P.primeiroVermelho ? esc(mesLongo(P.primeiroVermelho.ym)) : 'Nenhum', P.primeiroVermelho ? 'Saldo desse mês: ' + eur(P.primeiroVermelho.saldo, 0) : 'Em ' + (n / 12) + ' anos', P.primeiroVermelho ? ' bad' : ' good') + '</div>';
+      kpi('Gasta mais do que recebe', P.primeiroVermelho ? esc(mesLongo(P.primeiroVermelho.ym)) : 'Nunca', P.primeiroVermelho ? 'Primeiro mês com saldo negativo: ' + eur(P.primeiroVermelho.saldo, 0) : 'Em ' + (n / 12) + ' anos', P.primeiroVermelho ? ' bad' : ' good') +
+      kpi('Fica sem poupança', P.primeiroSemReserva ? esc(mesLongo(P.primeiroSemReserva.ym)) : 'Nunca', P.primeiroSemReserva ? 'A poupança fica abaixo de zero' : 'Em ' + (n / 12) + ' anos', P.primeiroSemReserva ? ' bad' : ' good') + '</div>';
+    const ps = S.periodos.filter(p => p.inicio).slice().sort((a, b) => a.inicio < b.inicio ? -1 : 1), ult = ps[ps.length - 1];
+    const avisoPer = !ult ? '' : /^\d{4}-\d{2}-\d{2}$/.test(String(ult.fim || '')) ? '<p class="note" style="margin-top:10px">O último período (' + esc(ult.desc || ult.tipo || 'sem nome') + ') termina em ' + esc(dataPt(ult.fim)) + '. Depois dessa data a previsão não conta salário nem deslocações.</p>' : '<p class="note" style="margin-top:10px">O último período (' + esc(ult.desc || ult.tipo || 'sem nome') + ') não tem data de fim, por isso a previsão repete-o até ao fim dos ' + (n / 12) + ' anos. Se o contrato acaba, escreva o <b>Fim</b> dele em <a href="#" data-act="ir:definicoes:def-contratos">Contratos e períodos</a>.</p>';
     const seg = '<div class="row" style="margin:0 0 12px"><span class="muted">Gráfico até</span><div class="seg" role="group" aria-label="Até quando mostrar a previsão">' + [1, 2, 3, 5, 10].map(a => '<button type="button" data-act="sint-anos:' + a + '" aria-pressed="' + (sintAnos === a) + '">' + a + (a === 1 ? ' ano' : ' anos') + '</button>').join('') + '</div></div>';
-    return '<section><h2>Síntese e previsão</h2><p class="lead">Tudo num só sítio: onde vai estar a sua poupança daqui a 1, 2, 3, 5 e 10 anos. Parte do plano mensal e, depois do último período que definiu (' + esc(P.ultimoPeriodo) + '), continua com os mesmos valores desse período. Não inventa aumentos nem fases: só entram as premissas que escrever em baixo.</p>' + kp + '</section>' +
+    return '<section><h2>Síntese e previsão</h2><p class="lead">Tudo num só sítio: onde vai estar a sua poupança daqui a 1, 2, 3, 5 e 10 anos. Parte do plano mensal e, depois do último período que definiu (' + esc(P.ultimoPeriodo) + '), continua com os mesmos valores desse período. Não inventa aumentos nem fases: só entram as premissas que escrever em baixo.</p>' + kp + avisoPer + '</section>' +
       '<section><h2>Premissas (opcionais)</h2><p class="lead">Deixe em branco para uma previsão sem ajustes. São percentagens por ano (por exemplo 2 = 2%) e aplicam-se de ano para ano, a partir do segundo.</p><div class="form">' +
       field('Aumento anual do que entra (%)', inp(pr + 'prevSalario', { ph: '0' }), 'Salário e outros rendimentos.') + field('Aumento anual do que sai (%)', inp(pr + 'prevDespesas', { ph: '0' }), 'Inflação nas despesas.') + field('Rendimento anual da poupança (%)', inp(pr + 'prevPoupanca', { ph: '0' }), 'Em branco usa a taxa da Revolut (Poupança e contas).') + '</div>' +
       (tem ? '<p class="note" style="margin-top:8px">Com estas premissas, a poupança em ' + esc(mesLongo(fim.ym)) + ' é <b>' + eur(fim.acum, 0) + '</b> (sem premissas seria <b>' + eur(fim.acumSemPremissas, 0) + '</b>).</p>' : '') +
@@ -3023,6 +3067,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     }
     if (!imp || !imp.cat) return;
     if (k === 'sel') imp.sel[a] = el.checked;
+    else if (k === 'sug') { imp.sug = imp.sug || { saldo: true, rec: {}, rend: {}, feito: false }; if (a === 'saldo') imp.sug.saldo = el.checked; else if ((a === 'rec' || a === 'rend') && /^\d+$/.test(p[2] || '')) imp.sug[a][+p[2]] = el.checked; }
     else if (k === 'cat') imp.cat[a] = el.value;
     else if (k === 'conta') imp.conta = el.value;
     else if (k === 'despPos') { imp.despPos = el.checked; impRecalcula(true); }
@@ -3045,6 +3090,40 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     imp = { movs: [], msg: g + ' gastos e ' + r + ' receitas importados' + (rc ? ' (' + rc + ' ligado' + (rc > 1 ? 's' : '') + ' a recorrentes, marcados como pagos)' : '') + (ap ? '. Aprendi ' + ap + ' regra' + (ap > 1 ? 's' : '') + ' com as suas correções' : '') + '.' };
     queueSave(); render();
   }
+  /* Arranque pelo extrato: propõe preencher o saldo, os recorrentes e os rendimentos mensais com o que o extrato mostra */
+  function impSugestoesHtml(I) {
+    const sg = E.sugestoesExtrato(I.movs, S); I.sug = I.sug || { saldo: true, rec: {}, rend: {}, feito: false };
+    if (I.sug.feito) return '<section class="card"><h2>⚡ Preenchido com este extrato</h2><p class="note">Aplicado o que escolheu. Pode rever em Recorrentes, Rendimentos e Definições. Falta importar os movimentos, mais abaixo.</p></section>';
+    const conta = I.conta, campo = conta === 'Principal' ? 'saldoPrincipal' : conta === 'Revolut' ? 'revolut' : '';
+    const poderSaldo = sg.saldo && campo && num(S.press[campo]) === 0, vazioAgora = !S.periodos.length && !S.fixas.length && !S.extras.length && S.gastos.every(g => g.notas === 'Importado do extrato');
+    if (!poderSaldo && !sg.recorrentes.length && !sg.rendimentos.length) return '';
+    const temSal = S.periodos.some(p => p.salMin === 'Sim' || num(p.bruto) > 0), padrao = tp => tp === 'rend' ? !temSal : true, marcado = (tp, i) => I.sug[tp][i] === undefined ? padrao(tp) : I.sug[tp][i];
+    const lin = (tp, i, x) => '<tr><td><input type="checkbox" data-imp="sug:' + tp + ':' + i + '"' + (marcado(tp, i) ? ' checked' : '') + ' aria-label="Adicionar ' + esc(x.nome) + '"></td><td class="l">' + esc(x.nome) + '</td><td>' + eur(x.valor) + '</td><td>dia ' + x.dia + '</td><td>' + x.meses + ' meses</td></tr>';
+    const tab = (titulo, tp, l, nota) => l.length ? '<h3 style="margin-top:12px">' + titulo + '</h3><p class="note">' + nota + '</p><div class="tablewrap"><table><thead><tr><th></th><th class="l">Descrição</th><th>Valor</th><th>Dia</th><th>Visto em</th></tr></thead><tbody>' + l.map((x, i) => lin(tp, i, x)).join('') + '</tbody></table></div>' : '';
+    return '<section class="card"><h2>⚡ Preencher a app com este extrato</h2><p class="lead">Além de importar os movimentos, a app pode preencher já o resto. Escolha o que quer aplicar. Nada é aplicado sem carregar no botão, e pode desfazer.</p>' +
+      (poderSaldo ? '<label class="row"><input type="checkbox" data-imp="sug:saldo"' + (I.sug.saldo !== false ? ' checked' : '') + '> Usar <b>' + eur(sg.saldo.valor) + '</b> (saldo de ' + dataPt(sg.saldo.data) + ') como saldo inicial da conta ' + esc(conta) + (vazioAgora ? '. O plano passa a começar em ' + (sg.proximoMes ? mesLongo(sg.proximoMes) : 'o mês seguinte') + ', para não contar duas vezes o que o extrato já inclui.' : '. O saldo é de ' + dataPt(sg.saldo.data) + ': se for diferente do saldo no início do plano, ajuste o mês inicial em Definições.') + '</label>' : '') +
+      tab('Pagamentos que se repetem', 'rec', sg.recorrentes, 'Passam a ser pagamentos recorrentes mensais, a contar a partir de ' + (sg.proximoMes ? mesLongo(sg.proximoMes) : 'o mês seguinte') + ' (os meses do extrato ficam pelos movimentos).') +
+      tab('Rendimentos que se repetem', 'rend', sg.rendimentos, 'Passam a ser rendimentos mensais no plano, a contar a partir de ' + (sg.proximoMes ? mesLongo(sg.proximoMes) : 'o mês seguinte') + '.' + (temSal ? ' Já tem períodos com salário nos Contratos, por isso não os marquei: se os juntar, o rendimento conta duas vezes.' : '')) +
+      ((sg.recorrentes.length || sg.rendimentos.length) ? '<p class="note" style="margin-top:8px">As transferências entre as suas contas (por exemplo para a Revolut) ficam de fora.</p>' : '') +
+      '<div class="row" style="margin-top:12px"><button type="button" class="btn pri" data-act="imp-sug"' + (I.sug.feito ? ' disabled' : '') + '>' + (I.sug.feito ? 'Já aplicado' : 'Aplicar o que escolhi') + '</button></div></section>';
+  }
+  function impSugestoesAplicar() {
+    const I = imp; if (!I || !I.movs || !I.sug || I.sug.feito) return;
+    const sg = E.sugestoesExtrato(I.movs, S), antes = JSON.stringify({ fixas: S.fixas, extras: S.extras, press: S.press }), feito = [];
+    const campo = I.conta === 'Principal' ? 'saldoPrincipal' : I.conta === 'Revolut' ? 'revolut' : '';
+    const vazioAgora = !S.periodos.length && !S.fixas.length && !S.extras.length && S.gastos.every(g => g.notas === 'Importado do extrato'), temSal = S.periodos.some(p => p.salMin === 'Sim' || num(p.bruto) > 0);
+    if (sg.saldo && campo && num(S.press[campo]) === 0 && I.sug.saldo !== false) { S.press[campo] = sg.saldo.valor; feito.push('saldo inicial'); if (vazioAgora && sg.proximoMes) { S.press.mesInicial = sg.proximoMes; feito.push('plano a começar em ' + mesLongo(sg.proximoMes)); } }
+    const ini = sg.proximoMes || (hojeIso().slice(0, 7) + '-01'), ym = ini.slice(0, 7);
+    let nr = 0, ne = 0;
+    sg.recorrentes.forEach((x, i) => { if (I.sug.rec[i] === false || S.fixas.length >= 5000) return; const c = E.categorizar(x.nome, S.importacao.regras, S.categorias);
+      S.fixas.push({ id: novoId(), cat: c.cat || '', desc: limpaTexto(x.nome, 120), icone: '', valor: x.valor, period: 'Mensal', dia: x.dia, mes: '', inicio: ini, fim: '', ativa: 'Sim', conta: I.conta, notas: 'Criado a partir do extrato' }); nr++; });
+    sg.rendimentos.forEach((x, i) => { if ((I.sug.rend[i] === undefined ? temSal : I.sug.rend[i] === false) || S.extras.length >= 5000) return;
+      S.extras.push({ data: ym + '-' + String(x.dia).padStart(2, '0'), tipo: 'Outro', desc: limpaTexto(x.nome, 120), origem: 'Extrato', valor: x.valor, freq: 'Mensal', ate: '', conta: I.conta, contar: 'Sim', notas: 'Criado a partir do extrato' }); ne++; });
+    if (nr) feito.push(nr + (nr === 1 ? ' pagamento recorrente' : ' pagamentos recorrentes')); if (ne) feito.push(ne + (ne === 1 ? ' rendimento mensal' : ' rendimentos mensais'));
+    I.sug.feito = true; queueSave(); render();
+    aviso(feito.length ? 'Preenchido: ' + feito.join(', ') + '.' : 'Nada para aplicar.', feito.length ? () => { const o = JSON.parse(antes); S.fixas = o.fixas; S.extras = o.extras; S.press = o.press; if (imp && imp.sug) imp.sug.feito = false; queueSave(); render(); } : null, 'Desfazer', 12000);
+  }
+
   function tabImportar() {
     const I = imp, regras = S.importacao.regras, tem = I && I.movs && I.movs.length;
     const caixa = '<section class="card"><h2>Importar extrato do banco</h2><p class="lead">Carregue o CSV ou o PDF do extrato, ou cole o texto. A app propõe a categoria de cada movimento, avisa dos que já estão registados, e só importa o que confirmar. O extrato é lido no seu navegador e não é enviado para lado nenhum. Para ler um PDF, o navegador descarrega o leitor de PDF (pdf.js) do cdnjs, uma só vez, e o ficheiro fica no seu computador.</p><div class="fields">' +
@@ -3071,7 +3150,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
       const nSaidas = I.movs.filter(m => m.valor < 0).length, nDup = I.movs.filter((m, i) => I.dup[i]).length;
       const kpisI = '<div class="grid">' + kpi('Movimentos lidos', String(I.movs.length), nSaidas + ' saídas e ' + (I.movs.length - nSaidas) + ' entradas') + kpi('A importar', String(sel.length), 'Marcados na lista') +
         kpi('Valor selecionado', eur(total), '', cls(total)) + kpi('Duplicados', String(nDup), nDup ? 'Ficam de fora (mesma data e valor, ou data próxima e mesma descrição)' : 'Nenhum') + '</div>';
-      rev = '<section><h2>Movimentos' + (I.nome ? ' de ' + esc(I.nome) : '') + '</h2>' + kpisI + mapa +
+      rev = impSugestoesHtml(I) + '<section><h2>Movimentos' + (I.nome ? ' de ' + esc(I.nome) : '') + '</h2>' + kpisI + mapa +
         '<div class="row" style="margin:12px 0"><label class="muted" for="imp-conta">Conta</label><select id="imp-conta" data-imp="conta">' + LISTAS.contas.map(c => '<option' + (c === I.conta ? ' selected' : '') + '>' + c + '</option>').join('') + '</select><button class="btn" data-act="imp-todos">Marcar ou desmarcar tudo</button></div>' +
         '<div class="tablewrap tall"><table class="sticky"><thead><tr><th></th><th>Data</th><th class="l">Descrição</th><th>Valor</th><th class="l">Categoria</th><th class="l">Origem</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
         '<div class="row" style="margin-top:12px"><button class="btn pri" data-act="imp-ok"' + (sel.length ? '' : ' disabled') + '>Importar ' + sel.length + ' movimento' + (sel.length === 1 ? '' : 's') + '</button><button class="btn" data-act="imp-cancelar">Cancelar</button><span class="muted">Selecionado: <b>' + eur(total) + '</b>. Os que já parecem registados (mesma data e valor) vêm desmarcados. Receitas entram em Rendimentos, sem contar no plano. Pagamentos iguais a um recorrente por pagar ficam ligados a ele, como pagos.</span></div>' +
@@ -3122,7 +3201,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     const res = tx.tanl > 0 ? '<div class="grid">' + (mo ? kpi('Revolut prevista este mês', eur(mo.revolutReal), 'Saldo inicial + transferências + juros') + kpi('Juros deste mês (líquidos)', eur(mo.jurosR), 'TAN líquida ' + pctTxt(tx.tanl)) : '') + kpi('Juros em todo o plano', eur(jurosTot, 0), 'Sobre o que está na Revolut', '') + '</div><p class="note" style="margin-top:8px">Os juros contam-se todos os meses sobre o saldo do mês anterior, já sem imposto. É uma estimativa: cada banco tem o seu modo de contar e creditar os juros.</p>' : '<p class="note">Escreva a TANB para o plano passar a contar os juros da Revolut.</p>';
     return '<section class="card"><h2 id="poup-conta">Revolut (conta poupança)</h2><p class="lead">A Revolut é a sua conta poupança e a conta principal é a normal. Escreva a taxa do banco e o plano passa a juntar os juros ao que está poupado. O saldo de partida está em Definições, e o que transfere cada mês, no Plano mensal.</p><div class="form">' +
       field('TANB da Revolut (% ao ano)', inp('press.revolutTanb', { ph: '0' }), 'Taxa anual nominal bruta, como vem no contrato.') + field('Imposto sobre os juros (%)', inp('press.revolutImposto', { ph: '28' }), 'Em branco usa 28%.') + '</div>' + res +
-      '<h3 style="margin-top:16px">Atualizar com o saldo do banco</h3><p class="lead">Escreva o saldo real que vê na Revolut. A app compara com o esperado para este mês e guarda-o em "Contas no fim de cada mês".</p><div class="form">' +
+      '<h3 style="margin-top:16px">Atualizar com o saldo do banco</h3><p class="lead">Escreva o saldo real que vê na Revolut. A app compara com o esperado para o fim deste mês (o melhor dia para conferir é o último do mês) e guarda-o em "Contas no fim de cada mês".</p><div class="form">' +
       field('Saldo real da Revolut (€)', '<input type="number" inputmode="decimal" step="any" id="po-real">') + '</div>' +
       '<div class="row" style="margin-top:8px"><button type="button" class="btn" data-act="po-atualizar">Comparar e guardar</button><span class="muted" id="po-msg" role="status"></span></div></section>';
   }
@@ -3135,7 +3214,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     if (!S.contas) S.contas = {};
     S.contas[mo.key] = Object.assign({}, S.contas[mo.key], { revolut: Math.round(real * 100) / 100 });
     queueSave(); render();
-    const txt = Math.abs(dif) < 0.01 ? 'As contas batem certo.' : 'Esperado ' + eur(mo.revolutReal) + ', real ' + eur(real) + ': diferença de ' + eur(dif) + '. Se for sempre parecida, ajuste a TANB ou registe as transferências em falta.';
+    const txt = Math.abs(dif) < 0.01 ? 'As contas batem certo.' : 'Esperado para o fim do mês ' + eur(mo.revolutReal) + ', real hoje ' + eur(real) + ': diferença de ' + eur(dif) + '. Pode incluir transferências e juros que ainda vão acontecer este mês; para uma conferência exata, faça-a no último dia do mês. Se a diferença for sempre parecida, ajuste a TANB ou registe as transferências em falta.';
     aviso('Saldo da Revolut guardado. ' + txt, () => { if (antes === 'null') delete S.contas[mo.key]; else S.contas[mo.key] = JSON.parse(antes); queueSave(); render(); }, 'Desfazer', 12000);
     const m2 = document.getElementById('po-msg'); if (m2) m2.textContent = txt;
   }
@@ -3272,7 +3351,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
       const b = 'periodos.' + i + '.';
       const brutoX = x.salMin === 'Sim' ? E.salMinAno(S, +String(x.inicio).slice(0, 4) || 0) : num(x.bruto);
       const irsCel = inp(b + 'irsModo', { t: 'sel', list: LISTAS.irsModo, aria: 'Modo da retenção de IRS' }) + (x.irsModo === 'Automático' ? '<div class="muted" style="font-size:12px">' + pctTxt(E.irsTaxa(brutoX)) + ' a ' + eur(brutoX, 0) + '</div>' : inp(b + 'irs', { aria: 'Retenção de IRS manual (0,02 = 2%)' }));
-      return '<tr><td>' + inp(b + 'inicio', { t: 'date', aria: 'Início' }) + '</td><td>' + inp(b + 'tipo', { t: 'sel', list: LISTAS.tipoContrato, aria: 'Tipo de contrato' }) + '</td><td class="l">' + inp(b + 'desc', { t: 'text', cls: 'wide', aria: 'Descrição' }) + '</td><td>' + inp(b + 'salMin', { t: 'sel', list: LISTAS.simnao, aria: 'Salário mínimo' }) + '</td><td>' + inp(b + 'bruto', { aria: 'Bruto' }) + '</td><td>' + irsCel + '</td><td>' + inp(b + 'subs', { aria: 'Subsídio alimentação' }) + '</td><td>' + inp(b + 'cartao', { t: 'sel', list: LISTAS.simnao, aria: 'Cartão' }) + '</td><td>' + inp(b + 'km', { aria: 'Km' }) + '</td><td>' + inp(b + 'portagens', { aria: 'Portagens' }) + '</td><td>' + inp(b + 'horasDia', { ph: String(num(S.press.horasDia)), aria: 'Horas por dia' }) + '</td><td>' + inp(b + 'horasSemana', { ph: String(num(S.press.horasSemana)), aria: 'Horas por semana' }) + '</td><td class="l">' + inp(b + 'notas', { t: 'text', cls: 'wide', aria: 'Notas' }) + '</td><td>' + delBtn('periodos', i) + '</td></tr>';
+      return '<tr><td>' + inp(b + 'inicio', { t: 'date', aria: 'Início' }) + '</td><td>' + inp(b + 'fim', { t: 'date', aria: 'Fim do período (opcional)' }) + '</td><td>' + inp(b + 'tipo', { t: 'sel', list: LISTAS.tipoContrato, aria: 'Tipo de contrato' }) + '</td><td class="l">' + inp(b + 'desc', { t: 'text', cls: 'wide', aria: 'Descrição' }) + '</td><td>' + inp(b + 'salMin', { t: 'sel', list: LISTAS.simnao, aria: 'Salário mínimo' }) + '</td><td>' + inp(b + 'bruto', { aria: 'Bruto' }) + '</td><td>' + irsCel + '</td><td>' + inp(b + 'subs', { aria: 'Subsídio alimentação' }) + '</td><td>' + inp(b + 'cartao', { t: 'sel', list: LISTAS.simnao, aria: 'Cartão' }) + '</td><td>' + inp(b + 'km', { aria: 'Km' }) + '</td><td>' + inp(b + 'portagens', { aria: 'Portagens' }) + '</td><td>' + inp(b + 'horasDia', { ph: String(num(S.press.horasDia)), aria: 'Horas por dia' }) + '</td><td>' + inp(b + 'horasSemana', { ph: String(num(S.press.horasSemana)), aria: 'Horas por semana' }) + '</td><td class="l">' + inp(b + 'notas', { t: 'text', cls: 'wide', aria: 'Notas' }) + '</td><td>' + delBtn('periodos', i) + '</td></tr>';
     }).join('');
     const cb = R.cb, pI = E.periodoAt(S, S.press.mesInicial), pL = E.periodoAt(S, R.months[R.months.length - 1].ym);
     const abaixo = E.abaixoDoMinimo(S), porPer = {}; abaixo.forEach(x => { (porPer[x.i] = porPer[x.i] || []).push(x); });
@@ -3293,7 +3372,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
       field('Poupança atual na Revolut (€)', inp(pr + 'revolut'), 'Ponto de partida da poupança.') + '</div>' +
       '<p class="note" style="margin-top:10px">O preço e o consumo do combustível ficam no separador Combustível.</p></section>' +
       '<section><h2 id="def-contratos">Contratos e períodos de trabalho</h2><p class="lead">Cada linha vale a partir da data de início e até começar a seguinte. Mudou de emprego, subiu o salário ou mudou o trajeto? Acrescente uma linha. Com "Salário = mínimo nacional" em Sim, o salário segue a tabela do salário mínimo. Com a retenção de IRS em Automático, a taxa vem da tabela de 2026 (não casado, sem dependentes) e acompanha o salário. Em Manual, escreve a taxa (0,02 = 2%).</p>' +
-      '<div class="tablewrap"><table><thead><tr><th>Início</th><th>Tipo</th><th class="l">Descrição</th><th>Salário = mínimo?</th><th>Salário bruto (€)</th><th>Retenção de IRS</th><th>Subsídio alimentação/dia</th><th>Pago em cartão?</th><th>Km/dia</th><th>Portagens/dia</th><th>Horas/dia</th><th>Horas/semana</th><th class="l">Notas</th><th></th></tr></thead><tbody>' + per + '</tbody></table></div><div class="row" style="margin-top:12px">' + addBtn('periodos', 'Novo período') + '</div>' + avisoMin +
+      '<div class="tablewrap"><table><thead><tr><th>Início</th><th>Fim (opcional)</th><th>Tipo</th><th class="l">Descrição</th><th>Salário = mínimo?</th><th>Salário bruto (€)</th><th>Retenção de IRS</th><th>Subsídio alimentação/dia</th><th>Pago em cartão?</th><th>Km/dia</th><th>Portagens/dia</th><th>Horas/dia</th><th>Horas/semana</th><th class="l">Notas</th><th></th></tr></thead><tbody>' + per + '</tbody></table></div><div class="row" style="margin-top:12px">' + addBtn('periodos', 'Novo período') + '</div>' + avisoMin +
       '<div class="split" style="margin-top:16px"><div><h3>Salário mínimo por ano</h3><div class="tablewrap"><table class="mini"><thead><tr><th>Ano</th><th>Mensal (€)</th><th class="l">Nota</th><th></th></tr></thead><tbody>' + sm + '</tbody></table></div><div style="margin-top:10px">' + addBtn('salMin', 'Novo ano') + '</div><p class="note">Anos sem linha usam o último valor conhecido. Os valores de 2027 em diante são previsões: confirme quando saírem em Diário da República.</p></div></div></section>' +
       '<section class="card"><h2 id="def-irs">Simulador de retenção de IRS (2026)</h2><p class="lead">Escreva um salário bruto mensal e veja a retenção, o desconto para a Segurança Social e o líquido.</p><div class="fields">' +
       field('Salário bruto mensal (€)', '<input type="number" inputmode="decimal" step="any" id="irs-bruto" value="' + irsSim + '">') +
@@ -3877,6 +3956,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     else if (act === 'imp-texto') { impOp++; const v = (document.getElementById('imp-texto').value || ''); if (v.length > 2e6) aviso('O texto é demasiado grande.'); else if (v.trim()) impIniciar(v, 'texto colado'); }
     else if (act === 'imp-todos') { if (imp && imp.cat) { const alguma = imp.movs.some((m, i) => !imp.sel[i] && !imp.dup[i]); imp.movs.forEach((m, i) => { imp.sel[i] = alguma && !imp.dup[i]; }); renderKeep(); } }
     else if (act === 'imp-cancelar') { impOp++; imp = null; render(); }
+    else if (act === 'imp-sug') impSugestoesAplicar();
     else if (act === 'imp-ok') { if (imp && imp.cat) impConfirmar(); }
     else if (act === 'tema') { tema = TEMAS[(TEMAS.indexOf(tema) + 1) % TEMAS.length]; try { localStorage.setItem('planner-tema', tema); } catch (e) { } aplicaTema(); renderKeep(); }
     else if (act === 'g-cat') { const n = catNomes()[+a1], sel = document.getElementById('g-cat'); if (sel && n !== undefined) sel.value = n; document.querySelectorAll('[data-act^="g-cat:"]').forEach((bt, i) => bt.setAttribute('aria-pressed', String(i === +a1))); }
