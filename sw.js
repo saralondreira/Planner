@@ -1,5 +1,5 @@
-/* Service worker do Planner: a app abre sem internet. A versão muda sempre que o código muda (o build escreve o número em c5c7d38c40). */
-const VERSAO = 'planner-c5c7d38c40';
+/* Service worker do Planner: a app abre sem internet. A versão muda sempre que o código muda (o build escreve o número em ad3ac77a23). */
+const VERSAO = 'planner-ad3ac77a23';
 const FICHEIROS = ['./', 'index.html', 'manifest.webmanifest', 'icone-180.png', 'icone-192.png', 'icone-512.png'];
 
 self.addEventListener('install', e => {
@@ -16,8 +16,10 @@ self.addEventListener('fetch', e => {
   // a Microsoft e o OneDrive nunca passam pela cache (nem o início de sessão, nem os dados)
   if (/(^|\.)(microsoftonline\.com|microsoft\.com|live\.com|sharepoint\.com|1drv\.com|onedrive\.com|office\.com)$/.test(u.hostname)) return;
   if (u.origin === location.origin) {   // os ficheiros da app: responde logo com o que tem e atualiza em segundo plano
+    const oauth = /[?&](code|state|error)=/.test(u.search);   // o regresso do início de sessão traz códigos no endereço: nunca se guarda
     e.respondWith(caches.match(e.request, { ignoreSearch: true }).then(guardado => {
-      const rede = fetch(e.request).then(r => { if (r && r.ok) { const c = r.clone(); caches.open(VERSAO).then(ca => ca.put(e.request, c)); } return r; }).catch(() => guardado);
+      const rede = fetch(e.request).then(r => { if (r && r.ok && !oauth) { const c = r.clone(); return caches.open(VERSAO).then(ca => ca.put(e.request, c)).then(() => r, () => r); } return r; }).catch(() => guardado);
+      e.waitUntil(rede.catch(() => { }));   // a atualização em segundo plano não é cortada
       return guardado || rede;
     }));
     return;
