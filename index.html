@@ -656,6 +656,10 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
 }
 
 
+/* Início: os indicadores extra ficam separados dos cartões */
+.grid + details.ajuda { margin-top: 16px; }
+.btn.pri .muted { color: inherit; opacity: .92; }
+
 </style>
 </head>
 <body>
@@ -2449,8 +2453,27 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     partes.push(prox.length ? 'Tem ' + prox.length + (prox.length === 1 ? ' pagamento' : ' pagamentos') + ' por pagar nos últimos 20 e próximos 30 dias' + (atraso ? ', ' + atraso + ' em atraso' : '') + '.' : 'Não tem pagamentos por pagar nos últimos 20 e próximos 30 dias.');
     return partes.join(' ');
   }
+  /* Janela de boas-vindas: na primeira vez, com a app vazia, propõe como começar (extrato, cópia, OneDrive ou à mão) */
+  const LS_BOAS = 'planner-boasvindas';
+  let boas = false, boasVista = false;
+  const appVazia = () => !(S.periodos.length || S.fixas.length || S.gastos.length || S.extras.length);
+  const boasDispensada = () => { try { return localStorage.getItem(LS_BOAS) === '1'; } catch (e) { return false; } };
+  const boasFechar = () => { boas = false; try { localStorage.setItem(LS_BOAS, '1'); } catch (e) { } };
+  function boasHtml() {
+    if (!boas) return '';
+    const op = (a, ico, t, d, pri) => '<button type="button" class="btn' + (pri ? ' pri' : '') + '" data-act="boas:' + a + '" style="display:flex;gap:12px;align-items:center;text-align:left;width:100%;padding:14px 16px;margin-top:10px"><span aria-hidden="true" style="font-size:24px">' + ico + '</span><span><b>' + t + '</b><br><span class="muted" style="font-weight:400">' + d + '</span></span></button>';
+    return '<div class="modal baixo" data-act="boas-fechar"><div class="sheet larga" role="dialog" aria-modal="true" aria-label="Começar a usar a app">' +
+      '<div class="row sh-topo"><h2>👋 Vamos começar</h2><button class="x" data-act="boas-fechar" aria-label="Fechar">×</button></div>' +
+      '<p class="lead">A app está vazia. Escolha a forma mais rápida de a preencher. Pode sempre fazer o resto mais tarde.</p>' +
+      op('extrato', '⚡', 'Começar com o extrato', 'Carregue o extrato do banco e a app propõe o saldo, os pagamentos que se repetem e os rendimentos.', true) +
+      op('copia', '📂', 'Carregar uma cópia', 'Já tem um ficheiro de cópia (.json) guardado.') +
+      (nuvemDisponivel() ? op('nuvem', '☁️', 'Ligar o OneDrive', 'Se já usa a app noutro aparelho, traz os dados de lá.') : '') +
+      op('mao', '✍️', 'Preencher à mão', 'Começar pelos contratos e períodos de trabalho.') +
+      '<div class="row" style="margin-top:14px"><button type="button" class="btn" data-act="boas:fim">Agora não</button></div></div></div>';
+  }
+
   function primeiraVezHtml() {   // app sem dados: diz como começar
-    if (S.periodos.length || S.fixas.length || S.gastos.length || S.extras.length) return '';
+    if (!appVazia()) return '';
     return '<section class="card sec"><h2>👋 Por onde começar</h2><p>A app está vazia. Pode <b>carregar uma cópia</b> (.json) que já tenha guardado, ou preencher os dados à mão, a começar pelos contratos nas Definições.' + (nuvemDisponivel() ? ' Para o iPhone e o PC partilharem os dados, ligue o OneDrive.' : '') + '</p>' +
       '<div class="row"><button type="button" class="btn pri" data-act="ir:importar">⚡ Começar com o extrato</button><button type="button" class="btn" data-act="menu:lateral">Carregar uma cópia…</button><button type="button" class="btn" data-act="ir:definicoes:def-contratos">Contratos</button><button type="button" class="btn" data-act="ir:definicoes:def-sincronizacao">Sincronização</button></div></section>';
   }
@@ -3506,6 +3529,8 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
   function recompute() { diaMudou(); R = E.calc(S); AP = E.apoios(S, hojeYm); }
   function render() {
     recompute();
+    if (!boasVista && nuvemPronta && appVazia() && !boasDispensada()) { boas = true; boasVista = true; }
+    if (boas && !appVazia()) boas = false;   // chegaram dados (da nuvem ou de uma cópia): a janela deixa de fazer sentido
     const abertoAntes = !!dialogoTopo(); if (!abertoAntes) focoOrigem = chaveFoco(document.activeElement);
     const grupo = GRUPOS.find(g => g[2].indexOf(tab) >= 0) || null; if (grupo) ultimaAba[grupo[0]] = tab;   // as páginas do menu lateral não pertencem a nenhum grupo
     document.getElementById('tabs').innerHTML = GRUPOS.map(g => '<button data-grupo="' + g[0] + '"' + (g === grupo ? ' aria-current="page"' : '') + '>' + ic(g[0]) + g[1] + '</button>').join('');
@@ -3516,7 +3541,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     if (mainEl.dataset) mainEl.dataset.pagina = tab;   // não usar data-tab: o gestor de cliques trataria qualquer clique dentro do main como mudar de separador
     if (tab !== 'recorrentes') fixaSheet = null; if (tab !== 'plano') planoSheet = null; if (tab !== 'rendimentos') rendSheet = null; if (tab !== 'despesas') gastoSheet = null; if (tab !== 'poupanca') { objSheet = null; contaSheet = null; }
     if (detSheet && detSheet.tab !== tab) detSheet = null; if (simSheet && simSheet.tab !== tab) simSheet = null;
-    mainEl.innerHTML = corpo + fixaHtml() + rendHtml() + gastoHtml() + objHtml() + contaHtml() + planoHtml() + detHtml() + simHtml() + rapidoHtml() + pickerHtml() + calHtml() + menuHtml();
+    mainEl.innerHTML = corpo + fixaHtml() + rendHtml() + gastoHtml() + objHtml() + contaHtml() + planoHtml() + detHtml() + simHtml() + rapidoHtml() + boasHtml() + pickerHtml() + calHtml() + menuHtml();
     if (tab === 'despesas') filtraLista('g'); else if (tab === 'rendimentos') filtraLista('r');
     const dlg = dialogoTopo();
     Array.from(document.querySelectorAll('header.top, #main > *')).forEach(e => {   // com uma folha aberta, o resto da página fica inerte (leitores de ecrã e teclado)
@@ -3812,7 +3837,7 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
       return;
     }
     if (ev.key === 'Escape' && (menu || picker || calSheet || fixaSheet != null || rendSheet != null || planoSheet || detSheet || simSheet || rapido || gastoSheet != null || objSheet != null || contaSheet)) {   // com o seletor de ícones por cima de uma folha, fecha só o seletor
-      if (picker && fixaSheet != null) picker = null; else { menu = null; picker = null; calSheet = null; fixaSheet = null; rendSheet = null; planoSheet = null; detSheet = null; simSheet = null; rapido = null; gastoSheet = null; objSheet = null; contaSheet = null; }
+      if (picker && fixaSheet != null) picker = null; else { if (boas) boasFechar(); menu = null; picker = null; calSheet = null; fixaSheet = null; rendSheet = null; planoSheet = null; detSheet = null; simSheet = null; rapido = null; gastoSheet = null; objSheet = null; contaSheet = null; }
       resetArm = false; apagarArm = false; renderKeep(); return;
     }
     if (ev.key === '/' && !escreve && !ev.ctrlKey && !ev.metaKey && !ev.altKey) { ev.preventDefault(); menu = 'ir'; renderKeep(); setTimeout(() => { const q = document.getElementById('ir-q'); if (q && q.focus) q.focus(); }, 0); return; }
@@ -3886,6 +3911,8 @@ html, body, button, a, select, input, label, canvas, svg, [data-act] { touch-act
     else if (act === 'rapido') {
       if (a1 === 'g' || a1 === 'r') { menu = null; rapido = { tipo: a1, valor: '', desc: '', data: hojeIso(), cat: ultimaCat(a1), novo: true, catEscolhida: false }; renderKeep(); setTimeout(() => { const e = document.getElementById('q-valor'); if (e && e.focus) e.focus(); }, 0); }
     }
+    else if (act === 'boas-fechar') { if (ev.target === b || b.classList.contains('x')) { boasFechar(); renderKeep(); } }
+    else if (act === 'boas') { boasFechar(); if (a1 === 'extrato') vaiPara('importar'); else if (a1 === 'copia') { menu = 'lateral'; renderKeep(); } else if (a1 === 'nuvem') vaiPara('definicoes', 'def-sincronizacao'); else if (a1 === 'mao') vaiPara('definicoes', 'def-contratos'); else renderKeep(); }
     else if (act === 'rapido-fechar') { if (ev.target === b || b.classList.contains('x')) { lerRapido(); rapido = null; renderKeep(); } }
     else if (act === 'rapido-ok') { if (rapido) rapidoGuardar(); }
     else if (act === 'q-cat') {
