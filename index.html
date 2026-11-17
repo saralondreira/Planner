@@ -1967,8 +1967,9 @@ tr.sub td:first-child { padding-left: 18px; }
     };
   }
   const CONTAS_APP = ['Principal', 'Revolut', 'Cartão refeição'];
-  function nomesContas() { const n = (S && S.ui && S.ui.nomesContas && typeof S.ui.nomesContas === 'object') ? S.ui.nomesContas : {}, out = {}; CONTAS_APP.forEach(k => { const v = String(n[k] == null ? '' : n[k]).replace(/[\u0000-\u001F\u007F<>]/g, ' ').trim().slice(0, 30); if (v && v !== k) out[k] = v; }); return out; }
-  const nomeConta = c => nomesContas()[c] || c;
+  function nomesContas() { const n = (S && S.ui && S.ui.nomesContas && typeof S.ui.nomesContas === 'object') ? S.ui.nomesContas : {}, out = Object.create(null); CONTAS_APP.forEach(k => { const v = String(n[k] == null ? '' : n[k]).replace(/[\u0000-\u001F\u007F<>]/g, ' ').trim().slice(0, 30); if (v && v !== k) out[k] = v; }); return out; }
+  const nomeConta = c => nomesContas()[c] || String(c == null ? '' : c);
+  const temNomeDeConta = t => CONTAS_APP.some(k => new RegExp('(^|[^\\wÀ-ÿ])' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![\\wÀ-ÿ])', 'i').test(t));   // o texto contém o nome original de uma conta da app como palavra
   // troca os nomes das contas da app pelos que a pessoa escolheu, só no texto visível (os valores guardados continuam os mesmos)
   function renomeiaContas(html) {
     const n = nomesContas(), ks = Object.keys(n); if (!ks.length) return html;
@@ -2594,18 +2595,18 @@ tr.sub td:first-child { padding-left: 18px; }
   const SEG_ROT = { 'g-conta': 'Conta', 'r-conta': 'Conta', 'r-freq': 'Repete?' };
   const seg = (id, atual) => '<input type="hidden" id="' + id + '" value="' + esc(atual) + '"><div class="seg" role="group" aria-label="' + esc(SEG_ROT[id] || '') + '">' + SEGS[id].map((x, i) => '<button type="button" data-act="seg:' + id + ':' + i + '" aria-pressed="' + (x === atual) + '">' + esc(x) + '</button>').join('') + '</div>';
   let filtroAtual = { g: '', r: '' }, filtroNomes = { g: [], r: [] };
-  const SEM = '__sem';
+  const SEM = '__sem', FCONTA = '\u0001conta:';
   function filtroSelect(pref, itens, todos, contas) {   // itens: [[nome, total]]; contas (opcional): [[conta, total]], só aparecem com 2 ou mais
     const valor = nome => (nome === 'Sem categoria' || nome === 'Sem tipo') ? SEM : nome, cs = (contas || []).filter(x => x[0]), comContas = cs.length > 1;
-    if (filtroAtual[pref] && !itens.some(x => valor(x[0]) === filtroAtual[pref]) && !(comContas && cs.some(x => 'conta:' + x[0] === filtroAtual[pref]))) filtroAtual[pref] = '';
+    if (filtroAtual[pref] && !itens.some(x => valor(x[0]) === filtroAtual[pref]) && !(comContas && cs.some(x => FCONTA + x[0] === filtroAtual[pref]))) filtroAtual[pref] = '';
     const op = (v, t, tot) => '<option value="' + esc(v) + '"' + (v === filtroAtual[pref] ? ' selected' : '') + '>' + esc(t) + ' · ' + eur(tot, 0) + '</option>';
     const cats = itens.map(x => op(valor(x[0]), x[0], x[1])).join('');
     return '<select id="' + pref + '-filtro" data-filtro="' + pref + '" aria-label="Filtrar a lista"><option value="">' + todos + '</option>' +
-      (comContas ? '<optgroup label="' + (pref === 'g' ? 'Categoria' : 'Tipo') + '">' + cats + '</optgroup><optgroup label="Conta">' + cs.map(x => op('conta:' + x[0], nomeConta(x[0]), x[1])).join('') + '</optgroup>' : cats) + '</select>';
+      (comContas ? '<optgroup label="' + (pref === 'g' ? 'Categoria' : 'Tipo') + '">' + cats + '</optgroup><optgroup label="Conta">' + cs.map(x => op(FCONTA + x[0], nomeConta(x[0]), x[1])).join('') + '</optgroup>' : cats) + '</select>';
   }
   function filtraLista(pref) {
     const q = ((document.getElementById(pref + '-busca') || {}).value || '').trim().toLowerCase(), cat = (document.getElementById(pref + '-filtro') || {}).value || '';
-    document.querySelectorAll('#' + pref + '-lista [data-txt]').forEach(tr => { tr.hidden = !((!q || tr.dataset.txt.indexOf(q) >= 0) && (!cat || (cat.indexOf('conta:') === 0 ? (tr.dataset.conta || '') === cat.slice(6) : cat === SEM ? tr.dataset.cat === '' : tr.dataset.cat === cat))); });
+    document.querySelectorAll('#' + pref + '-lista [data-txt]').forEach(tr => { tr.hidden = !((!q || tr.dataset.txt.indexOf(q) >= 0) && (!cat || (cat.indexOf(FCONTA) === 0 ? (tr.dataset.conta || '') === cat.slice(FCONTA.length) : cat === SEM ? tr.dataset.cat === '' : tr.dataset.cat === cat))); });
     const vz = document.getElementById(pref + '-vazio');   // aviso quando a pesquisa não encontra nada (só nas listas de cartões)
     if (vz) { const todos = Array.from(document.querySelectorAll('#' + pref + '-lista [data-txt]')); vz.hidden = !todos.length || todos.some(x => !x.hidden); }
   }
@@ -3743,6 +3744,7 @@ tr.sub td:first-child { padding-left: 18px; }
     else if (k === 'aba' && TABS.some(t => t[0] === a)) alterna('abasOcultas', a, el.checked);
     else if (k === 'nomeConta' && CONTAS_APP.indexOf(a) >= 0) {
       const t = String(v || '').replace(/[\u0000-\u001F\u007F<>]/g, ' ').trim().slice(0, 30), outros = CONTAS_APP.filter(x => x !== a).map(x => nomeConta(x).toLowerCase()).concat(CONTAS_APP.filter(x => x !== a).map(x => x.toLowerCase()), E.contasExtra(S).map(c => c.nome.toLowerCase()));
+      if (t && CONTAS_APP.filter(x => x !== a).some(x => new RegExp('(^|[^\\wÀ-ÿ])' + x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![\\wÀ-ÿ])', 'i').test(t))) { aviso('O nome não pode conter o nome original de outra conta (' + CONTAS_APP.filter(x => x !== a).join(', ') + '). Ficou o nome anterior.'); renderKeep(); return; }
       if (outros.indexOf((t || a).toLowerCase()) >= 0) { aviso('Já há uma conta com esse nome. Ficou o nome anterior.'); renderKeep(); return; }
       uiSet(u => { u.nomesContas = Object.assign({}, u.nomesContas); if (t && t !== a) u.nomesContas[a] = t; else delete u.nomesContas[a]; });
     }
@@ -4202,6 +4204,7 @@ tr.sub td:first-child { padding-left: 18px; }
       v = v.replace(/[<>]/g, ' ').trim().slice(0, 40);
       const usados = CONTAS_APP.map(x => x.toLowerCase()).concat(CONTAS_APP.map(x => nomeConta(x).toLowerCase()), (S.contasExtra || []).filter((c, i) => c && i !== +mc[1]).map(c => String(c.nome || '').trim().toLowerCase()));
       if (!v) { aviso('A conta precisa de um nome. Ficou o nome anterior.'); renderKeep(); return; }
+      if (temNomeDeConta(v)) { aviso('O nome não pode conter o nome de uma das contas da app (Principal, Revolut, Cartão refeição). Ficou o nome anterior.'); renderKeep(); return; }
       if (usados.indexOf(v.toLowerCase()) >= 0) { aviso('Já há uma conta com esse nome. Ficou o nome anterior.'); renderKeep(); return; }
     }
     const mr = /^categorias\.(\d+)\.nome$/.exec(el.dataset.p), antigo = mr ? S.categorias[+mr[1]].nome : null;
