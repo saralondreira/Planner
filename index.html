@@ -668,6 +668,29 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
 
 .ritmo { display: block; margin-top: 4px; }
 
+/* Importar: grupos de movimentos */
+tr.grupo td { background: var(--accent-soft); }
+tr.sub td:first-child { padding-left: 18px; }
+.btn.mini { padding: 2px 8px; min-height: 0; font-size: 13px; }
+
+/* Personalização */
+:root[data-letra="pequena"] #main { zoom: .92; }
+:root[data-letra="grande"] #main { zoom: 1.1; }
+:root[data-letra="muito grande"] #main { zoom: 1.22; }
+:root[data-compacto] #main section.card { padding: 12px 14px; margin-bottom: 10px; }
+:root[data-compacto] #main .grid { gap: 8px; }
+.ui-abas-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.ui-abas { border: 1px solid var(--line, #ccc); border-radius: 10px; padding: 8px 12px; margin: 0; }
+.ui-abas legend { font-weight: 600; padding: 0 4px; }
+
+/* Objetivos: a etiqueta do ritmo fica do tamanho do texto */
+.pay .pt .chip, .ritmo-chip { align-self: flex-start; width: auto; justify-self: start; }
+
+/* Telemóvel: pesquisa, filtro e exportar ocupam a largura toda */
+@media (max-width: 600px) {
+  #g-busca, #r-busca, #g-filtro, #r-filtro, [data-act="exportar:g"], [data-act="exportar:r"] { max-width: none !important; width: 100%; flex: 1 1 100%; }
+}
+
 </style>
 </head>
 <body>
@@ -993,9 +1016,12 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
     });
     let q = num(pr.revolut), s = num(pr.revolut);
     const tl = taxaPoupanca(pr).tanl;   // juros da Revolut: sobre o saldo do mês anterior, enquanto for positivo
+    // outras contas poupança criadas pela pessoa: cada uma com o seu saldo, a sua taxa e o que lá põe por mês (sai da poupança principal)
+    const ex = contasPoupancaExtra(S).map(c => ({ nome: c.nome, b: num(c.saldo), tl: taxaPoupanca({ revolutTanb: c.tanb, revolutImposto: c.imposto }).tanl, ap: Math.max(0, num(c.aporte)), juros: 0 }));
     months.forEach(mo => {
       mo.saldo = mo.liq - (mo.X !== null && mo.contaX === 'Cartão refeição' ? mo.X : 0) + mo.G + mo.H + (mo.cartao === 'Não' ? mo.subs : 0) - mo.totalDesp;
-      mo.juros = q > 0 ? q * tl / 12 : 0; q += mo.saldo + mo.juros; mo.acum = q;
+      let apx = 0, bx = 0; ex.forEach(c => { const j = c.b > 0 ? c.b * c.tl / 12 : 0; c.b += c.ap + j; c.juros += j; apx += c.ap; bx += c.b; });
+      mo.juros = q > 0 ? q * tl / 12 : 0; q += mo.saldo + mo.juros - apx; mo.acum = q + bx; mo.contasExtra = ex.map(c => c.b);
       mo.jurosR = s > 0 ? s * tl / 12 : 0; s += num(mo.man.transf) + mo.jurosR; mo.revolutReal = s;
     });
 
@@ -1064,7 +1090,7 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
     return { cb, months, horas, extras: extrasRes, fases, tot, rotuloIni: fases[0].fase, rotuloFim: fases[fases.length - 1].fase, cenarios, propostas, contas, minPrincipal, deslocMes: deslocMes(num(pI.km), num(pI.portagens)),
       fixasMensal, fixasPorConta, fixasPorCat, fixasSoMensais: S.fixas.reduce((a, f) => a + (f.period === 'Mensal' && f.ativa !== 'Não' ? num(f.valor) : 0), 0),
       fixasAnuais: S.fixas.reduce((a, f) => a + (f.period === 'Anual' && f.ativa !== 'Não' ? num(f.valor) : 0), 0),
-      reservaMin, poupancaLivre: Math.max(0, months[N - 1].acum - reservaMin), objetivos, necessarioMes, cabe: tot.media >= necessarioMes, poupancaPrevista: months[N - 1].acum, horizonte: N, poupancaReal: num(pr.revolut) + months.reduce((a, x) => a + num(x.man.transf), 0) };
+      contasExtra: contasPoupancaExtra(S).map((c, i) => ({ nome: c.nome, fim: months.length ? months[N - 1].contasExtra[i] : num(c.saldo), aporte: Math.max(0, num(c.aporte)) })), reservaMin, poupancaLivre: Math.max(0, months[N - 1].acum - reservaMin), objetivos, necessarioMes, cabe: tot.media >= necessarioMes, poupancaPrevista: months[N - 1].acum, horizonte: N, poupancaReal: num(pr.revolut) + months.reduce((a, x) => a + num(x.man.transf), 0) };
   }
 
   /* ---------- Feriados e pontes que se repetem; horas, banco de horas e férias ---------- */
@@ -1488,7 +1514,7 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
     const S2 = JSON.parse(JSON.stringify(S)); S2.press = Object.assign({}, S2.press, { horizonte: M });
     const R = calc(S2), pr = S.press || {};
     const gs = num(pr.prevSalario) / 100, gd = num(pr.prevDespesas) / 100, rp = (has(pr.prevPoupanca) ? num(pr.prevPoupanca) / 100 : taxaPoupanca(pr).tanl) / 12;
-    let acum = R.months.length ? R.months[0].acum - R.months[0].saldo - R.months[0].juros : 0, base = acum, entra = 0, sai = 0, juros = 0;
+    let acum = R.months.length ? num(pr.revolut) + contasPoupancaExtra(S).reduce((a, c) => a + num(c.saldo), 0) : 0, base = acum, entra = 0, sai = 0, juros = 0;
     const out = R.months.map((m, i) => {
       const ano = Math.floor(i / 12), fs = Math.pow(1 + gs, ano), fd = Math.pow(1 + gd, ano);
       const e = (m.saldo + m.totalDesp) * fs, s = m.totalDesp * fd, j = acum > 0 ? acum * rp : 0;
@@ -1530,7 +1556,7 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
       const g = grupos[k], saida = k[0] === 's', vals = g.map(m => Math.abs(m.valor)), md = med(vals);
       if (md < (saida ? 1 : 5)) return;
       const bons = g.filter(m => Math.abs(Math.abs(m.valor) - md) <= Math.max(0.5, 0.15 * md)), meses = new Set(bons.map(m => m.data.slice(0, 7)));
-      if (meses.size < 2) return;
+      if (meses.size < 2 || bons.length > meses.size) return;
       const nomes = {}; bons.forEach(m => { const n = String(m.desc || '').trim().slice(0, 60); nomes[n] = (nomes[n] || 0) + 1; });
       const nome = Object.keys(nomes).sort((a, b) => nomes[b] - nomes[a])[0] || '';
       const dia = Math.min(28, Math.max(1, Math.round(med(bons.map(m => +m.data.slice(8, 10))))));
@@ -1570,7 +1596,7 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
     return out;
   }
   function liquidezMes(S, R, ym, saldoIni) {
-    const key = mk(ym); if (!/^\d{4}-\d{2}$/.test(key) || parse(key).m < 1 || parse(key).m > 12) return { dias: [], temSalario: false, minimo: null };
+    const key = mk(ym); if (!/^\d{4}-\d{2}$/.test(key) || parse(key).m < 1 || parse(key).m > 12) return { dias: [], temSalario: false, salarioIncluido: false, minimo: null };
     const p = parse(key), de = key + '-01', ate = ymd(p.y, p.m, dim(p.y, p.m)), pr = S.press || {}, base = Object.assign({}, S, { fixas: S.fixas || [], gastos: S.gastos || [] });
     const movimentos = ocorrencias(base, de, ate).filter(o => o.estado !== 'saltado' && (!base.fixas[o.idx].conta || base.fixas[o.idx].conta === 'Principal')).map(o => ({ data: o.data, desc: base.fixas[o.idx].desc || 'Pagamento', valor: -o.valor }));
     (S.gastos || []).filter(g => !g.fixa && mk(g.data) === key && (!g.conta || g.conta === 'Principal')).forEach(g => movimentos.push({ data: g.data, desc: g.desc || 'Gasto', valor: -num(g.valor) }));
@@ -1579,10 +1605,12 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
     if (m && dia >= 1 && dia <= 31 && num(m.liq) > 0 && (!m.contaX || m.contaX === 'Principal')) movimentos.push({ data: ymd(p.y, p.m, Math.min(dim(p.y, p.m), Math.max(1, Math.round(dia)))), desc: 'Salário previsto', valor: num(m.liq) });
     const anterior = mk(addM(de, -1)), c = (S.contas || {})[anterior] || {};
     let saldo = saldoIni != null && isFinite(saldoIni) ? +saldoIni : has(c.principal) ? num(c.principal) : num(pr.saldoPrincipal);
+    const abre = saldo, salInc = movimentos.some(o => o.desc === 'Salário previsto');
     const dias = []; eachDay(de, ate, data => { const movs = movimentos.filter(o => o.data === data); saldo += movs.reduce((a, o) => a + o.valor, 0); dias.push({ d: parse(data).d, saldo, movs }); });
-    return { dias, temSalario: !!(m && dia >= 1 && dia <= 31), minimo: dias.reduce((a, d) => !a || d.saldo < a.saldo ? { d: d.d, saldo: d.saldo } : a, null) };
+    return { dias, temSalario: !!(m && dia >= 1 && dia <= 31), salarioIncluido: salInc, abertura: abre, minimo: dias.reduce((a, d) => !a || d.saldo < a.saldo ? { d: d.d, saldo: d.saldo } : a, abre < 0 ? { d: 0, saldo: abre } : null) };
   }
-  function subidasPreco(movs, S) {
+  function subidasPreco(movs, S, pct) {
+    const lim = 1 + Math.min(100, Math.max(0, pct == null || !isFinite(pct) ? 3 : +pct)) / 100;
     const grupos = {}, vistos = new Set();
     (movs || []).forEach(m => {
       if (!m || !/^\d{4}-\d{2}-\d{2}$/.test(String(m.data)) || num(m.valor) >= 0) return;
@@ -1596,21 +1624,112 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
       if (g.length < 2 || new Set(meses).size !== g.length) return;
       if (g.some((m, i) => i && (diffDays(g[i - 1].data, m.data) < 20 || diffDays(g[i - 1].data, m.data) > 45))) return;
       const ultimo = g[g.length - 1], vals = g.slice(0, -1).map(m => -num(m.valor)).sort((a, b) => a - b), h = vals.length >> 1, antes = vals.length % 2 ? vals[h] : (vals[h - 1] + vals[h]) / 2, agora = -num(ultimo.valor);
-      if (antes <= 0 || vals.some(v => Math.abs(v - antes) > Math.max(0.5, antes * 0.15)) || agora <= antes * 1.03) return;
+      if (antes <= 0 || vals.some(v => Math.abs(v - antes) > Math.max(0.5, antes * 0.15)) || agora <= antes * lim) return;
       const fixaIdx = ((S || {}).fixas || []).findIndex(f => f.ativa !== 'Não' && (!f.period || f.period === 'Mensal') && chaveDesc(f.desc) === k && (!ultimo.conta || !f.conta || ultimo.conta === f.conta));
       out.push({ nome: ultimo.desc, antes, agora, subidaPct: num((agora / antes - 1) * 100), fixaIdx });
     });
     return out;
   }
   function ritmoObjetivo(o, hojeFull, inicio) {
-    const valida = s => /^\d{4}-\d{2}-\d{2}$/.test(String(s)) && Number.isFinite(Date.parse(s));
+    const valida = s => { if (!/^\d{4}-\d{2}-\d{2}$/.test(String(s))) return false; const p = parse(s); return p.m >= 1 && p.m <= 12 && p.d >= 1 && p.d <= dim(p.y, p.m); };
     if (num(o.meta) <= 0 || !valida(o.data) || !valida(hojeFull)) return null;
     let de = valida(o.inicio) ? o.inicio : [inicio, o.criadoEm, o.dataEntrada].filter(valida).sort()[0];
     if (!de || de >= o.data) { const p = parse(o.data); de = ymd(p.y - 1, p.m, Math.min(p.d, dim(p.y - 1, p.m))); }
     const esperado = num(o.meta) * Math.max(0, Math.min(1, diffDays(de, hojeFull) / Math.max(1, diffDays(de, o.data)))), real = num(o.poupado), diff = real - esperado;
     return { esperado, real, diff, estado: Math.abs(diff) < 0.01 ? 'no ritmo' : diff > 0 ? 'adiantado' : 'atrasado' };
   }
-  root.PlannerEngine = { fechoMes, reservaAnuais, liquidezMes, subidasPreco, ritmoObjetivo, calc, previsao, semRendimento, taxaPoupanca, sugestoesExtrato, apoios, simularApoio, horizonte, abaixoDoMinimo, combustivel, addM, mk, num, has, parse, fixaEquiv, ocorrencias, periodoAt, salMinAno, ymd, pad, limiteMensal, orcMes, PERIODOS_ORC, irsRetencao, irsTaxa, irsAplicado, IRS_TABELA_I_2026, pascoa, feriadosNacionais, feriadosSet, expandir, expandirPontes, horaDe, horasDias, bancoHoras, saldoFerias, TIPOS_DIA, estudanteAtivo,
+
+  /* Grupos na importação: junta os movimentos do mesmo tipo (MB WAY, levantamentos, transferências) ou do mesmo comerciante (VENDING, LIDL...). */
+  const METODOS = [['m:mbway', 'MB WAY', /(^| )mb ?way( |$)/], ['m:lev', 'Levantamentos', /(^| )(levantamento|lev|atm|multibanco)( |$)/], ['m:trf', 'Transferências', /(^| )(trf|tfi|sepa|transf[a-z]*)( |$)/]];
+  function grupoDesc(desc) {
+    const nd = normalizaDesc(desc);
+    for (const [chave, nome, re] of METODOS) if (re.test(nd)) return { chave, nome };
+    const k = chaveDesc(desc);
+    if (k) return { chave: 'c:' + k, nome: k.charAt(0).toUpperCase() + k.slice(1) };
+    const d = nd.slice(0, 24) || 'sem descricao';
+    return { chave: 'd:' + d, nome: String(desc || 'Sem descrição').trim().slice(0, 40) || 'Sem descrição' };
+  }
+  function gruposMovimentos(movs) {
+    const g = {}, ordem = [];
+    (movs || []).forEach((m, i) => { const x = grupoDesc(m.desc); if (!g[x.chave]) { g[x.chave] = { chave: x.chave, nome: x.nome, idx: [], total: 0 }; ordem.push(x.chave); } g[x.chave].idx.push(i); g[x.chave].total += num(m.valor); });
+    return ordem.map(k => g[k]).sort((a, b) => b.idx.length - a.idx.length || Math.abs(b.total) - Math.abs(a.total));
+  }
+
+  /* Excel (.xlsx), lido no navegador sem bibliotecas: um .xlsx é um zip com XML. Devolve as linhas da primeira folha como texto, com as datas em AAAA-MM-DD. */
+  const XLSX_MAX = 30e6;
+  const u16 = (b, o) => b[o] | (b[o + 1] << 8), u32 = (b, o) => (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0;
+  async function inflar(dados) {
+    if (typeof DecompressionStream === 'undefined') throw new Error('sem-descompressao');
+    const rd = new Blob([dados]).stream().pipeThrough(new DecompressionStream('deflate-raw')).getReader(), partes = []; let tot = 0;
+    for (;;) { const { done, value } = await rd.read(); if (done) break; tot += value.length; if (tot > XLSX_MAX) { try { rd.cancel(); } catch (e) { } throw new Error('grande'); } partes.push(value); }
+    const out = new Uint8Array(tot); let o = 0; partes.forEach(p => { out.set(p, o); o += p.length; }); return out;
+  }
+  async function lerZip(b) {
+    let e = -1; for (let i = b.length - 22; i >= Math.max(0, b.length - 66000); i--) if (u32(b, i) === 0x06054b50) { e = i; break; }
+    if (e < 0) throw new Error('zip');
+    const n = Math.min(u16(b, e + 10), 2000); let p = u32(b, e + 16); const ent = {};
+    for (let k = 0; k < n && p + 46 <= b.length; k++) {
+      if (u32(b, p) !== 0x02014b50) break;
+      const met = u16(b, p + 10), csz = u32(b, p + 20), nl = u16(b, p + 28), el = u16(b, p + 30), cl = u16(b, p + 32), off = u32(b, p + 42);
+      const nome = new TextDecoder().decode(b.subarray(p + 46, p + 46 + nl)); ent[nome] = { met, csz, off }; p += 46 + nl + el + cl;
+    }
+    const ler = async nome => {
+      const x = ent[nome]; if (!x || x.off + 30 > b.length || u32(b, x.off) !== 0x04034b50) return null;
+      const ini = x.off + 30 + u16(b, x.off + 26) + u16(b, x.off + 28), d = b.subarray(ini, ini + x.csz);
+      const raw = x.met === 0 ? d : x.met === 8 ? await inflar(d) : null; return raw ? new TextDecoder('utf-8').decode(raw) : null;
+    };
+    return { nomes: Object.keys(ent), ler };
+  }
+  const xmlTxt = s => String(s).replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16))).replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(+d)).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
+  const textosT = x => { let t = '', m; const re = /<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/g; while ((m = re.exec(x))) t += xmlTxt(m[1]); return t; };
+  const attr = (tag, a) => { const m = new RegExp('\\s' + a + '="([^"]*)"').exec(tag); return m ? xmlTxt(m[1]) : null; };
+  const colNum = ref => { const m = /^([A-Z]+)/.exec(ref || ''); if (!m) return -1; let n = 0; for (const c of m[1]) n = n * 26 + c.charCodeAt(0) - 64; return n - 1; };
+  async function linhasDeXlsx(bytes) {
+    const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    if (b.length > 4 && u32(b, 0) === 0xe011cfd0) throw new Error('xls');   // .xls antigo (formato binário)
+    const z = await lerZip(b);
+    let folha = 'xl/worksheets/sheet1.xml';
+    const wb = await z.ler('xl/workbook.xml'), rels = await z.ler('xl/_rels/workbook.xml.rels');
+    if (wb && rels) { const s1 = /<sheet\s[^>]*>/.exec(wb), rid = s1 && (attr(s1[0], 'r:id') || attr(s1[0], 'id')); if (rid) { const re = new RegExp('<Relationship\\s[^>]*Id="' + rid.replace(/[^\w-]/g, '') + '"[^>]*>'), r = re.exec(rels), alvo = r && attr(r[0], 'Target'); if (alvo) folha = alvo.charAt(0) === '/' ? alvo.slice(1) : 'xl/' + alvo.replace(/^\.\//, ''); } }
+    if (z.nomes.indexOf(folha) < 0) folha = z.nomes.filter(n => /^xl\/worksheets\/[^/]+\.xml$/.test(n)).sort()[0];
+    const sx = folha && await z.ler(folha); if (!sx) throw new Error('folha');
+    const ssx = await z.ler('xl/sharedStrings.xml'), partilhados = [];
+    if (ssx) { let m; const re = /<si>([\s\S]*?)<\/si>/g; while ((m = re.exec(ssx))) partilhados.push(textosT(m[1])); }
+    const st = await z.ler('xl/styles.xml'), formatos = {}, estiloData = [];
+    if (st) {
+      let m; const rn = /<numFmt\s[^>]*>/g; while ((m = rn.exec(st))) formatos[attr(m[0], 'numFmtId')] = attr(m[0], 'formatCode') || '';
+      const cx = /<cellXfs[^>]*>([\s\S]*?)<\/cellXfs>/.exec(st);
+      if (cx) { const rx = /<xf\s[^>]*?\/?>/g; while ((m = rx.exec(cx[1]))) { const id = +attr(m[0], 'numFmtId'), cod = formatos[id]; estiloData.push((id >= 14 && id <= 17) || id === 22 || (cod != null && /[dy]/i.test(cod.replace(/"[^"]*"|\[[^\]]*\]|\\./g, '')))); } }
+    }
+    const d1904 = !!wb && /<workbookPr\b[^>]*\bdate1904="(1|true)"/i.test(wb), serialData = v => { const t = new Date(Date.UTC(d1904 ? 1904 : 1899, d1904 ? 0 : 11, d1904 ? 1 : 30) + Math.floor(v) * 86400000); return ymd(t.getUTCFullYear(), t.getUTCMonth() + 1, t.getUTCDate()); };
+    const rows = []; let m; const rr = /<row\b[^>]*>([\s\S]*?)<\/row>/g;
+    while ((m = rr.exec(sx))) {
+      if (rows.length >= 20000) throw new Error('linhas');
+      const row = []; let c; const rc = /<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g;
+      while ((c = rc.exec(m[1]))) {
+        const tag = '<c ' + c[1] + '>', dentro = c[2] || '', col = colNum(attr(tag, 'r')), t = attr(tag, 't'), sIdx = +(attr(tag, 's') || 0);
+        const vm = /<v>([\s\S]*?)<\/v>/.exec(dentro), v = vm ? xmlTxt(vm[1]) : '';
+        let val = '';
+        if (t === 's') val = partilhados[+v] || '';
+        else if (t === 'inlineStr') val = textosT(dentro);
+        else if (t === 'str' || t === 'e') val = v;
+        else if (t === 'b') val = v === '1' ? 'VERDADEIRO' : 'FALSO';
+        else if (v !== '' && isFinite(+v)) val = estiloData[sIdx] && +v > 1 && +v < 80000 ? serialData(+v) : String(Math.round(+v * 1e6) / 1e6);
+        else val = v;
+        const pos = col >= 0 ? col : row.length; if (pos > 200) continue; while (row.length < pos) row.push(''); row[pos] = String(val).replace(/[\r\n\t]+/g, ' ').trim();
+      }
+      if (row.some(x => x !== '')) rows.push(row);
+    }
+    return rows;
+  }
+  /* Contas que a pessoa cria além da principal e da Revolut. Só as de tipo Poupança entram na previsão (com saldo, taxa e transferência mensal). */
+  function contasExtra(S) {
+    const vistos = new Set(['principal', 'revolut', 'cartão refeição', 'cartao refeicao']);
+    return (S && Array.isArray(S.contasExtra) ? S.contasExtra : []).filter(c => c && typeof c === 'object').map(c => ({ nome: String(c.nome == null ? '' : c.nome).replace(/[\u0000-\u001F\u007F]/g, ' ').trim().slice(0, 40), tipo: c.tipo === 'À ordem' ? 'À ordem' : 'Poupança', saldo: num(c.saldo), tanb: c.tanb, imposto: c.imposto, aporte: num(c.aporte) }))
+      .filter(c => { const k = c.nome.toLowerCase(); if (!c.nome || vistos.has(k)) return false; vistos.add(k); return true; });
+  }
+  const contasPoupancaExtra = S => contasExtra(S).filter(c => c.tipo === 'Poupança');
+  root.PlannerEngine = { contasExtra, contasPoupancaExtra, grupoDesc, gruposMovimentos, linhasDeXlsx, fechoMes, reservaAnuais, liquidezMes, subidasPreco, ritmoObjetivo, calc, previsao, semRendimento, taxaPoupanca, sugestoesExtrato, apoios, simularApoio, horizonte, abaixoDoMinimo, combustivel, addM, mk, num, has, parse, fixaEquiv, ocorrencias, periodoAt, salMinAno, ymd, pad, limiteMensal, orcMes, PERIODOS_ORC, irsRetencao, irsTaxa, irsAplicado, IRS_TABELA_I_2026, pascoa, feriadosNacionais, feriadosSet, expandir, expandirPontes, horaDe, horasDias, bancoHoras, saldoFerias, TIPOS_DIA, estudanteAtivo,
     parseNumero, parseData, parseCSV, detectarColunas, movimentosDeCSV, movimentosDeTexto, movimentosDePdf, conferirSaldos, normalizaDesc, chaveDesc, categorizar, aprender, jaRegistado, duplicados };
   if (typeof module !== 'undefined') module.exports = root.PlannerEngine;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -1816,10 +1935,12 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
   const DEFAULTS = JSON.parse(document.getElementById('seed').textContent);
   const clone = o => JSON.parse(JSON.stringify(o));
   const MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  const LISTAS_BASE = { contas: ['Principal', 'Revolut', 'Cartão refeição'], tipos: ['Subsídio de férias', 'Subsídio de Natal', 'Prenda', 'Transferência recebida', 'Reembolso', 'Venda', 'Trabalho extra', 'Bolsa', 'Juros/Investimentos', 'Outro'], tipoContrato: ['Contrato', 'Estágio', 'Bolsa', 'Part-time', 'Outro'] };
+  const juntaLista = (base, extra) => { const out = base.slice(), v = new Set(base.map(x => x.toLowerCase())); (extra || []).forEach(x => { const t = String(x || '').trim().slice(0, 40); if (t && !v.has(t.toLowerCase())) { v.add(t.toLowerCase()); out.splice(out.length - 1, 0, t); } }); return out; };
   const LISTAS = {
-    contas: ['Principal', 'Revolut', 'Cartão refeição'],
-    tipos: ['Subsídio de férias', 'Subsídio de Natal', 'Prenda', 'Transferência recebida', 'Reembolso', 'Venda', 'Trabalho extra', 'Bolsa', 'Juros/Investimentos', 'Outro'],
-    irsModo: ['Automático', 'Manual'], tipoContrato: ['Contrato', 'Estágio', 'Bolsa', 'Part-time', 'Outro'],
+    get contas() { const b = LISTAS_BASE.contas.slice(); E.contasExtra(S).forEach(c => b.splice(b.length - 1, 0, c.nome)); return b; },
+    get tipos() { return juntaLista(LISTAS_BASE.tipos, uiCfg().tiposRend); },
+    irsModo: ['Automático', 'Manual'], get tipoContrato() { return juntaLista(LISTAS_BASE.tipoContrato, uiCfg().tiposPeriodo); },
     period: ['Semanal', 'Quinzenal', 'Mensal', 'Trimestral', 'Semestral', 'Anual'], periodoOrc: ['Diário', 'Semanal', 'Quinzenal', 'Mensal'], simnao: ['Sim', 'Não'], freq: ['Única', 'Mensal', 'Anual']
   };
   const TABS = [['inicio', 'Início'], ['apoios', 'Apoios'], ['sintese', 'Síntese e previsão', 'Poupança daqui a 1, 2, 3, 5 e 10 anos'], ['plano', 'Plano mensal'], ['sintese', 'Síntese e previsão'], ['rendimentos', 'Rendimentos'], ['despesas', 'Despesas'], ['importar', 'Importar'], ['orcamento', 'Orçamento'], ['recorrentes', 'Recorrentes'], ['horas', 'Horas'], ['calendario', 'Calendário'], ['combustivel', 'Combustível'], ['poupanca', 'Poupança e contas'], ['propostas', 'Propostas'], ['definicoes', 'Definições'], ['categorias', 'Categorias e ícones'], ['trabcfg', 'Regras do trabalho']];
@@ -1833,6 +1954,36 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
   /* Páginas que só se abrem pelo menu lateral (definições e regras da app, e o que se usa de vez em quando), com o título da secção do menu a que pertencem */
   const LATERAL = { importar: 'Dia a dia', categorias: 'Dia a dia', trabcfg: 'Trabalho', propostas: 'Planeamento', apoios: 'Planeamento', definicoes: 'Menu' };
   const ultimaAba = {};
+  /* Personalização: o que a pessoa escolhe mostrar, a ordem do Início, tipos próprios, alertas e aspeto. Guardado em S.ui (só existe depois de mudar alguma coisa). */
+  const BLOCOS_INICIO = [['lembretes', 'Lembretes', /<h2>Lembretes</], ['pode', 'Quanto posso gastar?', /Quanto posso gastar\?/], ['pagamentos', 'Próximos pagamentos', /<h2>Próximos pagamentos</], ['graficos', 'Gráficos', /<h2>Em gráficos</], ['poupanca', 'Poupança acumulada', /Poupança acumulada</]];
+  const listaTxt = (x, n) => (Array.isArray(x) ? x : []).map(v => String(v == null ? '' : v).replace(/[\u0000-\u001F\u007F]/g, ' ').trim().slice(0, 40)).filter(Boolean).slice(0, n || 30);
+  function uiCfg() {
+    const u = (S && S.ui && typeof S.ui === 'object') ? S.ui : {}, al = u.alertas || {}, as = u.aspeto || {};
+    const lim = (v, a, b, d) => { const n = parseFloat(v); return isFinite(n) ? Math.min(b, Math.max(a, n)) : d; };
+    return {
+      inicioOcultos: listaTxt(u.inicioOcultos), inicioOrdem: listaTxt(u.inicioOrdem), abasOcultas: listaTxt(u.abasOcultas), tiposPeriodo: listaTxt(u.tiposPeriodo), tiposRend: listaTxt(u.tiposRend),
+      alertas: { precoPct: lim(al.precoPct, 0, 100, 3), lembreteDias: Math.round(lim(al.lembreteDias, 1, 60, 7)), saldoMin: lim(al.saldoMin, -1e6, 1e6, 0) },
+      aspeto: { letra: ['pequena', 'normal', 'grande', 'muito grande'].indexOf(as.letra) >= 0 ? as.letra : 'normal', compacto: as.compacto === true, cor: /^#[0-9a-f]{6}$/i.test(String(as.cor || '')) ? as.cor : '' }
+    };
+  }
+  const CONTAS_APP = ['Principal', 'Revolut', 'Cartão refeição'];
+  function nomesContas() { const n = (S && S.ui && S.ui.nomesContas && typeof S.ui.nomesContas === 'object') ? S.ui.nomesContas : {}, out = {}; CONTAS_APP.forEach(k => { const v = String(n[k] == null ? '' : n[k]).replace(/[\u0000-\u001F\u007F<>]/g, ' ').trim().slice(0, 30); if (v && v !== k) out[k] = v; }); return out; }
+  const nomeConta = c => nomesContas()[c] || c;
+  // troca os nomes das contas da app pelos que a pessoa escolheu, só no texto visível (os valores guardados continuam os mesmos)
+  function renomeiaContas(html) {
+    const n = nomesContas(), ks = Object.keys(n); if (!ks.length) return html;
+    const re = new RegExp('(^|[^\\wÀ-ÿ])(' + ks.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')(?![\\wÀ-ÿ])', 'g');
+    const troca = t => t.replace(re, (m, a, k) => a + esc(n[k]));
+    return html.replace(/(<[^>]*>)([^<]+)(?=<)/g, (m, tag, t) => /^<option\b/i.test(tag) && !/\svalue=/i.test(tag) ? m : tag + troca(t)).replace(/(aria-label|title|placeholder)="([^"]*)"/g, (m, a, t) => a + '="' + troca(t) + '"');
+  }
+  function uiSet(f) { const antes = JSON.stringify(S.ui || null); if (!S.ui || typeof S.ui !== 'object') S.ui = {}; f(S.ui); if (JSON.stringify(S.ui) !== antes) queueSave(); }
+  function aplicaAspeto() {
+    const a = uiCfg().aspeto, d = document.documentElement; if (!d || !d.setAttribute) return;
+    if (a.letra !== 'normal') d.setAttribute('data-letra', a.letra); else if (d.removeAttribute) d.removeAttribute('data-letra');
+    if (a.compacto) d.setAttribute('data-compacto', '1'); else if (d.removeAttribute) d.removeAttribute('data-compacto');
+    if (d.style && d.style.setProperty) { if (a.cor) { d.style.setProperty('--accent', a.cor); d.style.setProperty('--accent-soft', a.cor + '22'); } else if (d.style.removeProperty) { d.style.removeProperty('--accent'); d.style.removeProperty('--accent-soft'); } }
+  }
+  const gruposVisiveis = () => { const oc = uiCfg().abasOcultas; return GRUPOS.map(g => [g[0], g[1], g[2].filter(t => oc.indexOf(t) < 0)]).filter(g => g[2].length); };
 
   let S = clone(DEFAULTS), R, AP, tab = 'inicio', gastoMes = '', orcSel = '';
   let hoje = new Date(), hojeYm = hoje.getFullYear() + '-' + E.pad(hoje.getMonth() + 1);
@@ -1993,7 +2144,7 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
     if (nome === 'poup-contas') {   // saldos reais no fim de cada mês
       const d = contasDados; if (!d) return null;
       return { type: 'bar', data: { labels: d.labels, datasets: [
-        { label: 'Principal', data: d.p, backgroundColor: DOCES[4], borderRadius: 4 }, { label: 'Revolut', data: d.r, backgroundColor: DOCES[0], borderRadius: 4 }, { label: 'Cartão refeição', data: d.c, backgroundColor: DOCES[3], borderRadius: 4 }] },
+        { label: nomeConta('Principal'), data: d.p, backgroundColor: DOCES[4], borderRadius: 4 }, { label: nomeConta('Revolut'), data: d.r, backgroundColor: DOCES[0], borderRadius: 4 }, { label: 'Cartão refeição', data: d.c, backgroundColor: DOCES[3], borderRadius: 4 }] },
         options: Object.assign({}, base, { plugins: { legend: { labels: { color: mu } }, tooltip: { callbacks: { label: c => ' ' + c.dataset.label + ': ' + eur(c.parsed.y) } } }, scales: { x: Object.assign({}, escalaX, { stacked: true }), y: Object.assign({}, eixoV(d.p.concat(d.r, d.c), 500), { stacked: true }) } }) };
     }
     if (nome === 'prop-sobra') {   // quanto sobra por mês em cada proposta
@@ -2369,7 +2520,7 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
       '<div class="row sh-topo"><h2>' + esc(o.nome || 'Novo objetivo') + '</h2><button class="x" data-act="obj-fechar" aria-label="Fechar">×</button></div>' +
       '<div class="fx-topo"><span class="ico" style="--c:#F48FB1" aria-hidden="true">🎯</span>' + field('Nome', inp(b + 'nome', { t: 'text', aria: 'Objetivo', ph: 'ex.: carta de condução' })) + '</div>' +
       '<div class="fields fx-campos">' + field('Meta (€)', inp(b + 'meta', { aria: 'Meta' })) + field('Já poupado (€)', inp(b + 'poupado', { aria: 'Já poupado' })) +
-      field('Data alvo', inp(b + 'data', { t: 'date', aria: 'Data alvo' }), 'Opcional') + field('Começou a poupar em', inp(b + 'inicio', { t: 'date', aria: 'Data em que começou a poupar' }), 'Opcional. Serve para ver se está no ritmo.') + field('Conta', inp(b + 'conta', { t: 'sel', list: LISTAS.contas, aria: 'Conta' })) + '</div>' +
+      field('Data alvo', inp(b + 'data', { t: 'date', aria: 'Data alvo' }), 'Opcional') + field('Começou a poupar em', inp(b + 'inicio', { t: 'date', aria: 'Data em que começou a poupar' }), 'Opcional. Serve para ver se está no ritmo.') + field('Conta', inp(b + 'conta', { t: 'sel', list: LISTAS.contas, aria: 'Conta' })) + field('Prioridade', inp(b + 'prioridade', { t: 'sel', list: ['Alta', 'Média', 'Baixa'], blank: true, aria: 'Prioridade' }), 'Os de prioridade alta aparecem primeiro.') + '</div>' +
       '<div class="bar ' + (pc >= 100 ? 'ok' : '') + '" role="progressbar" aria-label="Progresso" aria-valuenow="' + pc + '" aria-valuemin="0" aria-valuemax="100" style="margin-top:12px"><i style="width:' + pc + '%"></i></div><p class="note" style="margin-top:8px">' + pc + ' % poupado. ' + resumo + '</p>' +
       ritmoHtml(o) + '<div class="field"><label for="somar-' + i + '">Registar poupança</label><div class="comb"><input type="number" step="any" inputmode="decimal" id="somar-' + i + '" placeholder="€" aria-label="Valor a somar a ' + esc(o.nome || 'objetivo') + '"><button type="button" class="btn" data-act="somar:' + i + '">Somar</button></div><span class="hint">Soma ao que já poupou.</span></div>' +
       '<div class="row sh-fim"><button type="button" class="btn danger" data-act="del:objetivos:' + i + '">Apagar</button><button type="button" class="btn pri" data-act="obj-ok">Feito</button></div></div></div>';
@@ -2410,7 +2561,7 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
     o = o || {}; const v = getP(p); const t = o.t || 'num';
     const ph = o.ph != null ? ' placeholder="' + esc(o.ph) + '"' : '';
     const extra = (o.cls ? ' class="' + o.cls + '"' : '') + (o.id ? ' id="' + o.id + '"' : '') + (o.aria ? ' aria-label="' + esc(o.aria) + '"' : '');
-    if (t === 'sel') return '<select data-p="' + p + '" data-t="sel"' + extra + '>' + (o.blank ? '<option value=""></option>' : '') + o.list.map(x => '<option' + (x === v ? ' selected' : '') + '>' + esc(x) + '</option>').join('') + '</select>';
+    if (t === 'sel') return '<select data-p="' + p + '" data-t="sel"' + extra + '>' + (o.blank ? '<option value=""></option>' : '') + o.list.map(x => '<option' + (CONTAS_APP.indexOf(x) >= 0 ? ' value="' + esc(x) + '"' : '') + (x === v ? ' selected' : '') + '>' + esc(x) + '</option>').join('') + '</select>';
     if (t === 'chk') return '<input type="checkbox" data-p="' + p + '" data-t="chk"' + (v ? ' checked' : '') + extra + '>';
     if (t === 'text') return '<input type="text" data-p="' + p + '" data-t="text" maxlength="' + (o.max || 200) + '" value="' + esc(v) + '"' + ph + extra + '>';
     if (t === 'color') return '<input type="color" data-p="' + p + '" data-t="text" value="' + esc(corOk(v)) + '"' + extra + '>';
@@ -2444,15 +2595,17 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
   const seg = (id, atual) => '<input type="hidden" id="' + id + '" value="' + esc(atual) + '"><div class="seg" role="group" aria-label="' + esc(SEG_ROT[id] || '') + '">' + SEGS[id].map((x, i) => '<button type="button" data-act="seg:' + id + ':' + i + '" aria-pressed="' + (x === atual) + '">' + esc(x) + '</button>').join('') + '</div>';
   let filtroAtual = { g: '', r: '' }, filtroNomes = { g: [], r: [] };
   const SEM = '__sem';
-  function filtroSelect(pref, itens, todos) {   // itens: [[nome, total]]
-    const valor = nome => (nome === 'Sem categoria' || nome === 'Sem tipo') ? SEM : nome;
-    if (filtroAtual[pref] && !itens.some(x => valor(x[0]) === filtroAtual[pref])) filtroAtual[pref] = '';
+  function filtroSelect(pref, itens, todos, contas) {   // itens: [[nome, total]]; contas (opcional): [[conta, total]], só aparecem com 2 ou mais
+    const valor = nome => (nome === 'Sem categoria' || nome === 'Sem tipo') ? SEM : nome, cs = (contas || []).filter(x => x[0]), comContas = cs.length > 1;
+    if (filtroAtual[pref] && !itens.some(x => valor(x[0]) === filtroAtual[pref]) && !(comContas && cs.some(x => 'conta:' + x[0] === filtroAtual[pref]))) filtroAtual[pref] = '';
+    const op = (v, t, tot) => '<option value="' + esc(v) + '"' + (v === filtroAtual[pref] ? ' selected' : '') + '>' + esc(t) + ' · ' + eur(tot, 0) + '</option>';
+    const cats = itens.map(x => op(valor(x[0]), x[0], x[1])).join('');
     return '<select id="' + pref + '-filtro" data-filtro="' + pref + '" aria-label="Filtrar a lista"><option value="">' + todos + '</option>' +
-      itens.map(x => '<option value="' + esc(valor(x[0])) + '"' + (valor(x[0]) === filtroAtual[pref] ? ' selected' : '') + '>' + esc(x[0]) + ' · ' + eur(x[1], 0) + '</option>').join('') + '</select>';
+      (comContas ? '<optgroup label="' + (pref === 'g' ? 'Categoria' : 'Tipo') + '">' + cats + '</optgroup><optgroup label="Conta">' + cs.map(x => op('conta:' + x[0], nomeConta(x[0]), x[1])).join('') + '</optgroup>' : cats) + '</select>';
   }
   function filtraLista(pref) {
     const q = ((document.getElementById(pref + '-busca') || {}).value || '').trim().toLowerCase(), cat = (document.getElementById(pref + '-filtro') || {}).value || '';
-    document.querySelectorAll('#' + pref + '-lista [data-txt]').forEach(tr => { tr.hidden = !((!q || tr.dataset.txt.indexOf(q) >= 0) && (!cat || (cat === SEM ? tr.dataset.cat === '' : tr.dataset.cat === cat))); });
+    document.querySelectorAll('#' + pref + '-lista [data-txt]').forEach(tr => { tr.hidden = !((!q || tr.dataset.txt.indexOf(q) >= 0) && (!cat || (cat.indexOf('conta:') === 0 ? (tr.dataset.conta || '') === cat.slice(6) : cat === SEM ? tr.dataset.cat === '' : tr.dataset.cat === cat))); });
     const vz = document.getElementById(pref + '-vazio');   // aviso quando a pesquisa não encontra nada (só nas listas de cartões)
     if (vz) { const todos = Array.from(document.querySelectorAll('#' + pref + '-lista [data-txt]')); vz.hidden = !todos.length || todos.some(x => !x.hidden); }
   }
@@ -2569,17 +2722,24 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
     return '<section class="card sec"><h2>🗂️ Cópia em ficheiro</h2><p class="note">' + (dc == null ? 'Ainda não guardou nenhuma cópia em ficheiro.' : 'A última cópia em ficheiro foi há ' + dc + ' dias.') + ' Guarde uma no iCloud Drive ou no OneDrive: fica fora do Claude e protege-o de qualquer imprevisto.</p><div class="row"><button type="button" class="btn" data-act="export">Guardar cópia agora</button><button type="button" class="btn" data-act="ir:definicoes:def-sincronizacao">Sincronização e cópias</button></div></section>';
   }
   function lembretesHtml() {
-    const hi = hojeIso(), pagamentos = E.ocorrencias(S, hojeYm + '-01', addDiasIso(hi, 7)).filter(o => o.estado === 'pendente');
+    const hi = hojeIso(), dl = uiCfg().alertas.lembreteDias, pagamentos = E.ocorrencias(S, addDiasIso(hi, -20), addDiasIso(hi, dl)).filter(o => o.estado === 'pendente');
     const mo = R.months.find(m => m.key === hojeYm), falta = mo && num(mo.man.transf) <= 0 && mo.saldo > 0;
     if (!pagamentos.length && !falta) return '';
     const atras = pagamentos.filter(o => o.data < hi), prox = pagamentos.filter(o => o.data >= hi);
-    return '<section class="card"><h2>Lembretes</h2>' + (atras.length ? '<p class="neg-v">' + (atras.length === 1 ? 'Tem 1 pagamento em atraso' : 'Tem ' + atras.length + ' pagamentos em atraso') + ' este mês (' + eur(atras.reduce((x, o) => x + o.valor, 0)) + '): ' + esc(atras.slice(0, 3).map(o => (S.fixas[o.idx] || {}).desc || 'Sem nome').join(', ')) + (atras.length > 3 ? '…' : '') + '.</p>' : '') + (prox.length ? '<p>' + (prox.length === 1 ? '1 pagamento vence' : prox.length + ' pagamentos vencem') + ' nos próximos 7 dias (' + eur(prox.reduce((x, o) => x + o.valor, 0)) + ').</p>' : '') + (pagamentos.length ? '<button type="button" class="btn" data-act="ir:recorrentes">Ver os pagamentos</button>' : '') +
+    return '<section class="card"><h2>Lembretes</h2>' + (atras.length ? '<p class="neg-v">' + (atras.length === 1 ? 'Tem 1 pagamento em atraso' : 'Tem ' + atras.length + ' pagamentos em atraso') + ' (' + eur(atras.reduce((x, o) => x + o.valor, 0)) + '): ' + esc(atras.slice(0, 3).map(o => (S.fixas[o.idx] || {}).desc || 'Sem nome').join(', ')) + (atras.length > 3 ? '…' : '') + '.</p>' : '') + (prox.length ? '<p>' + (prox.length === 1 ? '1 pagamento vence' : prox.length + ' pagamentos vencem') + ' nos próximos ' + dl + (dl === 1 ? ' dia' : ' dias') + ' (' + eur(prox.reduce((x, o) => x + o.valor, 0)) + ').</p>' : '') + (pagamentos.length ? '<button type="button" class="btn" data-act="ir:recorrentes">Ver os pagamentos</button>' : '') +
       (falta ? '<p>Você ainda não registou a transferência para a poupança de ' + esc(mesLongo(mo.ym)) + '. O saldo previsto disponível é ' + eur(mo.saldo) + '.</p><button type="button" class="btn" data-act="plano-mes:' + esc(mo.key) + '">Registar transferência</button>' : '') + '</section>';
   }
   function tabInicio() {
+    const html = tabInicioBase(), cfg = uiCfg(), partes = html.split(/(?=<section)/), topo = [], blocos = [], fim = [];
+    partes.forEach((p, i) => { const b = i === 0 ? null : BLOCOS_INICIO.find(x => x[2].test(p)); if (i === 0 || (!b && !blocos.length)) topo.push(p); else if (b) blocos.push([b[0], p]); else fim.push(p); });
+    const ord = k => { const i = cfg.inicioOrdem.indexOf(k); return i < 0 ? 100 + BLOCOS_INICIO.findIndex(x => x[0] === k) : i; };
+    return topo.join('') + blocos.filter(b => cfg.inicioOcultos.indexOf(b[0]) < 0).sort((a, b) => ord(a[0]) - ord(b[0])).map(b => b[1]).join('') + fim.join('');
+  }
+  function tabInicioBase() {
     const a = AP, mesAtual = R.months.find(m => m.key === hojeYm) || R.months[0];
     const k = (l, v, s, extra, go) => '<div class="kpi' + (go ? ' go' : '') + '"' + (go ? ' data-act="ir:' + go + '" role="link" tabindex="0" title="Abrir"' : '') + '><div class="l">' + l + '</div><div class="v' + (extra || '') + '">' + v + '</div><div class="s">' + s + '</div></div>';
-    const contaUlt = R.contas.slice().reverse().find(c => c.E !== null);
+    const contaUlt = R.contas.slice().reverse().find(c => c.E !== null), ce = E.contasExtra(S), nExtra = ce.length;
+    const dinheiroContas = (contaUlt ? contaUlt.E : num(S.press.saldoPrincipal) + num(S.press.revolut)) + ce.reduce((a, c) => a + num(c.saldo), 0);
     const chip = S.apoios.tarifaSocial ? '<span class="chip good">Tarifa social</span>' : a.pendente ? '<span class="chip">Por completar</span>' : a.ok ? '<span class="chip good">Dentro do limite</span>' : '<span class="chip">Acima do limite</span>';   // no painel principal nunca há alertas
     const prox = E.ocorrencias(S, addDiasIso(hojeIso(), -20), addDiasIso(hojeIso(), 30)).filter(o => o.estado === 'pendente');
     const carro = (t, titulo, emoji) => {
@@ -2588,8 +2748,8 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
         '<div class="chartbox on pizza" data-chart="ini-' + (t === 'd' ? 'despesas' : 'receitas') + '" role="img" aria-label="' + titulo + ', ' + pr[1].toLowerCase() + '"></div>' +
         '<p class="note center">' + esc(d.nota) + ' · total ' + eur(tot, 0) + '</p>' + listaGraf('ini-' + (t === 'd' ? 'despesas' : 'receitas')) + '<div class="dots" aria-hidden="true">' + PER_INI.map((x, i) => '<i' + (i === iniPer[t] ? ' class="on"' : '') + '></i>').join('') + '</div></div>';
     };
-    const kRend = k('Rendimento de ' + S.apoios.ano + ' (com previsão)', eur(a.totalLedger, 0), 'Recebido até hoje: ' + eur(a.recebidoAteHoje, 0), '', 'apoios'), kApoio = k('Apoio carro elétrico (Fundo Ambiental)', chip, a.pendente ? 'Adicione os membros do agregado' : a.rotulo + ': ' + eur(a.valor, 0) + ' · limite ' + eur(num(S.apoios.limite), 0), '', 'apoios'), kSaldo = k('Saldo do mês (' + mesTxt(mesAtual.ym) + ')', eur(mesAtual.saldo), 'Receitas menos despesas previstas', cls(mesAtual.saldo), 'plano'), kConta = k('Dinheiro em contas', eur(contaUlt ? contaUlt.E : num(S.press.saldoPrincipal) + num(S.press.revolut)), contaUlt ? 'Último saldo registado (' + mesTxt(contaUlt.ym) + ')' : 'Saldo inicial: principal + Revolut', cls(contaUlt ? contaUlt.E : num(S.press.saldoPrincipal) + num(S.press.revolut)), 'poupanca'), kMin = k('Mínimo a manter na principal', eur(R.minPrincipal), 'Despesas fixas + deslocações do mês', '', 'poupanca'), kOrc = (mesAtual.orc.totalLimite > 0 ? k('Orçamento de ' + mesTxt(mesAtual.ym), eur(mesAtual.orc.totalGasto, 0) + ' / ' + eur(mesAtual.orc.totalLimite, 0), mesAtual.orc.totalGasto > mesAtual.orc.totalLimite ? 'Acima do limite total' : 'Gasto face ao limite, em categorias com limite', mesAtual.orc.totalGasto > mesAtual.orc.totalLimite ? ' neg-v' : '', 'orcamento') : k('Orçamento do mês', 'Por definir', 'Defina os limites no separador Orçamento', '', 'orcamento'));
-    return '<section><h2>Visão geral</h2><p class="lead resumo">' + esc(resumoInicio(mesAtual, prox)) + ' Os números principais estão em baixo; edite os valores nos outros separadores e tudo atualiza.</p>' +
+    const kRend = k('Rendimento de ' + S.apoios.ano + ' (com previsão)', eur(a.totalLedger, 0), 'Recebido até hoje: ' + eur(a.recebidoAteHoje, 0), '', 'apoios'), kApoio = k('Apoio carro elétrico (Fundo Ambiental)', chip, a.pendente ? 'Adicione os membros do agregado' : a.rotulo + ': ' + eur(a.valor, 0) + ' · limite ' + eur(num(S.apoios.limite), 0), '', 'apoios'), kSaldo = k('Saldo do mês (' + mesTxt(mesAtual.ym) + ')', eur(mesAtual.saldo), 'Receitas menos despesas previstas', cls(mesAtual.saldo), 'plano'), kConta = k('Dinheiro em contas', eur(dinheiroContas), (contaUlt ? 'Último saldo registado (' + mesTxt(contaUlt.ym) + ')' : 'Saldo inicial: principal + Revolut') + (nExtra ? ' + ' + nExtra + (nExtra === 1 ? ' outra conta' : ' outras contas') : ''), cls(dinheiroContas), 'poupanca'), kMin = k('Mínimo a manter na principal', eur(R.minPrincipal), 'Despesas fixas + deslocações do mês', '', 'poupanca'), kOrc = (mesAtual.orc.totalLimite > 0 ? k('Orçamento de ' + mesTxt(mesAtual.ym), eur(mesAtual.orc.totalGasto, 0) + ' / ' + eur(mesAtual.orc.totalLimite, 0), mesAtual.orc.totalGasto > mesAtual.orc.totalLimite ? 'Acima do limite total' : 'Gasto face ao limite, em categorias com limite', mesAtual.orc.totalGasto > mesAtual.orc.totalLimite ? ' neg-v' : '', 'orcamento') : k('Orçamento do mês', 'Por definir', 'Defina os limites no separador Orçamento', '', 'orcamento'));
+    return '<section><h2>Visão geral</h2><p class="lead resumo">' + esc(resumoInicio(mesAtual, prox)) + '</p>' +
       '<div class="grid">' + kSaldo + kConta + kOrc + '</div>' +
       '<details class="ajuda"><summary>Mais indicadores</summary><div class="grid" style="margin-top:10px">' + kRend + kApoio + kMin + '</div></details></section>' +
       primeiraVezHtml() + lembretesHtml() + podeHtml(mesAtual) +
@@ -2709,6 +2869,15 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
       return '<p>' + esc(mesLongo(x.ym + '-01') + ' · ' + (tem ? 'Despesas: ' + (dif > 0 ? '+' : '') + eur(dif) + ' face ao previsto' + (num(x.previstoDesp) ? ' (' + pctTxt(dif / Math.abs(num(x.previstoDesp))) + ')' : '') : 'sem dados reais ou previsão') + (x.contasReal != null && x.contasPrev != null ? ' · Contas: ' + (num(x.contasReal) - num(x.contasPrev) > 0 ? '+' : '') + eur(num(x.contasReal) - num(x.contasPrev)) + ' face ao previsto' : '') + (x.nota ? ' · ' + x.nota : '')) + '</p>';
     }).join('') : '<p class="note">Ainda não há fechos guardados.</p>') + '</section>';
   }
+  function contasExtraHtml() {
+    const L = Array.isArray(S.contasExtra) ? S.contasExtra : [], fins = R.contasExtra || [];
+    const linhas = L.map((c, i) => { const b = 'contasExtra.' + i + '.', poup = (c && c.tipo) !== 'À ordem', f = fins.find(x => x.nome === String((c && c.nome) || '').trim());
+      return '<tr><td class="l">' + inp(b + 'nome', { t: 'text', aria: 'Nome da conta' }) + '</td><td>' + inp(b + 'tipo', { t: 'sel', list: ['Poupança', 'À ordem'], aria: 'Tipo de conta' }) + '</td><td>' + inp(b + 'saldo', { aria: 'Saldo atual' }) + '</td>' +
+        '<td>' + (poup ? inp(b + 'tanb', { ph: '0', aria: 'TANB (%)' }) : '—') + '</td><td>' + (poup ? inp(b + 'aporte', { ph: '0', aria: 'Transferência mensal' }) : '—') + '</td><td class="' + (f ? cls(f.fim) : '') + '">' + (poup && f ? eur(f.fim, 0) : '—') + '</td><td>' + delBtn('contasExtra', i) + '</td></tr>'; }).join('');
+    return '<section class="card"><h2>As suas contas</h2><p class="lead">Além da conta principal e da Revolut, crie as contas que tem: outras poupanças (depósitos a prazo, certificados, conta do banco…) ou contas à ordem. As de poupança entram na previsão com a taxa e a transferência mensal de cada uma (o que transfere sai da poupança principal). Os nomes aparecem nas listas de contas da app.</p>' +
+      (L.length ? '<div class="tablewrap"><table><thead><tr><th class="l">Nome</th><th>Tipo</th><th>Saldo atual (€)</th><th>TANB (%)</th><th>Por mês (€)</th><th>No fim do plano</th><th></th></tr></thead><tbody>' + linhas + '</tbody></table></div>' : '<p class="note">Ainda não criou outras contas.</p>') +
+      '<div style="margin-top:12px">' + addBtn('contasExtra', 'Nova conta') + '</div></section>';
+  }
   function reservaHtml() {
     const r = E.reservaAnuais(S, { hoje: hojeIso() }), ult = R.contas.filter(c => c.key < hojeYm && E.has(c.c.revolut)).pop(), poupado = ult ? num(ult.c.revolut) : num(S.press.revolut);
     return '<section class="card"><h2>Reserva para despesas anuais</h2>' + (r.totalAno > 0 ? '<div class="grid">' + kpi('A reservar por mês', esc(eur(r.porMes)), '') + kpi('Próximos 12 meses', esc(eur(r.totalAno)), '') + '</div><p class="note">' + esc('Você tem ' + eur(poupado) + ' na última poupança registada' + (R.reservaMin > 0 ? ', dos quais ' + eur(Math.max(0, poupado - R.reservaMin)) + ' acima da reserva mínima protegida' : '') + ': ' + (Math.max(0, poupado - R.reservaMin) >= r.totalAno ? 'cobre' : 'não cobre') + ' estas despesas dos próximos 12 meses.') + '</p><p class="note">Estas despesas já estão no plano e na previsão nos meses em que vencem, por isso não são descontadas outra vez dos objetivos.' + '</p>' + r.proximos.slice(0, 8).map(o => '<p>' + esc(dataPt(o.mes) + ' · ' + o.desc + ' · ' + eur(o.valor)) + '</p>').join('') : '<p class="note">Ainda não há despesas não mensais com vencimento definido nos próximos 12 meses.</p>') + '</section>';
@@ -2718,14 +2887,14 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
     const ms = R.months.filter(m => m.key >= hojeYm).slice(0, 12).map(m => m.key), sel = ms.indexOf(liqMes) >= 0 ? liqMes : (ms[0] || hojeYm);
     let r = null, ini = null; ms.slice(0, ms.indexOf(sel) + 1).forEach(k => { r = E.liquidezMes(S, R, k, ini); if (r.dias.length) ini = r.dias[r.dias.length - 1].saldo; }); if (!r) r = E.liquidezMes(S, R, sel);
     const rows = r.dias.filter(d => d.movs.length);
-    return '<section class="card"><h2>Calendário de liquidez</h2>' + (ms.length > 1 ? '<div class="field"><label for="liq-mes">Mês</label><select id="liq-mes" data-local="liqMes">' + ms.map(k => '<option value="' + esc(k) + '"' + (k === sel ? ' selected' : '') + '>' + esc(mesLongo(k + '-01')) + '</option>').join('') + '</select></div>' : '<p>' + esc(mesLongo(sel + '-01')) + '</p>') + (rows.length ? kpi('Menor saldo diário', esc(eur(r.minimo.saldo)), esc('Dia ' + r.minimo.d), cls(r.minimo.saldo)) + (!r.temSalario ? '<p class="note">O salário não está incluído porque falta o dia em que o recebe. Escreva-o em <a href="#" data-act="ir:definicoes:def-pressupostos">Definições, Pressupostos</a>.</p>' : r.minimo.saldo < 0 ? '<p class="neg-v">Você tem dias com saldo previsto abaixo de zero.</p>' : '') + '<div class="tablewrap"><table class="mini"><thead><tr><th>Dia</th><th class="l">Movimentos</th><th>Saldo</th></tr></thead><tbody>' + rows.map(d => '<tr><td>' + esc(d.d) + '</td><td class="l">' + esc(d.movs.map(m => m.desc + ' ' + eur(m.valor)).join(' · ')) + '</td><td class="' + cls(d.saldo) + '">' + esc(eur(d.saldo)) + '</td></tr>').join('') + '</tbody></table></div><p class="note">Estimativa da conta principal: parte do saldo real do mês anterior ou do saldo inicial; nos meses seguintes parte do fim do mês anterior previsto. Inclui apenas movimentos com data; o salário exige um dia de pagamento definido. Não inclui despesas sem dia nem transferências previstas.</p>' : '<p class="note">Ainda não há movimentos com data para estimar a liquidez deste mês.</p>') + '</section>';
+    return '<section class="card"><h2>Calendário de liquidez</h2>' + (ms.length > 1 ? '<div class="field"><label for="liq-mes">Mês</label><select id="liq-mes" data-local="liqMes">' + ms.map(k => '<option value="' + esc(k) + '"' + (k === sel ? ' selected' : '') + '>' + esc(mesLongo(k + '-01')) + '</option>').join('') + '</select></div>' : '<p>' + esc(mesLongo(sel + '-01')) + '</p>') + (rows.length ? kpi('Menor saldo diário', esc(eur(r.minimo.saldo)), esc(r.minimo.d ? 'Dia ' + r.minimo.d : 'Saldo de abertura'), cls(r.minimo.saldo)) + (!r.temSalario ? '<p class="note">O salário não está incluído porque falta o dia em que o recebe. Escreva-o em <a href="#" data-act="ir:definicoes:def-pressupostos">Definições, Pressupostos</a>.</p>' : !r.salarioIncluido ? '<p class="note">O salário não está incluído neste mês: o líquido previsto é zero ou vai para outra conta que não a principal.</p>' : '') + (r.minimo.saldo < 0 ? '<p class="neg-v">Você tem dias com saldo previsto abaixo de zero.</p>' : r.minimo.saldo < uiCfg().alertas.saldoMin ? '<p class="neg-v">Há dias com saldo abaixo do mínimo que definiu (' + eur(uiCfg().alertas.saldoMin) + ').</p>' : '') + '<div class="tablewrap"><table class="mini"><thead><tr><th>Dia</th><th class="l">Movimentos</th><th>Saldo</th></tr></thead><tbody>' + rows.map(d => '<tr><td>' + esc(d.d) + '</td><td class="l">' + esc(d.movs.map(m => m.desc + ' ' + eur(m.valor)).join(' · ')) + '</td><td class="' + cls(d.saldo) + '">' + esc(eur(d.saldo)) + '</td></tr>').join('') + '</tbody></table></div><p class="note">Estimativa da conta principal: parte do saldo real do mês anterior ou do saldo inicial; nos meses seguintes parte do fim do mês anterior previsto. Inclui apenas movimentos com data; o salário exige um dia de pagamento definido. Não inclui despesas sem dia nem transferências previstas.</p>' : '<p class="note">Ainda não há movimentos com data para estimar a liquidez deste mês.</p>') + '</section>';
   }
   function movimentosPreco() {
     const salvos = S.gastos.filter(g => g.notas === 'Importado do extrato').map(g => ({ data: g.data, desc: g.desc, valor: -num(g.valor), conta: g.conta }));
     return salvos.concat(imp && imp.movs ? imp.movs.map(m => Object.assign({}, m, { conta: imp.conta })) : []);
   }
   function precosHtml(soFixas) {
-    const lista = E.subidasPreco(movimentosPreco(), S).filter(x => !soFixas || x.fixaIdx >= 0);
+    const pct = uiCfg().alertas.precoPct, lista = E.subidasPreco(movimentosPreco(), S, pct).filter(x => !soFixas || x.fixaIdx >= 0);
     if (!lista.length) return '';
     return '<section class="card"><h2>Alerta de subida de preço</h2>' + lista.map(x => '<p>' + esc(x.nome + ': de ' + eur(x.antes) + ' para ' + eur(x.agora) + ' (+' + pctTxt(x.subidaPct / 100) + ').') + '</p>' + (x.fixaIdx >= 0 && num(S.fixas[x.fixaIdx].valor) !== x.agora ? '<button type="button" class="btn" data-act="preco-atualizar:' + esc(x.fixaIdx) + '">Atualizar o valor do recorrente</button>' : '')).join('') + '<p class="note">Você pode rever os valores antes de atualizar o pagamento.</p></section>';
   }
@@ -2867,14 +3036,14 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
       const e = R.extras[i], auto = e.valor === null || e.valor === undefined || e.valor === '', nao = e.contar !== 'Sim';
       const quando = e.freq === 'Mensal' ? 'todos os meses' + (e.ate ? ' até ' + mesTxt(e.ate) : '') : e.freq === 'Anual' ? 'todos os anos' + (e.ate ? ' até ' + mesTxt(e.ate) : '') : '';
       const sub = [e.data && dataOk(e.data) ? dataPt(e.data) : 'Sem data', e.tipo, e.origem, quando, e.conta].filter(Boolean).map(esc).join(' · ');
-      return '<button type="button" class="pay rx' + (nao ? ' done' : '') + '" data-act="rend:' + i + '" data-txt="' + esc(((e.desc || '') + ' ' + (e.tipo || '') + ' ' + (e.origem || '')).toLowerCase()) + '" data-cat="' + esc(e.tipo || '') + '">' +
+      return '<button type="button" class="pay rx' + (nao ? ' done' : '') + '" data-act="rend:' + i + '" data-txt="' + esc(((e.desc || '') + ' ' + (e.tipo || '') + ' ' + (e.origem || '') + ' ' + nomeConta(e.conta || '')).toLowerCase()) + '" data-cat="' + esc(e.tipo || '') + '" data-conta="' + esc(e.conta || '') + '">' +
         chipIco(TIPO_ICO[e.tipo] || '✨', '#4DB6AC') + '<span class="pt"><span class="sr">Editar </span><b>' + esc(e.desc || 'Sem descrição') + '</b><span class="muted">' + sub + '</span></span>' +
         '<span class="pv">' + eur(e.val) + (nao ? '<span class="chip">Não conta</span>' : auto ? '<small>automático</small>' : '') + '</span><span class="chev" aria-hidden="true">›</span></button>';
     }).join('');
     const ativos = R.extras.filter(e => e.contar === 'Sim'), tot = ativos.reduce((a, e) => a + e.val, 0);
     const mensal = ativos.filter(e => e.freq === 'Mensal').reduce((a, e) => a + e.val, 0), unica = ativos.filter(e => e.freq === 'Única').reduce((a, e) => a + e.val, 0), anuais = ativos.filter(e => e.freq === 'Anual').reduce((a, e) => a + e.val, 0);
     const maior = ativos.reduce((m, e) => e.val > m.val ? e : m, { val: 0, desc: '' });
-    const porTipo = {}; ativos.forEach(e => { const t = e.tipo || 'Sem tipo'; porTipo[t] = (porTipo[t] || 0) + e.val; });
+    const porTipo = Object.create(null); ativos.forEach(e => { const t = e.tipo || 'Sem tipo'; porTipo[t] = (porTipo[t] || 0) + e.val; });
     rendDados = { fatias: Object.entries(porTipo).filter(x => x[1] > 0).map(x => ({ nome: x[0], v: x[1] })) };
     const kpis = '<div class="grid">' + kpi('Total a contar', eur(tot), R.extras.length + ' registo' + (R.extras.length === 1 ? '' : 's')) + kpi('Repetem todos os meses', eur(mensal), mensal ? 'Valor mensal somado' : 'Nenhum') + kpi('Pagamentos únicos', eur(unica), anuais ? 'Mais ' + eur(anuais) + ' que se repetem todos os anos' : '') + kpi('Maior rendimento', eur(maior.val), maior.desc ? esc(maior.desc) : 'Sem rendimentos') + '</div>';
     const chips = LISTAS.tipos.map((t, i) => '<button type="button" class="catchip" data-act="r-tipo:' + i + '" aria-pressed="false"><span class="cem" aria-hidden="true">' + (TIPO_ICO[t] || '✨') + '</span>' + esc(t) + '</button>').join('');
@@ -2883,7 +3052,7 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
       formNovo({ pref: 'r', titulo: 'Novo rendimento', ph: 'ex.: prenda de anos', rotulo: 'Tipo', chips, act: 'rend-add', botao: 'Registar rendimento', extra: field('Repete?', seg('r-freq', 'Única')),
         oculto: '<select id="r-tipo" hidden aria-hidden="true"><option value="">Outro</option>' + LISTAS.tipos.map(t => '<option>' + esc(t) + '</option>').join('') + '</select>' }) +
       grafico +
-      '<section><div class="row" style="margin:0 0 12px"><input type="search" id="r-busca" placeholder="Procurar rendimentos…" aria-label="Procurar rendimentos" maxlength="60" style="max-width:260px">' + filtroSelect('r', Object.entries(porTipo), 'Todos os tipos') + '</div>' +
+      '<section><div class="row" style="margin:0 0 12px"><input type="search" id="r-busca" placeholder="Procurar rendimentos…" aria-label="Procurar rendimentos" maxlength="60" style="max-width:260px">' + filtroSelect('r', Object.entries(porTipo), 'Todos os tipos') + '<button type="button" class="btn" data-act="exportar:r" title="Exportar todos os rendimentos para um ficheiro CSV que abre no Excel">⬇ Exportar CSV</button></div>' +
       (rows ? '<div class="paylist duas" id="r-lista">' + rows + '</div><p class="empty" id="r-vazio" hidden>Nenhum rendimento corresponde à pesquisa.</p>' : '<div class="empty">Ainda sem rendimentos extra. <button type="button" class="btn pri" data-act="rapido:r" style="margin-left:8px">Registar um rendimento</button></div>') +
       '<div class="row" style="margin-top:12px">' + addBtn('extras', 'Rendimento com mais detalhe') + '<span class="muted">Toque num rendimento para o alterar. Total registado a contar: <b>' + eur(tot) + '</b>. Nos subsídios, o valor em branco usa o salário líquido do mês.</span></div></section>';
   }
@@ -2893,7 +3062,7 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
     if (!gastoMes) gastoMes = hojeYm;
     const gs = S.gastos.map((g, i) => Object.assign({}, g, { i })).filter(g => (g.data || '').slice(0, 7) === gastoMes).sort((a, b) => a.data < b.data ? 1 : -1);
     const totG = gs.reduce((a, g) => a + num(g.valor), 0);
-    const porCatG = {}; gs.forEach(g => { const c = g.cat || 'Sem categoria'; porCatG[c] = (porCatG[c] || 0) + num(g.valor); });
+    const porCatG = Object.create(null); gs.forEach(g => { const c = g.cat || 'Sem categoria'; porCatG[c] = (porCatG[c] || 0) + num(g.valor); });
     const hIso = hojeIso(), yy = +gastoMes.slice(0, 4), mm = +gastoMes.slice(5, 7), diasMes = new Date(Date.UTC(yy, mm, 0)).getUTCDate();
     const decorridos = gastoMes === hojeYm ? Math.max(1, hoje.getDate()) : diasMes;
     const maior = gs.reduce((m, g) => num(g.valor) > num(m.valor) ? g : m, gs[0] || { valor: 0, desc: '' });
@@ -2908,14 +3077,14 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
       '<div class="card"><h3>Por dia</h3><div class="chartbox on" data-chart="desp-dias" role="img" aria-label="Gastos de cada dia do mês"></div></div></div><p class="note center">Toque numa fatia ou numa barra para ver os gastos dessa categoria ou desse dia.</p>' + listaGraf('desp-cats') + listaGraf('desp-dias') : '';
     const linhas = gs.map(g => {   // cada gasto é um cartão; o toque abre a folha de edição e, no telemóvel, deslizar para a esquerda apaga
       const sub = [dataPt(g.data), g.cat || 'Sem categoria', g.conta].filter(Boolean).map(esc).join(' · ');
-      return '<button type="button" class="pay gx" data-act="gasto:' + g.i + '" data-swd="gastos:' + g.i + '" data-txt="' + esc(((g.desc || '') + ' ' + (g.cat || '')).toLowerCase()) + '" data-cat="' + esc(g.cat || '') + '">' +
+      return '<button type="button" class="pay gx" data-act="gasto:' + g.i + '" data-swd="gastos:' + g.i + '" data-txt="' + esc(((g.desc || '') + ' ' + (g.cat || '') + ' ' + nomeConta(g.conta || '')).toLowerCase()) + '" data-cat="' + esc(g.cat || '') + '" data-conta="' + esc(g.conta || '') + '">' +
         chipIco(catIcon(g.cat), catCor(g.cat)) + '<span class="pt"><span class="sr">Editar </span><b>' + (g.fixa ? '🔁 ' : '') + esc(g.desc || 'Sem descrição') + '</b><span class="muted">' + sub + '</span></span><span class="pv">' + eur(num(g.valor)) + '</span><span class="chev" aria-hidden="true">›</span></button>';
     }).join('');
     return '<section><h2>Gastos do dia a dia</h2><p class="lead">Cada gasto entra nas despesas do mês certo no plano mensal. Os pagamentos recorrentes marcados como pagos aparecem aqui com 🔁 e não contam duas vezes.</p>' + kpis + '</section>' +
       formNovo({ pref: 'g', titulo: 'Novo gasto', ph: 'ex.: supermercado', rotulo: 'Categoria', chips, act: 'gasto-add', botao: 'Registar gasto',
         oculto: '<select id="g-cat" hidden aria-hidden="true"><option value="">Sem categoria</option>' + catNomes().map(c => '<option>' + esc(c) + '</option>').join('') + '</select>' }) +
       graficos +
-      '<section><div class="row" style="margin:0 0 12px">' + stepper('gastoMes', meses, gastoMes, m => mesLongo(m + '-01'), hojeYm) + '<input type="search" id="g-busca" placeholder="Procurar gastos…" aria-label="Procurar gastos" maxlength="60" style="max-width:220px">' + filtroSelect('g', Object.entries(porCatG), 'Todas as categorias') + '</div>' +
+      '<section><div class="row" style="margin:0 0 12px">' + stepper('gastoMes', meses, gastoMes, m => mesLongo(m + '-01'), hojeYm) + '<input type="search" id="g-busca" placeholder="Procurar gastos…" aria-label="Procurar gastos" maxlength="60" style="max-width:220px">' + filtroSelect('g', Object.entries(porCatG), 'Todas as categorias', Object.entries(gs.reduce((o, g) => { if (g.conta) o[g.conta] = (o[g.conta] || 0) + num(g.valor); return o; }, Object.create(null)))) + '<button type="button" class="btn" data-act="exportar:g" title="Exportar todos os gastos para um ficheiro CSV que abre no Excel">⬇ Exportar CSV</button></div>' +
       (linhas ? '<div class="paylist duas" id="g-lista">' + linhas + '</div><p class="empty" id="g-vazio" hidden>Nenhum gasto corresponde à pesquisa.</p><p class="note" style="margin-top:10px">Toque num gasto para o alterar. No telemóvel, deslize-o para a esquerda para o apagar (pode desfazer).</p>' : '<div class="empty">Sem gastos neste mês. <button type="button" class="btn pri" data-act="rapido:g" style="margin-left:8px">Registar um gasto</button></div>') + '</section>';
   }
 
@@ -3139,14 +3308,14 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
   function impRecalcula(manterMapa) {
     const I = imp;
     if (I.modo === 'pdf') I.movs = I.pdfMovs;
-    else if (I.modo === 'csv') {
-      I.rows = E.parseCSV(I.texto);
+    else if (I.modo === 'csv' || I.modo === 'xlsx') {
+      I.rows = I.modo === 'xlsx' ? I.xrows : E.parseCSV(I.texto);
       if (!manterMapa || !I.map) I.map = E.detectarColunas(I.rows);
       I.movs = I.map.ok ? E.movimentosDeCSV(I.rows, I.map, { despesasPositivas: I.despPos }) : [];
     } else I.movs = E.movimentosDeTexto(I.texto, { despesasPositivas: true });
     I.movs.forEach(m => { m.desc = limpaTexto(m.desc, 200); });
     if (I.movs.length > LIM.movimentos) { I.movs = I.movs.slice(0, LIM.movimentos); aviso('Só os primeiros ' + LIM.movimentos + ' movimentos foram lidos.'); }
-    I.sel = {}; I.cat = {}; I.cat0 = {}; I.org = {}; I.dup = {}; I.dupMotivo = {};
+    I.sel = {}; I.cat = {}; I.cat0 = {}; I.org = {}; I.dup = {}; I.dupMotivo = {}; I.aberto = I.aberto || {};
     const dups = E.duplicados(I.movs, S);   // olha à data, ao valor e à descrição, e conta quantas vezes cada um já está registado
     I.movs.forEach((m, i) => {
       const c = E.categorizar(m.desc, S.importacao.regras, S.categorias);
@@ -3163,6 +3332,7 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
       const f = S.fixas[oc.idx]; usadas.add(oc.id + '|' + oc.data);
       I.fix[i] = { id: oc.id, ocorr: oc.data, nome: f.desc || 'Recorrente' }; I.cat[i] = f.cat || ''; I.cat0[i] = I.cat[i]; I.org[i] = 'recorrente';
     });
+    I.grupos = E.gruposMovimentos(I.movs);
   }
   function impIniciar(texto, nome) {
     imp = { nome, texto, modo: 'csv', conta: 'Principal', despPos: false, map: null, msg: '' };
@@ -3197,6 +3367,12 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
     if (!imp.movs.length) imp.msg = 'Não encontrei movimentos neste PDF. Experimente o CSV ou cole o texto.';
     render();
   }
+  function impIniciarXlsx(rows, nome) {
+    imp = { nome, modo: 'xlsx', xrows: rows, conta: 'Principal', despPos: false, map: null, msg: '' };
+    impRecalcula(false);
+    if (!imp.movs.length) imp.msg = 'Não encontrei movimentos na primeira folha do Excel. Confirme as colunas em baixo ou guarde o extrato como CSV.';
+    render();
+  }
   async function lerFicheiro(f) {
     if (f.arrayBuffer) { const buf = await f.arrayBuffer(); try { return new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (e) { return new TextDecoder('windows-1252').decode(buf); } }
     return f.text();
@@ -3208,7 +3384,15 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
       impOp++;   // uma escolha nova (mesmo inválida) deixa sem efeito a leitura anterior
       const f = el.files && el.files[0]; if (!f) return;
       const ePdf0 = /\.pdf$/i.test(f.name || '') || f.type === 'application/pdf';
-      if (!/\.(csv|txt|tsv|pdf)$/i.test(f.name || '')) { imp = { movs: [], msg: 'Formato não suportado. Use um ficheiro CSV, TXT ou PDF.' }; render(); return; }
+      if (/\.xls$/i.test(f.name || '')) { imp = { movs: [], msg: 'Os ficheiros .xls antigos não são suportados. Abra-o no Excel e guarde como .xlsx ou CSV.' }; render(); return; }
+      if (!/\.(csv|txt|tsv|pdf|xlsx)$/i.test(f.name || '')) { imp = { movs: [], msg: 'Formato não suportado. Use um ficheiro CSV, Excel (.xlsx), TXT ou PDF.' }; render(); return; }
+      if (/\.xlsx$/i.test(f.name || '')) {
+        if ((f.size || 0) > LIM.ficheiro) { imp = { movs: [], msg: 'Ficheiro demasiado grande (máximo 5 MB).' }; render(); return; }
+        const op = ++impOp; imp = { movs: [], msg: 'A ler o Excel…' }; render();
+        f.arrayBuffer().then(buf => E.linhasDeXlsx(new Uint8Array(buf))).then(rows => { if (op === impOp) impIniciarXlsx(rows, f.name); })
+          .catch(err => { if (op !== impOp) return; const m = err && err.message; imp = { movs: [], msg: m === 'linhas' ? 'O Excel tem mais de 20 000 linhas. Divida o extrato em partes mais pequenas.' : m === 'xls' ? 'Este ficheiro é um .xls antigo com outro nome. Abra-o no Excel e guarde como .xlsx ou CSV.' : m === 'sem-descompressao' ? 'Este navegador não consegue abrir ficheiros Excel. Guarde o extrato como CSV.' : m === 'grande' ? 'O Excel é demasiado grande.' : 'Não consegui ler o Excel. Guarde o extrato como CSV e tente outra vez.' }; render(); });
+        return;
+      }
       if ((f.size || 0) > (ePdf0 ? LIM.pdf : LIM.ficheiro)) { imp = { movs: [], msg: 'Ficheiro demasiado grande (máximo ' + (ePdf0 ? '15' : '5') + ' MB).' }; render(); return; }
       if (/\.pdf$/i.test(f.name || '') || f.type === 'application/pdf') {
         const op = ++impOp; imp = { movs: [], msg: 'A ler o PDF…' }; render();
@@ -3222,6 +3406,8 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
     if (k === 'sel') imp.sel[a] = el.checked;
     else if (k === 'sug') { imp.sug = imp.sug || { saldo: true, rec: {}, rend: {}, feito: false }; if (a === 'saldo') imp.sug.saldo = el.checked; else if ((a === 'rec' || a === 'rend') && /^\d+$/.test(p[2] || '')) imp.sug[a][+p[2]] = el.checked; }
     else if (k === 'cat') imp.cat[a] = el.value;
+    else if (k === 'gcat' || k === 'gsel') { const g = (imp.grupos || [])[+a]; if (g) g.idx.forEach(i => { if (k === 'gsel') { if (!imp.dup[i]) imp.sel[i] = el.checked; } else if (imp.movs[i].valor < 0 && !imp.fix[i]) imp.cat[i] = el.value; }); }
+    else if (k === 'vista') imp.vista = el.value === 'lista' ? 'lista' : 'grupos';
     else if (k === 'conta') imp.conta = el.value;
     else if (k === 'despPos') { imp.despPos = el.checked; impRecalcula(true); }
     else if (k === 'map') { imp.map[a] = +el.value; imp.map.ok = imp.map.data >= 0 && (imp.map.valor >= 0 || imp.map.debito >= 0 || imp.map.credito >= 0); impRecalcula(true); }
@@ -3229,13 +3415,16 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
   }
   function impConfirmar() {
     const I = imp; let g = 0, r = 0, ap = 0, rc = 0, ultimo = '';
+    const catsPorChave = {}, aprendidas = new Set();   // o mesmo comerciante com categorias diferentes (como MB WAY) não cria regra
+    I.movs.forEach((m, i) => { if (!I.sel[i] || m.valor >= 0 || I.fix[i]) return; const k = E.chaveDesc(m.desc); if (k) (catsPorChave[k] = catsPorChave[k] || new Set()).add(I.cat[i] || ''); });
+    const mistos = new Set(Object.keys(catsPorChave).filter(k => catsPorChave[k].size > 1));
     I.movs.forEach((m, i) => {
       if (!I.sel[i]) return;
       if (m.valor < 0 && I.fix[i]) {
         S.gastos.push({ data: m.data, desc: I.fix[i].nome, cat: I.cat[i] || '', valor: Math.abs(m.valor), conta: I.conta, notas: 'Importado do extrato', fixa: I.fix[i].id, ocorr: I.fix[i].ocorr }); g++; rc++;
       } else if (m.valor < 0) {
         S.gastos.push({ data: m.data, desc: m.desc, cat: I.cat[i] || '', valor: Math.abs(m.valor), conta: I.conta, notas: 'Importado do extrato' }); g++;
-        if (I.cat[i] && I.cat[i] !== I.cat0[i]) { E.aprender(S.importacao.regras, m.desc, I.cat[i]); ap++; }
+        if (I.cat[i] && I.cat[i] !== I.cat0[i] && !mistos.has(E.chaveDesc(m.desc))) { const k = E.chaveDesc(m.desc); if (k && !aprendidas.has(k)) { aprendidas.add(k); E.aprender(S.importacao.regras, m.desc, I.cat[i]); ap++; } }
       } else { S.extras.push({ data: m.data, tipo: 'Outro', desc: m.desc, origem: 'Extrato', valor: m.valor, freq: 'Única', ate: '', conta: I.conta, contar: 'Não', notas: 'Importado do extrato' }); r++; }
       if (m.data > ultimo) ultimo = m.data;
     });
@@ -3279,35 +3468,47 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
 
   function tabImportar() {
     const I = imp, regras = S.importacao.regras, tem = I && I.movs && I.movs.length;
-    const caixa = '<section class="card"><h2>Importar extrato do banco</h2><p class="lead">Carregue o CSV ou o PDF do extrato, ou cole o texto. A app propõe a categoria de cada movimento, avisa dos que já estão registados, e só importa o que confirmar. O extrato é lido no seu navegador e não é enviado para lado nenhum. Para ler um PDF, o navegador descarrega o leitor de PDF (pdf.js) do cdnjs, uma só vez, e o ficheiro fica no seu computador.</p><div class="fields">' +
-      field('Ficheiro do extrato (CSV ou PDF)', '<input type="file" id="imp-ficheiro" data-imp="ficheiro" accept=".csv,.txt,.tsv,.pdf,text/csv,text/plain,application/pdf">') +
+    const caixa = '<section class="card"><h2>Importar extrato do banco</h2><p class="lead">Carregue o extrato em CSV, Excel (.xlsx) ou PDF, ou cole o texto. A app propõe a categoria de cada movimento, avisa dos que já estão registados, e só importa o que confirmar. O extrato é lido no seu navegador e não é enviado para lado nenhum. Para ler um PDF, o navegador descarrega o leitor de PDF (pdf.js) do cdnjs, uma só vez, e o ficheiro fica no seu computador.</p><div class="fields">' +
+      field('Ficheiro do extrato (CSV, Excel ou PDF)', '<input type="file" id="imp-ficheiro" data-imp="ficheiro" accept=".csv,.txt,.tsv,.pdf,.xlsx,text/csv,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">') +
       field('Ou cole o texto do extrato', '<textarea id="imp-texto" rows="4" placeholder="Uma linha por movimento, com a data e o valor"></textarea>') + '</div>' +
       '<div class="row" style="margin-top:12px"><button class="btn" data-act="imp-texto">Ler o texto colado</button>' + (I && I.msg ? '<span class="chip ' + (/importados/.test(I.msg) ? 'good' : 'warn') + '" role="status">' + esc(I.msg) + '</span>' : '') + '</div></section>';
     let rev = '';
     if (tem) {
       const sel = Object.keys(I.sel).filter(i => I.sel[i]).map(Number), total = sel.reduce((a, i) => a + I.movs[i].valor, 0);
       let mapa = '';
-      if (I.modo === 'csv') {
+      if (I.modo === 'csv' || I.modo === 'xlsx') {
         const cab = I.rows[I.map.header] || [], ncol = Math.max.apply(null, I.rows.slice(0, 40).map(r => r.length).concat([1]));
         const opt = (campo, v) => '<select data-imp="map:' + campo + '" aria-label="Coluna ' + campo + '"><option value="-1"' + (v < 0 ? ' selected' : '') + '>—</option>' + Array.from({ length: ncol }, (_, c) => '<option value="' + c + '"' + (c === v ? ' selected' : '') + '>' + esc(cab[c] || ('Coluna ' + (c + 1))) + '</option>').join('') + '</select>';
         mapa = '<details><summary>Colunas do ficheiro (' + (I.map.ok ? 'detetadas sozinhas' : 'confirme') + ')</summary><div class="fields">' + field('Data', opt('data', I.map.data)) + field('Descrição', opt('desc', I.map.desc)) + field('Valor (com sinal)', opt('valor', I.map.valor)) + field('Débito', opt('debito', I.map.debito)) + field('Crédito', opt('credito', I.map.credito)) +
           field('Sinal', '<label class="row"><input type="checkbox" data-imp="despPos"' + (I.despPos ? ' checked' : '') + '> As saídas vêm com valor positivo</label>') + '</div></details>';
       } else if (I.modo === 'pdf') mapa = '<p class="note">Lido do PDF pelas posições das colunas (data, descrição, montante e saldo). ' + (I.conf && I.conf.total ? '<span class="chip ' + (I.conf.ok === I.conf.total ? 'good' : 'warn') + '">Saldos conferidos: ' + I.conf.ok + ' de ' + I.conf.total + '</span>' : '') + '</p>';
       else mapa = '<p class="note">Lido como texto colado. Quando há dois valores na linha, o último é o saldo. Se o texto marca as saídas com \"-\", o que não tem sinal é entrada, senão conta como saída. Confirme sempre os valores e os sinais.</p>';
-      const linhas = I.movs.map((m, i) => {
+      const linhaMov = i => {
+        const m = I.movs[i];
         const saida = m.valor < 0, o = I.org[i];
         return '<tr' + (I.dup[i] ? ' class="muted"' : '') + '><td><input type="checkbox" data-imp="sel:' + i + '"' + (I.sel[i] ? ' checked' : '') + ' aria-label="Importar o movimento de ' + dataPt(m.data) + ': ' + esc(m.desc) + '"></td><td>' + dataPt(m.data) + '</td><td class="l">' + esc(m.desc) + '</td><td class="' + (saida ? '' : 'good') + '">' + eur(m.valor) + '</td>' +
           '<td class="l">' + (saida ? '<select data-imp="cat:' + i + '" aria-label="Categoria de ' + dataPt(m.data) + ': ' + esc(m.desc) + '"><option value=""></option>' + catNomes().map(c => '<option' + (c === I.cat[i] ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</select>' : '<span class="chip">Receita</span>') + '</td>' +
           '<td class="l">' + (saida ? (o === 'recorrente' ? '<span class="chip acc">Recorrente: ' + esc(I.fix[i].nome) + '</span>' : o === 'regra' ? '<span class="chip good">Regra</span>' : o === 'sugestão' ? '<span class="chip warn">Sugestão</span>' : '<span class="chip">Sem categoria</span>') : '') + (I.dup[i] ? ' <span class="chip warn">' + (I.dupMotivo[i] === 'repetido' ? 'Repetido no ficheiro' : I.dupMotivo[i] === 'proximo' ? 'Já registado (data próxima)' : 'Já registado') + '</span>' : '') + '</td></tr>';
-      }).join('');
+      };
+      const vistaGrupos = I.vista !== 'lista';
+      const linhas = vistaGrupos ? (I.grupos || []).map((g, gi) => {
+        if (g.idx.length === 1) return linhaMov(g.idx[0]);   // um movimento sozinho não precisa de grupo
+        const said = g.idx.filter(i => I.movs[i].valor < 0 && !I.fix[i]), cats = Array.from(new Set(said.map(i => I.cat[i] || ''))), comum = cats.length === 1 ? cats[0] : null;
+        const livres = g.idx.filter(i => !I.dup[i]), nSel = livres.filter(i => I.sel[i]).length, nDupG = g.idx.length - livres.length, ab = !!I.aberto[g.chave];
+        const selG = said.length ? '<select data-imp="gcat:' + gi + '" aria-label="Categoria de todos os movimentos de ' + esc(g.nome) + '">' + (comum === null ? '<option value="" selected>Várias categorias</option>' : '<option value=""></option>') + catNomes().map(c => '<option' + (c === comum ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</select>' : (g.idx.some(i => I.movs[i].valor < 0) ? '<span class="chip acc">Recorrentes</span>' : '<span class="chip">Receitas</span>');
+        return '<tr class="grupo"><td><input type="checkbox" data-imp="gsel:' + gi + '"' + (livres.length && nSel === livres.length ? ' checked' : '') + (livres.length ? '' : ' disabled') + ' aria-label="Importar todos os movimentos de ' + esc(g.nome) + '"></td>' +
+          '<td><button type="button" class="btn mini" data-act="imp-grp:' + gi + '" aria-expanded="' + ab + '" aria-label="' + (ab ? 'Fechar' : 'Ver') + ' os movimentos de ' + esc(g.nome) + '">' + (ab ? '▾' : '▸') + ' ' + g.idx.length + '</button></td>' +
+          '<td class="l"><b>' + esc(g.nome) + '</b>' + (nSel !== livres.length && nSel ? ' <span class="muted">(' + nSel + ' de ' + livres.length + ' marcados)</span>' : '') + (nDupG ? ' <span class="chip warn">' + nDupG + ' já registado' + (nDupG > 1 ? 's' : '') + '</span>' : '') + '</td><td class="' + cls(g.total) + '">' + eur(g.total) + '</td><td class="l">' + selG + '</td>' +
+          '<td class="l">' + (comum === null ? '<span class="muted">Abra o grupo para ver cada um</span>' : '') + '</td></tr>' + (ab ? g.idx.map(i => linhaMov(i).replace(/^<tr(?: class="([^"]*)")?>/, (x, c) => '<tr class="sub' + (c ? ' ' + c : '') + '">')).join('') : '');
+      }).join('') : I.movs.map((m, i) => linhaMov(i)).join('');
       const nSaidas = I.movs.filter(m => m.valor < 0).length, nDup = I.movs.filter((m, i) => I.dup[i]).length;
       const kpisI = '<div class="grid">' + kpi('Movimentos lidos', String(I.movs.length), nSaidas + ' saídas e ' + (I.movs.length - nSaidas) + ' entradas') + kpi('A importar', String(sel.length), 'Marcados na lista') +
         kpi('Valor selecionado', eur(total), '', cls(total)) + kpi('Duplicados', String(nDup), nDup ? 'Ficam de fora (mesma data e valor, ou data próxima e mesma descrição)' : 'Nenhum') + '</div>';
       rev = precosHtml(false) + impSugestoesHtml(I) + '<section><h2>Movimentos' + (I.nome ? ' de ' + esc(I.nome) : '') + '</h2>' + kpisI + mapa +
-        '<div class="row" style="margin:12px 0"><label class="muted" for="imp-conta">Conta</label><select id="imp-conta" data-imp="conta">' + LISTAS.contas.map(c => '<option' + (c === I.conta ? ' selected' : '') + '>' + c + '</option>').join('') + '</select><button class="btn" data-act="imp-todos">Marcar ou desmarcar tudo</button></div>' +
-        '<div class="tablewrap tall"><table class="sticky"><thead><tr><th></th><th>Data</th><th class="l">Descrição</th><th>Valor</th><th class="l">Categoria</th><th class="l">Origem</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
+        '<div class="row" style="margin:12px 0"><label class="muted" for="imp-vista">Ver</label><select id="imp-vista" data-imp="vista"><option value="grupos"' + (vistaGrupos ? ' selected' : '') + '>Agrupado por tipo de gasto</option><option value="lista"' + (vistaGrupos ? '' : ' selected') + '>Todos os movimentos</option></select><label class="muted" for="imp-conta">Conta</label><select id="imp-conta" data-imp="conta">' + LISTAS.contas.map(c => '<option value="' + esc(c) + '"' + (c === I.conta ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</select><button class="btn" data-act="imp-todos">Marcar ou desmarcar tudo</button></div>' +
+        (vistaGrupos ? '<p class="note">Os movimentos parecidos estão juntos (por exemplo todos os de MB WAY ou de VENDING). Escolha a categoria do grupo de uma vez; se um grupo tiver gastos de tipos diferentes, abra-o (▸) e mude só os que precisar.</p>' : '') + '<div class="tablewrap tall"><table class="sticky"><thead><tr><th></th><th>' + (vistaGrupos ? 'Movimentos' : 'Data') + '</th><th class="l">Descrição</th><th>Valor</th><th class="l">Categoria</th><th class="l">Origem</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
         '<div class="row" style="margin-top:12px"><button class="btn pri" data-act="imp-ok"' + (sel.length ? '' : ' disabled') + '>Importar ' + sel.length + ' movimento' + (sel.length === 1 ? '' : 's') + '</button><button class="btn" data-act="imp-cancelar">Cancelar</button><span class="muted">Selecionado: <b>' + eur(total) + '</b>. Os que já parecem registados (mesma data e valor) vêm desmarcados. Receitas entram em Rendimentos, sem contar no plano. Pagamentos iguais a um recorrente por pagar ficam ligados a ele, como pagos.</span></div>' +
-        '<p class="note" style="margin-top:8px">Quando escolher uma categoria diferente da proposta, a app aprende a regra para esse comerciante e usa-a nos próximos extratos.</p></section>';
+        '<p class="note" style="margin-top:8px">Quando escolher uma categoria diferente da proposta, a app aprende a regra para esse comerciante e usa-a nos próximos extratos. Se o mesmo comerciante ficar com categorias diferentes (como pagamentos MB WAY), não cria regra.</p></section>';
     }
     const rrows = regras.map((r, i) => '<tr><td class="l">' + inp('importacao.regras.' + i + '.padrao', { t: 'text', aria: 'Palavra do comerciante' }) + '</td><td class="l">' + inp('importacao.regras.' + i + '.cat', { t: 'sel', list: catNomes(), blank: true, aria: 'Categoria' }) + '</td><td>' + num(r.n) + '</td><td>' + delBtn('importacao.regras', i) + '</td></tr>').join('');
     const regs = '<section><h2>Regras aprendidas</h2><p class="lead">Se a descrição do movimento tiver a palavra da regra, a categoria vem preenchida. A app cria estas regras sozinha quando corrige uma categoria. Pode editar, apagar ou acrescentar. Com várias palavras (por exemplo "cafe central"), a regra mais específica ganha.</p>' +
@@ -3374,12 +3575,13 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
 
   function tabPoupanca() {
     { const cm0 = R.contas.filter(c => c.E !== null), cm = cm0.length ? cm0 : R.contas.slice(0, 6), g = (c, k) => num((S.contas[c.key] || {})[k]); contasDados = cm.length ? { labels: cm.map(c => mesTxt(c.ym)), p: cm.map(c => g(c, 'principal')), r: cm.map(c => g(c, 'revolut')), c: cm.map(c => g(c, 'cartao')) } : null; }
-    const cartoes = R.objetivos.length ? '<div class="paylist duas" id="ob-lista">' + R.objetivos.map((o, i) => {
+    const PRI = { Alta: 0, 'Média': 1, Baixa: 2 }, ordemObj = R.objetivos.map((o, i) => i).sort((a, b) => (PRI[S.objetivos[a].prioridade] ?? 1.5) - (PRI[S.objetivos[b].prioridade] ?? 1.5) || a - b);
+    const cartoes = R.objetivos.length ? '<div class="paylist duas" id="ob-lista">' + ordemObj.map(i => [R.objetivos[i], i]).map(([o, i]) => {
       const so = S.objetivos[i] || {}, pc = Math.min(100, Math.round((o.prog || 0) * 100));
       return '<button type="button" class="pay ob" data-act="obj:' + i + '">' + chipIco('🎯', '#F48FB1') + '<span class="pt"><span class="sr">Editar </span><b>' + esc(so.nome || 'Sem nome') + '</b>' + ritmoHtml(so) + '<span class="muted">' + eur(num(so.poupado), 0) + ' de ' + eur(num(so.meta), 0) + (o.falta > 0 ? ' · faltam ' + eur(o.falta, 0) : o.falta === 0 ? ' · meta atingida' : '') + (o.meses != null && o.falta > 0 ? ' · ' + eur(o.porMes) + ' por mês' : '') + '</span>' +
         '<span class="bar ' + (pc >= 100 ? 'ok' : '') + '" role="progressbar" aria-label="' + esc(so.nome || 'Objetivo') + '" aria-valuenow="' + pc + '" aria-valuemin="0" aria-valuemax="100"><i style="width:' + pc + '%"></i></span></span><span class="pv">' + pc + ' %</span><span class="chev" aria-hidden="true">›</span></button>';
     }).join('') + '</div>' : '<div class="empty">Ainda sem objetivos. Acrescente o primeiro em baixo.</div>';
-    return poupancaHtml() + reservaHtml() + '<section><h2>Objetivos de poupança</h2><p class="lead">Defina a meta e a data. O planner calcula quanto tem de pôr de lado por mês.</p>' + cartoes +
+    return poupancaHtml() + contasExtraHtml() + reservaHtml() + '<section><h2>Objetivos de poupança</h2><p class="lead">Defina a meta e a data. O planner calcula quanto tem de pôr de lado por mês.</p>' + cartoes +
       '<div class="row" style="margin-top:12px">' + addBtn('objetivos', 'Novo objetivo') + '<span class="muted">Toque num objetivo para o alterar ou para registar uma poupança.</span></div>' +
       '<div class="grid" style="margin-top:14px"><div class="kpi"><div class="l">Total necessário por mês</div><div class="v">' + eur(R.necessarioMes) + '</div></div><div class="kpi"><div class="l">Saldo médio previsto por mês</div><div class="v' + cls(R.tot.media) + '">' + eur(R.tot.media) + '</div></div><div class="kpi"><div class="l">Cabe no orçamento?</div><div class="v ' + (R.cabe ? 'good' : 'bad') + '">' + (R.cabe ? 'Sim' : 'Não') + '</div><div class="s">' + (R.cabe ? '' : 'Ajuste metas ou prazos.') + '</div></div></div></section>' +
       '<section><h2>Contas no fim de cada mês</h2><p class="lead">Anote o saldo real da principal, da Revolut e do cartão refeição. O total em dinheiro não inclui o cartão refeição. O saldo previsto parte do último saldo real.</p>' +
@@ -3498,6 +3700,57 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
       '<p class="note">Atalhos: o botão ☰ abre o menu lateral, onde ficam as regras e o que se usa de vez em quando (importar extrato, categorias, regras do trabalho, propostas, apoios, definições, dados e tema), o botão + abre as ações rápidas, e "Ir para" ou a tecla / procuram uma página. As setas ‹ › mudam de mês ou de ano.</p></section>';
   }
 
+  /* Exportar movimentos para CSV: separador ; e vírgula decimal (Excel em português), com BOM para os acentos. Texto que comece por = + - @ leva um ' antes, para o Excel não o tratar como fórmula. */
+  const csvCampo = (x, texto) => { let t = String(x == null ? '' : x).replace(/[\r\n]+/g, ' '); if (texto && /^[=+\-@\t]/.test(t)) t = "'" + t; return /[;"]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+  const csvNum = v => (Math.round(num(v) * 100) / 100).toFixed(2).replace('.', ',');
+  function csvMovimentos(qual) {
+    const L = qual === 'g' ? S.gastos.slice() : S.extras.slice(); L.sort((a, b) => String(a.data || '').localeCompare(String(b.data || '')));
+    const cab = qual === 'g' ? ['Data', 'Descrição', 'Categoria', 'Conta', 'Valor (€)', 'Recorrente', 'Notas'] : ['Data', 'Tipo', 'Descrição', 'Origem', 'Valor (€)', 'Frequência', 'Até', 'Conta', 'Conta no plano', 'Notas'];
+    const lin = qual === 'g' ? L.map(g => [csvCampo(g.data, 1), csvCampo(g.desc, 1), csvCampo(g.cat, 1), csvCampo(nomeConta(g.conta || ''), 1), csvNum(g.valor), g.fixa ? 'Sim' : 'Não', csvCampo(g.notas, 1)])
+      : L.map(e => [csvCampo(e.data, 1), csvCampo(e.tipo, 1), csvCampo(e.desc, 1), csvCampo(e.origem, 1), e.valor === null || e.valor === '' || e.valor === undefined ? '' : csvNum(e.valor), csvCampo(e.freq, 1), csvCampo(e.ate, 1), csvCampo(nomeConta(e.conta || ''), 1), csvCampo(e.contar, 1), csvCampo(e.notas, 1)]);
+    return '\ufeff' + [cab.join(';')].concat(lin.map(l => l.join(';'))).join('\r\n') + '\r\n';
+  }
+  function exportarCsv(qual) {
+    const n = qual === 'g' ? S.gastos.length : S.extras.length;
+    if (!n) { aviso(qual === 'g' ? 'Ainda não há gastos para exportar.' : 'Ainda não há rendimentos para exportar.'); return; }
+    const nome = (qual === 'g' ? 'gastos-' : 'rendimentos-') + hojeIso() + '.csv';
+    try { const u = URL.createObjectURL(new Blob([csvMovimentos(qual)], { type: 'text/csv;charset=utf-8' })), a = document.createElement('a'); a.href = u; a.download = nome; a.style.display = 'none'; (document.body || document.head).appendChild(a); a.click(); setTimeout(() => { try { a.remove(); URL.revokeObjectURL(u); } catch (e) { } }, 1000); aviso('Exportados ' + n + (qual === 'g' ? ' gastos' : ' rendimentos') + ' para ' + nome + '. O ficheiro fica só no seu aparelho.'); }
+    catch (e) { aviso('Não foi possível criar o ficheiro neste navegador.'); }
+  }
+  function personalizarHtml() {
+    const c = uiCfg(), ord = BLOCOS_INICIO.map(b => b[0]).sort((a, b) => { const ia = c.inicioOrdem.indexOf(a), ib = c.inicioOrdem.indexOf(b); return (ia < 0 ? 100 + BLOCOS_INICIO.findIndex(x => x[0] === a) : ia) - (ib < 0 ? 100 + BLOCOS_INICIO.findIndex(x => x[0] === b) : ib); });
+    const nomeB = k => BLOCOS_INICIO.find(x => x[0] === k)[1];
+    const blocos = ord.map((k, i) => '<tr><td class="l"><label class="row"><input type="checkbox" data-ui="inicio:' + k + '"' + (c.inicioOcultos.indexOf(k) < 0 ? ' checked' : '') + '> ' + esc(nomeB(k)) + '</label></td><td><button type="button" class="btn mini" data-act="ui-ordem:' + k + ':-1"' + (i ? '' : ' disabled') + ' aria-label="Subir ' + esc(nomeB(k)) + '">↑</button> <button type="button" class="btn mini" data-act="ui-ordem:' + k + ':1"' + (i < ord.length - 1 ? '' : ' disabled') + ' aria-label="Descer ' + esc(nomeB(k)) + '">↓</button></td></tr>').join('');
+    const abas = GRUPOS.filter(g => g[0] !== 'inicio').map(g => '<fieldset class="ui-abas"><legend>' + esc(g[1]) + '</legend>' + g[2].map(t => '<label class="row"><input type="checkbox" data-ui="aba:' + t + '"' + (c.abasOcultas.indexOf(t) < 0 ? ' checked' : '') + '> ' + esc((TABS.find(x => x[0] === t) || ['', t])[1]) + '</label>').join('') + '</fieldset>').join('');
+    const txt = (k, v, ph, aria) => '<input type="text" data-ui="' + k + '" value="' + esc(v.join(', ')) + '" placeholder="' + esc(ph) + '" aria-label="' + esc(aria) + '">';
+    const numI = (k, v, aria, min, max) => '<input type="number" step="any" data-ui="' + k + '" value="' + esc(v) + '" min="' + min + '" max="' + max + '" aria-label="' + esc(aria) + '">';
+    return '<section class="card"><h2 id="def-personalizar">Personalizar a app</h2><p class="lead">Escolha o que vê e como vê. Fica guardado com os seus dados e vale em todos os aparelhos.</p>' +
+      '<h3>Início</h3><p class="note">Os blocos que aparecem no Início e por que ordem. A visão geral fica sempre no topo.</p><div class="tablewrap"><table class="mini"><tbody>' + blocos + '</tbody></table></div>' +
+      '<h3 style="margin-top:14px">Menu</h3><p class="note">Os separadores que não usa ficam escondidos do menu de baixo (continuam no menu lateral).</p><div class="ui-abas-grid">' + abas + '</div>' +
+      '<h3 style="margin-top:14px">Nomes das contas</h3><p class="note">Dê às contas da app os nomes que usa. O nome muda em toda a app; os registos antigos ficam ligados à mesma conta.</p><div class="fields">' +
+      CONTAS_APP.map(k => field(k === 'Principal' ? 'Conta principal (à ordem)' : k === 'Revolut' ? 'Conta poupança principal' : 'Cartão refeição', '<input type="text" maxlength="30" data-ui="nomeConta:' + esc(k) + '" value="' + esc(nomesContas()[k] || '') + '" placeholder="' + esc(k) + '" aria-label="Nome para a conta ' + esc(k) + '">', 'Em branco: ' + esc(k) + '.')).join('') + '</div>' +
+      '<h3 style="margin-top:14px">Tipos próprios</h3><div class="fields">' + field('Tipos de período (contratos)', txt('tiposPeriodo', c.tiposPeriodo, 'ex.: Freelance, Erasmus', 'Tipos de período próprios'), 'Separe com vírgulas. Juntam-se a Contrato, Estágio, Bolsa e Part-time.') +
+      field('Tipos de rendimento', txt('tiposRend', c.tiposRend, 'ex.: Explicações, Mesada', 'Tipos de rendimento próprios'), 'Separe com vírgulas.') + '</div>' +
+      '<h3 style="margin-top:14px">Alertas</h3><div class="fields">' + field('Subida de preço a partir de (%)', numI('precoPct', c.alertas.precoPct, 'Subida de preço mínima em percentagem', 0, 100)) + field('Lembrar pagamentos com (dias)', numI('lembreteDias', c.alertas.lembreteDias, 'Dias de antecedência dos lembretes', 1, 60)) + field('Avisar se o saldo descer abaixo de (€)', numI('saldoMin', c.alertas.saldoMin, 'Saldo mínimo da conta principal', -1000000, 1000000), 'No calendário de liquidez.') + '</div>' +
+      '<h3 style="margin-top:14px">Aspeto</h3><div class="fields">' + field('Tamanho da letra', '<select data-ui="letra" aria-label="Tamanho da letra">' + ['pequena', 'normal', 'grande', 'muito grande'].map(x => '<option value="' + x + '"' + (x === c.aspeto.letra ? ' selected' : '') + '>' + x.charAt(0).toUpperCase() + x.slice(1) + '</option>').join('') + '</select>') +
+      field('Modo compacto', '<label class="row"><input type="checkbox" data-ui="compacto"' + (c.aspeto.compacto ? ' checked' : '') + '> Menos espaço entre cartões (bom no telemóvel)</label>') +
+      field('Cor principal', '<div class="comb"><input type="color" data-ui="cor" value="' + esc(c.aspeto.cor || '#0D6A73') + '" aria-label="Cor principal"><button type="button" class="btn" data-act="ui-cor-repor"' + (c.aspeto.cor ? '' : ' disabled') + '>Repor</button></div>') + '</div></section>';
+  }
+  function uiChange(el) {
+    const p = el.dataset.ui.split(':'), k = p[0], a = p[1], v = el.value;
+    const alterna = (lista, item, mostrar) => uiSet(u => { const l = listaTxt(u[lista]).filter(x => x !== item); if (!mostrar) l.push(item); u[lista] = l; });
+    if (k === 'inicio' && BLOCOS_INICIO.some(b => b[0] === a)) alterna('inicioOcultos', a, el.checked);
+    else if (k === 'aba' && TABS.some(t => t[0] === a)) alterna('abasOcultas', a, el.checked);
+    else if (k === 'nomeConta' && CONTAS_APP.indexOf(a) >= 0) {
+      const t = String(v || '').replace(/[\u0000-\u001F\u007F<>]/g, ' ').trim().slice(0, 30), outros = CONTAS_APP.filter(x => x !== a).map(x => nomeConta(x).toLowerCase()).concat(CONTAS_APP.filter(x => x !== a).map(x => x.toLowerCase()), E.contasExtra(S).map(c => c.nome.toLowerCase()));
+      if (outros.indexOf((t || a).toLowerCase()) >= 0) { aviso('Já há uma conta com esse nome. Ficou o nome anterior.'); renderKeep(); return; }
+      uiSet(u => { u.nomesContas = Object.assign({}, u.nomesContas); if (t && t !== a) u.nomesContas[a] = t; else delete u.nomesContas[a]; });
+    }
+    else if (k === 'tiposPeriodo' || k === 'tiposRend') uiSet(u => { u[k] = listaTxt(String(v || '').split(','), 30); });
+    else if (k === 'precoPct' || k === 'lembreteDias' || k === 'saldoMin') { const n = parseFloat(v); if (v !== '' && !isFinite(n)) { aviso('Escreva um número.'); renderKeep(); return; } uiSet(u => { u.alertas = Object.assign({}, u.alertas); if (v === '') delete u.alertas[k]; else u.alertas[k] = n; }); }
+    else if (k === 'letra' || k === 'compacto' || k === 'cor') uiSet(u => { u.aspeto = Object.assign({}, u.aspeto); u.aspeto[k] = k === 'compacto' ? !!el.checked : String(v || ''); });
+    renderKeep();
+  }
   function tabDefinicoes() {
     const pr = 'press.';
     const per = S.periodos.map((x, i) => {
@@ -3526,7 +3779,7 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
       field('Saldo atual, conta principal (€)', inp(pr + 'saldoPrincipal')) +
       field('Poupança atual na Revolut (€)', inp(pr + 'revolut'), 'Ponto de partida da poupança.') + '</div>' +
       '<p class="note" style="margin-top:10px">O preço e o consumo do combustível ficam no separador Combustível.</p></section>' +
-      '<section><h2 id="def-contratos">Contratos e períodos de trabalho</h2><p class="lead">Cada linha vale a partir da data de início e até começar a seguinte. Mudou de emprego, subiu o salário ou mudou o trajeto? Acrescente uma linha. Com "Salário = mínimo nacional" em Sim, o salário segue a tabela do salário mínimo. Com a retenção de IRS em Automático, a taxa vem da tabela de 2026 (não casado, sem dependentes) e acompanha o salário. Em Manual, escreve a taxa (0,02 = 2%).</p>' +
+      personalizarHtml() + '<section><h2 id="def-contratos">Contratos e períodos de trabalho</h2><p class="lead">Cada linha vale a partir da data de início e até começar a seguinte. Mudou de emprego, subiu o salário ou mudou o trajeto? Acrescente uma linha. Com "Salário = mínimo nacional" em Sim, o salário segue a tabela do salário mínimo. Com a retenção de IRS em Automático, a taxa vem da tabela de 2026 (não casado, sem dependentes) e acompanha o salário. Em Manual, escreve a taxa (0,02 = 2%).</p>' +
       '<div class="tablewrap"><table><thead><tr><th>Início</th><th>Fim (opcional)</th><th>Tipo</th><th class="l">Descrição</th><th>Salário = mínimo?</th><th>Salário bruto (€)</th><th>Retenção de IRS</th><th>Subsídio alimentação/dia</th><th>Pago em cartão?</th><th>Km/dia</th><th>Portagens/dia</th><th>Horas/dia</th><th>Horas/semana</th><th class="l">Notas</th><th></th></tr></thead><tbody>' + per + '</tbody></table></div><div class="row" style="margin-top:12px">' + addBtn('periodos', 'Novo período') + '</div>' + avisoMin +
       '<div class="split" style="margin-top:16px"><div><h3>Salário mínimo por ano</h3><div class="tablewrap"><table class="mini"><thead><tr><th>Ano</th><th>Mensal (€)</th><th class="l">Nota</th><th></th></tr></thead><tbody>' + sm + '</tbody></table></div><div style="margin-top:10px">' + addBtn('salMin', 'Novo ano') + '</div><p class="note">Anos sem linha usam o último valor conhecido. Os valores de 2027 em diante são previsões: confirme quando saírem em Diário da República.</p></div></div></section>' +
       '<section class="card"><h2 id="def-irs">Simulador de retenção de IRS (2026)</h2><p class="lead">Escreva um salário bruto mensal e veja a retenção, o desconto para a Segurança Social e o líquido.</p><div class="fields">' +
@@ -3612,7 +3865,7 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
   /* A app sem nenhuma informação da pessoa: ficam só as regras (IRS, salário mínimo, acréscimos) e as categorias, sem limites */
   function dadosVazios() {
     const v = clone(DEFAULTS);
-    ['fechos', 'fixas', 'gastos', 'extras', 'objetivos', 'feriados', 'pontes', 'ferias', 'saltadas', 'periodos', 'propostas'].forEach(k => { v[k] = []; });
+    ['contasExtra', 'fechos', 'fixas', 'gastos', 'extras', 'objetivos', 'feriados', 'pontes', 'ferias', 'saltadas', 'periodos', 'propostas'].forEach(k => { v[k] = []; });
     v.plano = {}; v.contas = {}; v.horas = { saldoInicial: 0, meses: {}, registo: [] };
     v.combustivel.abast = []; v.importacao = { regras: [] };
     v.apoios.ledger = {}; v.apoios.outrosAdultos = ''; v.apoios.sims = [];
@@ -3664,8 +3917,9 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
     if (!boasVista && nuvemPronta && appVazia() && !boasDispensada()) { boas = true; boasVista = true; }
     if (boas && !appVazia()) boas = false;   // chegaram dados (da nuvem ou de uma cópia): a janela deixa de fazer sentido
     const abertoAntes = !!dialogoTopo(); if (!abertoAntes) focoOrigem = chaveFoco(document.activeElement);
-    const grupo = GRUPOS.find(g => g[2].indexOf(tab) >= 0) || null; if (grupo) ultimaAba[grupo[0]] = tab;   // as páginas do menu lateral não pertencem a nenhum grupo
-    document.getElementById('tabs').innerHTML = GRUPOS.map(g => '<button data-grupo="' + g[0] + '"' + (g === grupo ? ' aria-current="page"' : '') + '>' + ic(g[0]) + g[1] + '</button>').join('');
+    aplicaAspeto();
+    const GV = gruposVisiveis(), grupo = GV.find(g => g[2].indexOf(tab) >= 0) || null; if (grupo) ultimaAba[grupo[0]] = tab;   // as páginas do menu lateral não pertencem a nenhum grupo
+    document.getElementById('tabs').innerHTML = GV.map(g => '<button data-grupo="' + g[0] + '"' + (g === grupo ? ' aria-current="page"' : '') + '>' + ic(g[0]) + g[1] + '</button>').join('');
     document.getElementById('subtabs').innerHTML = !grupo ? '<span class="crumb">' + ic('menu') + esc(LATERAL[tab] || 'Menu') + ' › <b>' + esc((TABS.find(t => t[0] === tab) || ['', ''])[1]) + '</b></span><button type="button" class="crumb-b" data-act="menu:lateral">Abrir o menu</button>' : grupo[2].length > 1 ? grupo[2].map(id => '<button data-tab="' + id + '"' + (id === tab ? ' aria-current="page"' : '') + '>' + ic(id) + TABS.find(t => t[0] === id)[1] + '</button>').join('') : '';
     const mainEl = document.getElementById('main'), anima = animar; animar = false; mainEl.className = anima ? 'anim' : '';
     // aspeto comum: a 1.ª secção é o cabeçalho da página (ícone + título + texto) e as seguintes são cartões
@@ -3673,7 +3927,7 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
     if (mainEl.dataset) mainEl.dataset.pagina = tab;   // não usar data-tab: o gestor de cliques trataria qualquer clique dentro do main como mudar de separador
     if (tab !== 'recorrentes') fixaSheet = null; if (tab !== 'plano') planoSheet = null; if (tab !== 'rendimentos') rendSheet = null; if (tab !== 'despesas') gastoSheet = null; if (tab !== 'poupanca') { objSheet = null; contaSheet = null; }
     if (detSheet && detSheet.tab !== tab) detSheet = null; if (simSheet && simSheet.tab !== tab) simSheet = null;
-    mainEl.innerHTML = corpo + fixaHtml() + rendHtml() + gastoHtml() + objHtml() + contaHtml() + planoHtml() + detHtml() + simHtml() + rapidoHtml() + boasHtml() + pickerHtml() + calHtml() + menuHtml();
+    mainEl.innerHTML = renomeiaContas(corpo + fixaHtml() + rendHtml() + gastoHtml() + objHtml() + contaHtml() + planoHtml() + detHtml() + simHtml() + rapidoHtml() + boasHtml() + pickerHtml() + calHtml() + menuHtml());
     if (tab === 'despesas') filtraLista('g'); else if (tab === 'rendimentos') filtraLista('r');
     const dlg = dialogoTopo();
     Array.from(document.querySelectorAll('header.top, #main > *')).forEach(e => {   // com uma folha aberta, o resto da página fica inerte (leitores de ecrã e teclado)
@@ -3741,7 +3995,7 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
   const novoId = () => 'f' + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
   function merge(base, saved) {
     saved = seguro(saved == null ? {} : clone(saved));   // os dados recebidos da conta vêm congelados (só de leitura): trabalha-se sempre sobre uma cópia
-    ['fechos', 'fixas', 'gastos', 'extras', 'periodos', 'categorias', 'feriados', 'pontes', 'ferias', 'objetivos', 'propostas', 'salMin', 'saltadas'].forEach(k => { if (k in saved && !Array.isArray(saved[k])) delete saved[k]; else if (k in saved && k !== 'saltadas') saved[k] = saved[k].filter(x => x && typeof x === 'object' && !Array.isArray(x)); });
+    ['contasExtra', 'fechos', 'fixas', 'gastos', 'extras', 'periodos', 'categorias', 'feriados', 'pontes', 'ferias', 'objetivos', 'propostas', 'salMin', 'saltadas'].forEach(k => { if (k in saved && !Array.isArray(saved[k])) delete saved[k]; else if (k in saved && k !== 'saltadas') saved[k] = saved[k].filter(x => x && typeof x === 'object' && !Array.isArray(x)); });
     const out = clone(base);
     Object.keys(saved || {}).forEach(k => { out[k] = saved[k]; });
     out.press = Object.assign(clone(base.press), seguro(saved.press));
@@ -3920,6 +4174,7 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
     categorias: () => ({ nome: 'Nova categoria', icone: '📦', cor: '#6B7C87', limite: '', periodo: 'Mensal' }),
     objetivos: () => ({ inicio: hojeIso(), nome: '', meta: '', data: '', poupado: 0, conta: 'Revolut' }),
     'importacao.regras': () => ({ padrao: '', cat: '', n: 0 }),
+    contasExtra: () => ({ nome: 'Nova conta ' + ((S.contasExtra || []).length + 1), tipo: 'Poupança', saldo: 0, tanb: '', imposto: '', aporte: 0 }),
     propostas: () => ({ nome: 'Nova opção', tipo: 'Contrato', bruto: 920, irs: 0, irsModo: 'Automático', subs: 0, km: 0, port: 0, dias: 22 }),
     periodos: () => ({ inicio: '', tipo: 'Contrato', desc: '', salMin: 'Não', bruto: '', irsModo: 'Automático', irs: 0, subs: '', cartao: 'Sim', km: '', portagens: '', notas: '' }),
     salMin: () => ({ ano: '', valor: '', nota: '' }), feriados: () => ({ data: '', nome: '', repete: 'Não' }), pontes: () => ({ inicio: '', ate: '', desc: '', desconta: 'Não', repete: 'Não' }), ferias: () => ({ de: '', ate: '' })
@@ -3927,6 +4182,7 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
   document.addEventListener('change', ev => {
     const el = ev.target;
     if (el.dataset && el.dataset.imp) { impChange(el); return; }
+    if (el.dataset && el.dataset.ui) { uiChange(el); return; }
     if (el.dataset && el.dataset.filtro) { filtroAtual[el.dataset.filtro] = el.value; filtraLista(el.dataset.filtro); return; }
     if (el.dataset && el.dataset.copia) { carregarCopia(el.files && el.files[0]); try { el.value = ''; } catch (e) { } return; }
     if (el.dataset && el.dataset.local === 'gastoMes') { gastoMes = el.value; renderKeep(); return; }
@@ -3941,6 +4197,13 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
     if (t === 'text' && typeof v === 'string') { v = limpaTexto(v); if (/^\d{4}-\d{2}(-\d{2})?$/.test(v) && !dataOk(v)) { aviso('Data inválida: use um ano entre 1990 e 2100 e um dia que exista. Ficou o valor anterior.'); renderKeep(); return; } }
     if (el.dataset.p === 'press.diaSalario' && v !== '' && (v < 1 || v > 31 || v !== Math.round(v))) { aviso('O dia do salário tem de ser um número inteiro de 1 a 31. Ficou o valor anterior.'); renderKeep(); return; }
     if (el.dataset.p === 'press.reservaMin' && v !== '' && v < 0) { aviso('A reserva mínima não pode ser negativa. Ficou o valor anterior.'); renderKeep(); return; }
+    const mc = /^contasExtra\.(\d+)\.nome$/.exec(el.dataset.p), contaAntiga = mc && S.contasExtra && S.contasExtra[+mc[1]] ? String(S.contasExtra[+mc[1]].nome || '').trim() : null;
+    if (mc && typeof v === 'string') {
+      v = v.replace(/[<>]/g, ' ').trim().slice(0, 40);
+      const usados = CONTAS_APP.map(x => x.toLowerCase()).concat(CONTAS_APP.map(x => nomeConta(x).toLowerCase()), (S.contasExtra || []).filter((c, i) => c && i !== +mc[1]).map(c => String(c.nome || '').trim().toLowerCase()));
+      if (!v) { aviso('A conta precisa de um nome. Ficou o nome anterior.'); renderKeep(); return; }
+      if (usados.indexOf(v.toLowerCase()) >= 0) { aviso('Já há uma conta com esse nome. Ficou o nome anterior.'); renderKeep(); return; }
+    }
     const mr = /^categorias\.(\d+)\.nome$/.exec(el.dataset.p), antigo = mr ? S.categorias[+mr[1]].nome : null;
     if (mr && typeof v === 'string') {
       v = v.trim();
@@ -3948,6 +4211,7 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
       if (S.categorias.some((c, i) => i !== +mr[1] && c.nome.toLowerCase() === v.toLowerCase())) { aviso('Já existe uma categoria com esse nome. Ficou o nome anterior.'); renderKeep(); return; }
     }
     setP(el.dataset.p, v);
+    if (mc && contaAntiga && contaAntiga !== v) { [S.gastos, S.extras, S.fixas, S.objetivos].forEach(l => (l || []).forEach(x => { if (x && x.conta === contaAntiga) x.conta = v; })); }
     if (mr && antigo !== v) { S.fixas.forEach(f => { if (f.cat === antigo) f.cat = v; }); S.gastos.forEach(g => { if (g.cat === antigo) g.cat = v; }); ((S.importacao || {}).regras || []).forEach(r => { if (r.cat === antigo) r.cat = v; }); }
     if (/^extras\.\d+\.valor$/.test(el.dataset.p) && v === '') setP(el.dataset.p, null);
     if (/^gastos\.\d+\.data$/.test(el.dataset.p) && typeof v === 'string' && dataOk(v)) gastoMes = v.slice(0, 7);   // a lista acompanha o gasto para o mês novo
@@ -4001,11 +4265,13 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
   document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && calSheet) { calSheet = null; render(); return; } if (ev.key === 'Escape' && picker) { picker = null; render(); return; } if (ev.key === 'Enter' && ev.target && /^g-/.test(ev.target.id || '')) { ev.preventDefault(); document.querySelector('[data-act="gasto-add"]').click(); } if (ev.key === 'Enter' && !ev.isComposing && ev.target && /^q-/.test(ev.target.id || '') && rapido) { ev.preventDefault(); rapidoGuardar(); return; } if (ev.key === 'Enter' && ev.target && /^a-/.test(ev.target.id || '')) { ev.preventDefault(); document.querySelector('[data-act="abast-add"]').click(); } });
   document.addEventListener('click', async ev => {
     const gb = ev.target.closest('[data-grupo]');
-    if (gb) { const g = GRUPOS.find(x => x[0] === gb.dataset.grupo); if (!g) return; tab = (ultimaAba[g[0]] && g[2].indexOf(ultimaAba[g[0]]) >= 0) ? ultimaAba[g[0]] : g[2][0]; try { history.replaceState(null, '', '#' + tab); } catch (e) { } animar = true; render(); window.scrollTo(0, 0); return; }
+    if (gb) { const g = gruposVisiveis().find(x => x[0] === gb.dataset.grupo); if (!g) return; tab = (ultimaAba[g[0]] && g[2].indexOf(ultimaAba[g[0]]) >= 0) ? ultimaAba[g[0]] : g[2][0]; try { history.replaceState(null, '', '#' + tab); } catch (e) { } animar = true; render(); window.scrollTo(0, 0); return; }
     const tb = ev.target.closest('[data-tab]'); if (tb) { tab = tb.dataset.tab; try { history.replaceState(null, '', '#' + tab); } catch (e) { } animar = true; render(); window.scrollTo(0, 0); return; }
     const b = ev.target.closest('[data-act]'); if (!b) return;
     const [act, a1, a2] = b.dataset.act.split(':');
     if (act === 'add') {
+      if (a1 === 'contasExtra' && !Array.isArray(S.contasExtra)) S.contasExtra = [];
+      if (a1 === 'contasExtra' && S.contasExtra.length >= 20) { aviso('No máximo 20 contas.'); return; }
       getP(a1).push(NEW[a1]()); queueSave();
       if (a1 === 'fixas') fixaSheet = S.fixas.length - 1;   // um recorrente ou um rendimento novo abre logo na folha de edição
       if (a1 === 'extras') rendSheet = S.extras.length - 1;
@@ -4029,7 +4295,7 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
       queueSave(); render(); aviso('Fecho do mês guardado.', () => { S.fechos = antes; queueSave(); render(); });
     }
     else if (act === 'preco-atualizar') {
-      const x = E.subidasPreco(movimentosPreco(), S).find(x => x.fixaIdx === +a1), f = S.fixas[+a1];
+      const x = E.subidasPreco(movimentosPreco(), S, uiCfg().alertas.precoPct).find(x => x.fixaIdx === +a1), f = S.fixas[+a1];
       if (x && f) { const antes = f.valor; f.valor = x.agora; queueSave(); render(); aviso('Valor do recorrente atualizado.', () => { f.valor = antes; queueSave(); render(); }); }
     }
     else if (act === 'po-atualizar') poupancaAtualizar();
@@ -4128,6 +4394,10 @@ button.btn.op-boas { display: flex; align-items: center; justify-content: flex-s
       else if (act === 'cal-rem') { const antes = JSON.stringify(S), ms = marcasDoDia(calSheet.data).filter(x => x.lista); ['feriados', 'pontes'].forEach(l => ms.filter(x => x.lista === l).map(x => x.i).sort((x, y) => y - x).forEach(i => S[l].splice(i, 1))); calSheet = null; queueSave(); render(); aviso('Marcas removidas (os registos inteiros, também noutros dias ou anos).', () => { S = merge(DEFAULTS, JSON.parse(antes)); queueSave(); render(); }); }
     }
     else if (act === 'imp-texto') { impOp++; const v = (document.getElementById('imp-texto').value || ''); if (v.length > 2e6) aviso('O texto é demasiado grande.'); else if (v.trim()) impIniciar(v, 'texto colado'); }
+    else if (act === 'exportar' && (a1 === 'g' || a1 === 'r')) exportarCsv(a1);
+    else if (act === 'ui-ordem') { const ks = BLOCOS_INICIO.map(b => b[0]), c = uiCfg(), ord = ks.slice().sort((x, y) => { const ix = c.inicioOrdem.indexOf(x), iy = c.inicioOrdem.indexOf(y); return (ix < 0 ? 100 + ks.indexOf(x) : ix) - (iy < 0 ? 100 + ks.indexOf(y) : iy); }), i = ord.indexOf(a1), j = i + (+a2); if (i >= 0 && j >= 0 && j < ord.length) { ord[i] = ord[j]; ord[j] = a1; uiSet(u => { u.inicioOrdem = ord; }); renderKeep(); } }
+    else if (act === 'ui-cor-repor') { uiSet(u => { u.aspeto = Object.assign({}, u.aspeto); delete u.aspeto.cor; }); renderKeep(); }
+    else if (act === 'imp-grp') { const g = imp && imp.grupos && imp.grupos[+a1]; if (g) { imp.aberto[g.chave] = !imp.aberto[g.chave]; renderKeep(); } }
     else if (act === 'imp-todos') { if (imp && imp.cat) { const alguma = imp.movs.some((m, i) => !imp.sel[i] && !imp.dup[i]); imp.movs.forEach((m, i) => { imp.sel[i] = alguma && !imp.dup[i]; }); renderKeep(); } }
     else if (act === 'imp-cancelar') { impOp++; imp = null; render(); }
     else if (act === 'imp-sug') impSugestoesAplicar();
