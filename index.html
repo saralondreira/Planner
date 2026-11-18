@@ -691,6 +691,63 @@ tr.sub td:first-child { padding-left: 18px; }
   #g-busca, #r-busca, #g-filtro, #r-filtro, [data-act="exportar:g"], [data-act="exportar:r"] { max-width: none !important; width: 100%; flex: 1 1 100%; }
 }
 
+/* Menu lateral e folhas: quando se escolhe uma opção lá dentro, não voltam a deslizar */
+.sem-anim, .sem-anim.drawer, .sem-anim .drawer, .sem-anim .sheet { animation: none !important; }
+
+/* Seletor de cores */
+.cor-btn { width: 44px; height: 44px; border-radius: 12px; border: 2px solid var(--line); background: var(--c, #6B7C87); cursor: pointer; padding: 0; }
+.cor-btn:focus-visible, .cor-op:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.cores { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 8px; }
+.cor-op { aspect-ratio: 1; min-height: 48px; border-radius: 14px; border: 2px solid transparent; background: var(--c); cursor: pointer; padding: 0; }
+.cor-op.atual { border-color: var(--ink); box-shadow: inset 0 0 0 3px var(--surface); }
+#cor-custom { width: 56px; height: 44px; padding: 2px; border-radius: 10px; }
+
+/* Categorias no telemóvel: cada categoria é uma linha só, sem deslizar para o lado */
+@media (max-width: 600px) {
+  .cat-tab thead { display: none; }
+  .cat-tab, .cat-tab tbody { display: block; width: 100%; }
+  .cat-tab tr { display: grid; grid-template-columns: auto 1fr auto auto; grid-template-areas: "ico nome cor del" "ico uso uso uso"; gap: 2px 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .cat-tab td { padding: 0; border: 0; min-width: 0; }
+  .cat-tab td:nth-child(1) { grid-area: ico; }
+  .cat-tab td:nth-child(2) { grid-area: nome; }
+  .cat-tab td:nth-child(3) { grid-area: cor; }
+  .cat-tab td:nth-child(4) { grid-area: uso; text-align: left; font-size: 13px; color: var(--muted); }
+  .cat-tab td:nth-child(4)::before { content: "Em uso: "; }
+  .cat-tab td:nth-child(5) { grid-area: del; }
+  .cat-tab td.empty { grid-area: auto; grid-column: 1 / -1; }
+  .cat-tab input[type="text"] { width: 100%; min-width: 0; }
+}
+
+/* Importar no telemóvel: cada movimento é um cartão com tudo à vista (data, descrição, valor, categoria e se é um recorrente), sem deslizar para o lado */
+@media (max-width: 600px) {
+  .imp-tab thead { display: none; }
+  .imp-tab, .imp-tab tbody { display: block; width: 100%; }
+  .imp-tab tr { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "sel desc val" "sel data data" "sel cat cat" "sel org org"; gap: 4px 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .imp-tab td { padding: 0; border: 0; min-width: 0; text-align: left; }
+  .imp-tab td:nth-child(1) { grid-area: sel; align-self: start; padding-top: 2px; }
+  .imp-tab td:nth-child(2) { grid-area: data; font-size: 13px; color: var(--muted); }
+  .imp-tab td:nth-child(3) { grid-area: desc; font-weight: 600; overflow-wrap: anywhere; }
+  .imp-tab td:nth-child(4) { grid-area: val; text-align: right; font-weight: 600; white-space: nowrap; }
+  .imp-tab td:nth-child(5) { grid-area: cat; }
+  .imp-tab td:nth-child(6) { grid-area: org; }
+  .imp-tab td:nth-child(5):empty, .imp-tab td:nth-child(6):empty { display: none; }
+  .imp-tab select { width: 100%; max-width: none; }
+  .imp-tab tr.sub { padding-left: 14px; background: var(--head); }
+  .imp-tab tr.grupo td:nth-child(2) { font-weight: 400; }
+}
+@media (max-width: 600px) {
+  .imp-tab td { overflow-wrap: anywhere; }
+  .imp-tab .chip { white-space: normal; display: inline-block; max-width: 100%; line-height: 1.35; }
+  .imp-tab td:nth-child(3) { min-width: 0; }
+}
+
+/* Importar: combustível */
+.comb-op { display: flex; gap: 6px; align-items: center; font-size: 13px; margin-top: 4px; cursor: pointer; }
+.comb-campos { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: end; margin-top: 6px; }
+.comb-campos label { display: grid; gap: 2px; font-size: 12px; color: var(--muted); }
+.comb-campos input { width: 100px; min-width: 0; }
+.comb-campos .muted { font-size: 12px; }
+
 </style>
 </head>
 <body>
@@ -807,16 +864,24 @@ tr.sub td:first-child { padding-left: 18px; }
      a parte variável é o limite menos os recorrentes (nunca abaixo de 0). */
   const PERIODOS_ORC = { 'Diário': 365 / 12, 'Semanal': 52 / 12, 'Quinzenal': 26 / 12, 'Mensal': 1 };
   const limiteMensal = c => has(c.limite) ? num(c.limite) * (PERIODOS_ORC[c.periodo] || 1) : null;
-  function orcMes(S, key, fixasCat, hojeStr) {
+  /* Gastos que já estão em Combustível: têm um abastecimento com a mesma data e o mesmo valor (um abastecimento por gasto).
+     O plano já estima o combustível, por isso estes gastos não se somam outra vez aos gastos variáveis. */
+  function gastosDeCombustivel(S) {
+    const ab = {}, out = new Set(), cent = v => Math.round(num(v) * 100);
+    ((S.combustivel && Array.isArray(S.combustivel.abast)) ? S.combustivel.abast : []).forEach(a => { if (a && a.data && has(a.valor)) { const k = a.data + '|' + cent(a.valor); ab[k] = (ab[k] || 0) + 1; } });
+    (S.gastos || []).forEach(g => { if (!g || g.fixa || !g.data) return; const k = g.data + '|' + cent(g.valor); if (ab[k] > 0) { ab[k]--; out.add(g); } });
+    return out;
+  }
+  function orcMes(S, key, fixasCat, hojeStr, semComb) {
     const cats = S.categorias || [], orc = S.orcamento || {}, hojeYm = mk(hojeStr);
     const ym = key + '-01', next = addM(ym, 1), p = parse(ym), nd = dim(p.y, p.m);
     const fechado = key < hojeYm, atual = key === hojeYm;
     const dias = atual ? Math.min(nd, Math.max(1, parse(hojeStr).d)) : nd;
-    const real = {}, pagos = {}; let totalReal = 0;
+    const real = {}, realPl = {}, pagos = {}; let totalReal = 0;   // realPl: o real que conta para o plano (sem os gastos de combustível, já estimados)
     S.gastos.forEach(g => {
       if (!g.data || g.data < ym || g.data >= next) return;
       const c = g.cat || '', v = num(g.valor);
-      if (g.fixa) pagos[c] = (pagos[c] || 0) + v; else { real[c] = (real[c] || 0) + v; totalReal += v; }
+      if (g.fixa) pagos[c] = (pagos[c] || 0) + v; else { real[c] = (real[c] || 0) + v; totalReal += v; if (!(semComb && semComb.has(g))) realPl[c] = (realPl[c] || 0) + v; }
     });
     const pend = {};
     if (!fechado) ocorrencias(S, ym, addDays(next, -1)).forEach(o => { if (o.estado === 'pendente') { const c = S.fixas[o.idx].cat || ''; pend[c] = (pend[c] || 0) + o.valor; } });
@@ -828,18 +893,18 @@ tr.sub td:first-child { padding-left: 18px; }
       const lim = ov !== null ? ov : limiteMensal(c), temLimite = lim !== null;
       if (temLimite) limitadas.add(c.nome);
       const rc = fixasCat[c.nome] || 0, disp = temLimite ? Math.max(0, lim - rc) : 0;
-      const r = real[c.nome] || 0, pg = pagos[c.nome] || 0, pd = pend[c.nome] || 0, gasto = r + pg;
+      const r = real[c.nome] || 0, rp = realPl[c.nome] || 0, pg = pagos[c.nome] || 0, pd = pend[c.nome] || 0, gasto = r + pg;
       const perc = temLimite && lim > 0 ? gasto / lim : null;
       const projecao = atual ? pg + pd + r / dias * nd : null;
       const estado = !temLimite ? 'sem' : lim <= 0 ? (gasto > 0 ? 'bad' : 'ok') : perc > 1 ? 'bad' : perc >= 0.8 ? 'warn' : 'ok';
       return { nome: c.nome, icone: c.icone, cor: c.cor, limite: lim, equivalente: limiteMensal(c), override: ov, temLimite, recorrentes: rc, disponivel: disp,
         real: r, pagos: pg, pendentes: pd, gasto, restante: temLimite ? lim - gasto : null, perc, projecao, estado,
         ritmo: !!(atual && temLimite && estado !== 'bad' && projecao > lim),
-        plano: temLimite ? (aberto ? Math.max(r, disp) : r) : 0 };
+        plano: temLimite ? (aberto ? Math.max(rp, disp) : rp) : 0 };
     });
-    const realGeral = Object.keys(real).reduce((a, c) => a + (limitadas.has(c) ? 0 : real[c]), 0);
+    const realGeral = Object.keys(real).reduce((a, c) => a + (limitadas.has(c) ? 0 : real[c]), 0), realGeralPl = Object.keys(realPl).reduce((a, c) => a + (limitadas.has(c) ? 0 : realPl[c]), 0);
     const gOv = orc.geralMeses && has(orc.geralMeses[key]) ? num(orc.geralMeses[key]) : null, G = gOv !== null ? gOv : num(orc.geral);
-    const geral = { limite: G, override: gOv, real: realGeral, plano: aberto ? Math.max(realGeral, G) : realGeral };
+    const geral = { limite: G, override: gOv, real: realGeral, plano: aberto ? Math.max(realGeralPl, G) : realGeralPl };
     return { key, linhas, geral, fechado, atual, semRegistos, dias, nd,
       varPlano: linhas.reduce((a, l) => a + l.plano, 0) + geral.plano,
       totalLimite: linhas.reduce((a, l) => a + (l.temLimite ? l.limite : 0), 0) + G,
@@ -949,6 +1014,7 @@ tr.sub td:first-child { padding-left: 18px; }
     const fixasPorCat = {}; S.fixas.forEach(f => { if (f.cat) fixasPorCat[f.cat] = (fixasPorCat[f.cat] || 0) + fixaEquiv(f); });
 
     const ledger = (S.apoios && S.apoios.ledger) || {};
+    const gComb = gastosDeCombustivel(S);   // gastos que já têm o seu abastecimento em Combustível
     const months = [];
     const N = horizonte(S);
     for (let i = 0; i < N; i++) {
@@ -990,10 +1056,13 @@ tr.sub td:first-child { padding-left: 18px; }
       const next = addM(ym, 1);
       const gastosMes = S.gastos.reduce((a, g) => a + (g.data && !g.fixa && g.data >= ym && g.data < next ? num(g.valor) : 0), 0);
       // gastos variáveis do plano: orçamento por categoria (sem limites nem "geral", é só o que foi registado)
-      const orcM = orcMes(S, key, fixasCat, hojeFull);
+      const orcM = orcMes(S, key, fixasCat, hojeFull, gComb);
+      // combustível: o plano estima-o (comb). Os gastos de combustível já registados (com abastecimento) não se somam a essa estimativa: só conta o que passar dela.
+      const combReg = gComb.size ? S.gastos.reduce((a, g) => a + (gComb.has(g) && g.data >= ym && g.data < next ? num(g.valor) : 0), 0) : 0, combExtra = Math.max(0, combReg - comb);
+      const varPlano = orcM.varPlano + combExtra;
       months.push({ i, ym, key, fase: faseDe(periodoAt(S, ym)), dias, uteis, hol, fer, pont, pontDesc, km: num(per.km), per,
-        bruto, liq, irs: irsT, X, contaX, subs: sub, comb, port, manut, fixas, fixasCat, extra, gastosMes, varPlano: orcM.varPlano, orc: orcM, preco, cartao: per.cartao,
-        G: 0, H: 0, totalDesp: comb + port + manut + fixas + extra + orcM.varPlano, man });
+        bruto, liq, irs: irsT, X, contaX, subs: sub, comb, port, manut, fixas, fixasCat, extra, gastosMes, combReg, combExtra, varPlano, orc: orcM, preco, cartao: per.cartao,
+        G: 0, H: 0, totalDesp: comb + port + manut + fixas + extra + varPlano, man });
     }
     // extras de rendimento (valor automático = salário líquido do mês da data)
     const liqPorMes = {}; months.forEach(mo => { liqPorMes[mo.key] = mo.liq; });
@@ -2249,7 +2318,16 @@ tr.sub td:first-child { padding-left: 18px; }
   const chipIco = (emoji, cor) => '<span class="ico" style="--c:' + esc(corOk(cor)) + '" aria-hidden="true">' + esc(emoji) + '</span>';
   const icoBtn = (path, emoji, cor, label) => '<button class="ico btn-ico" style="--c:' + esc(corOk(cor)) + '" data-act="pick:' + path + '" aria-label="' + esc(label || 'Escolher ícone') + '" title="Escolher ícone">' + (emoji ? esc(emoji) : '＋') + '</button>';
   const EMOJIS = ['🏠', '🛒', '🚗', '⛽', '🚌', '🚆', '✈️', '📱', '💻', '🌐', '📺', '🎬', '🎮', '🎧', '📚', '🎓', '✏️', '💊', '🩺', '🦷', '❤️', '🏋️', '🧴', '💇', '👕', '👟', '🎁', '🎉', '🍽️', '☕', '🍕', '🍔', '🥗', '🍷', '🐶', '🐱', '🌱', '🔧', '🛠️', '💡', '🔥', '💧', '📡', '🧾', '🏦', '💳', '💶', '💰', '📈', '🪙', '🔁', '🔔', '🔒', '🛡️', '📦', '📮', '🧳', '🏖️', '⛰️', '🎫', '🧸', '🩹', '🅿️', '🛣️', '🚿', '🧹', '👶', '💍', '⭐', '🏷️'];
-  let picker = null;
+  let picker = null, corPick = null;
+  const PALETA = [['Vermelho', '#E57373'], ['Rosa', '#F06292'], ['Roxo', '#BA68C8'], ['Violeta', '#9575CD'], ['Azul-índigo', '#7986CB'], ['Azul', '#64B5F6'], ['Azul-claro', '#4FC3F7'], ['Turquesa', '#4DD0E1'], ['Verde-água', '#4DB6AC'], ['Verde', '#81C784'],
+    ['Verde-lima', '#AED581'], ['Amarelo', '#DCE775'], ['Âmbar', '#FFD54F'], ['Laranja', '#FFB74D'], ['Coral', '#FF8A65'], ['Castanho', '#A1887F'], ['Cinzento-azulado', '#90A4AE'], ['Cinzento', '#6B7C87'], ['Petróleo', '#0D6A73'], ['Rosa-claro', '#F48FB1']];
+  function corPickerHtml() {
+    if (!corPick) return '';
+    const atual = corOk(getP(corPick)).toLowerCase();
+    return '<div class="modal baixo" data-act="cor-fechar"><div class="sheet" role="dialog" aria-modal="true" aria-label="Escolher cor"><div class="row sh-topo"><h2>Escolher cor</h2><button class="x" data-act="cor-fechar" aria-label="Fechar">×</button></div>' +
+      '<div class="cores">' + PALETA.map((c, i) => '<button type="button" class="cor-op' + (c[1].toLowerCase() === atual ? ' atual' : '') + '" style="--c:' + c[1] + '" data-act="cor-set:' + i + '" aria-label="' + esc(c[0]) + '" aria-pressed="' + (c[1].toLowerCase() === atual) + '"></button>').join('') + '</div>' +
+      '<div class="row" style="margin-top:14px"><label class="muted" for="cor-custom">Outra cor</label><input type="color" id="cor-custom" value="' + esc(atual) + '" aria-label="Outra cor"><button type="button" class="btn" data-act="cor-custom">Usar esta cor</button></div></div></div>';
+  }
   function pickerHtml() {
     if (!picker) return '';
     return '<div class="modal" data-act="picker-close"><div class="sheet" role="dialog" aria-modal="true" aria-label="Escolher ícone"><div class="row" style="justify-content:space-between"><h2>Escolher ícone</h2><button class="x" data-act="picker-close" aria-label="Fechar">×</button></div>' +
@@ -2565,7 +2643,7 @@ tr.sub td:first-child { padding-left: 18px; }
     if (t === 'sel') return '<select data-p="' + p + '" data-t="sel"' + extra + '>' + (o.blank ? '<option value=""></option>' : '') + o.list.map(x => '<option' + (CONTAS_APP.indexOf(x) >= 0 ? ' value="' + esc(x) + '"' : '') + (x === v ? ' selected' : '') + '>' + esc(x) + '</option>').join('') + '</select>';
     if (t === 'chk') return '<input type="checkbox" data-p="' + p + '" data-t="chk"' + (v ? ' checked' : '') + extra + '>';
     if (t === 'text') return '<input type="text" data-p="' + p + '" data-t="text" maxlength="' + (o.max || 200) + '" value="' + esc(v) + '"' + ph + extra + '>';
-    if (t === 'color') return '<input type="color" data-p="' + p + '" data-t="text" value="' + esc(corOk(v)) + '"' + extra + '>';
+    if (t === 'color') return '<button type="button" class="cor-btn" style="--c:' + esc(corOk(v)) + '" data-act="cor:' + esc(p) + '" aria-label="' + esc((o.aria || 'Cor') + ': escolher outra cor') + '" title="Escolher cor"></button>';
     if (t === 'time') return '<input type="time" data-p="' + p + '" data-t="text" value="' + esc(v) + '"' + extra + '>';
     if (t === 'date') return '<input type="date" min="1990-01-01" max="2100-12-31" data-p="' + p + '" data-t="text" value="' + esc(v) + '"' + extra + '>';
     return '<input type="number" inputmode="decimal" step="any" min="-1000000000" max="1000000000" data-p="' + p + '" data-t="num" value="' + (v == null || v === '' ? '' : esc(v)) + '"' + ph + extra + '>';
@@ -3018,7 +3096,7 @@ tr.sub td:first-child { padding-left: 18px; }
       lin('Preço do combustível (€/L)', inp(base + 'preco', { ph: f2.format(m.preco), aria: 'Preço combustível ' + k })) +
       lin('Combustível', eur(m.comb)) + lin('Portagens', eur(m.port)) + lin('Manutenção do carro', eur(m.manut)) + lin('Despesas fixas', eur(m.fixas)) +
       lin('Extras / imprevistos', inp(base + 'extras', { aria: 'Extras ' + k })) +
-      lin('Gastos variáveis (plano)' + peq('Gastos já registados: ' + eur(m.gastosMes)), eur(m.varPlano)) +
+      lin('Gastos variáveis (plano)' + peq('Gastos já registados: ' + eur(m.gastosMes) + (m.combReg > 0 ? '. Destes, ' + eur(m.combReg) + ' são de combustível, que já conta na linha Combustível' + (m.combExtra > 0 ? ' (aqui só entra o que passou da estimativa: ' + eur(m.combExtra) + ')' : '') : '')), eur(m.varPlano)) +
       lin('Total que sai', eur(m.totalDesp), 'tot') + '</tbody></table></div>' +
       '<h3>Resultado</h3><div class="tablewrap"><table class="mini def"><tbody>' +
       lin('Saldo do mês', '<b>' + eur(m.saldo) + '</b>', cls(m.saldo)) + lin('Poupança acumulada (prevista)', eur(m.acum), cls(m.acum)) +
@@ -3304,7 +3382,8 @@ tr.sub td:first-child { padding-left: 18px; }
   }
 
   /* ---------- Importar extratos do banco ---------- */
-  let imp = null;
+  let imp = null, novaCat = null;
+  const NOVA_CAT = '__nova', COMB_RE = /(^| )(galp|repsol|prio|cepsa|bp|combustivel|combustiveis|gasoleo|gasolina|posto|abastecimento)( |$)/;
   const dataPt = iso => iso.slice(8) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4);
   function impRecalcula(manterMapa) {
     const I = imp;
@@ -3322,17 +3401,33 @@ tr.sub td:first-child { padding-left: 18px; }
       const c = E.categorizar(m.desc, S.importacao.regras, S.categorias);
       I.cat[i] = c.cat; I.cat0[i] = c.cat; I.org[i] = c.origem; I.dup[i] = dups[i].dup; I.dupMotivo[i] = dups[i].motivo; I.sel[i] = m.valor < 0 && !I.dup[i];
     });
-    // saídas que são um pagamento recorrente por pagar (mesmo valor, até 10 dias de diferença): ficam ligadas a ele, como "Pago", para não contar duas vezes
+    // saídas que correspondem a um pagamento recorrente por pagar: ficam ligadas a ele, como "Pago", para não contar duas vezes.
+    // Vale o mesmo valor (até 10 dias de diferença) ou, se a descrição do movimento tiver o nome do recorrente, um valor parecido (até 15%, no mínimo 1 €) até 12 dias de diferença.
     const usadas = new Set(), difDias = (a, b) => { const x = E.parse(a), y = E.parse(b); return Math.abs(Date.UTC(x.y, x.m - 1, x.d) - Date.UTC(y.y, y.m - 1, y.d)) / 86400000; };
-    I.fix = {};
-    I.movs.forEach((m, i) => {
-      if (m.valor >= 0) return;
-      const v = Math.abs(m.valor);
-      const oc = E.ocorrencias(S, addDiasIso(m.data, -10), addDiasIso(m.data, 10)).filter(o => o.estado === 'pendente' && Math.abs(o.valor - v) < 0.015 && !usadas.has(o.id + '|' + o.data)).sort((a, b) => difDias(a.data, m.data) - difDias(b.data, m.data))[0];
-      if (!oc) return;
-      const f = S.fixas[oc.idx]; usadas.add(oc.id + '|' + oc.data);
-      I.fix[i] = { id: oc.id, ocorr: oc.data, nome: f.desc || 'Recorrente' }; I.cat[i] = f.cat || ''; I.cat0[i] = I.cat[i]; I.org[i] = 'recorrente';
+    I.fix = {}; const cand = [];
+    const saidasI = I.movs.map((m, i) => i).filter(i => I.movs[i].valor < 0 && !I.dup[i]);   // o que já está registado não reserva um recorrente
+    let pend = [];
+    if (saidasI.length) {   // as ocorrências pendentes calculam-se uma só vez para o intervalo todo do extrato, e não uma vez por movimento
+      const datas = saidasI.map(i => I.movs[i].data).sort();
+      pend = E.ocorrencias(S, addDiasIso(datas[0], -12), addDiasIso(datas[datas.length - 1], 12)).filter(o => o.estado === 'pendente');
+    }
+    const primeiraDesde = d => { let a = 0, b = pend.length; while (a < b) { const c = (a + b) >> 1; if (pend[c].data < d) a = c + 1; else b = c; } return a; };   // pesquisa binária (as ocorrências vêm por ordem de data)
+    saidasI.forEach(i => {
+      const m = I.movs[i], v = Math.abs(m.valor), nm = ' ' + E.normalizaDesc(m.desc) + ' ', fim = addDiasIso(m.data, 12);
+      for (let k = primeiraDesde(addDiasIso(m.data, -12)); k < pend.length && pend[k].data <= fim; k++) {
+        const o = pend[k];
+        const f = S.fixas[o.idx], dd = difDias(o.data, m.data), dif = Math.abs(o.valor - v), kf = E.chaveDesc(f.desc);
+        const descBate = !!kf && (nm.indexOf(' ' + kf + ' ') >= 0), exato = dif < 0.015, parecido = dif <= Math.max(1, 0.15 * o.valor);   // a palavra inteira: "seguro" não liga a "seguros"
+        const score = exato && descBate ? 0 : exato && dd <= 10 ? 1 : descBate && parecido ? 2 : null;
+        if (score !== null) cand.push({ i, o, f, score, dd, dif });
+      }
     });
+    cand.sort((x, y) => x.score - y.score || x.dd - y.dd || x.dif - y.dif).forEach(c => {
+      const k = c.o.id + '|' + c.o.data; if (I.fix[c.i] || usadas.has(k)) return; usadas.add(k);
+      I.fix[c.i] = { id: c.o.id, ocorr: c.o.data, nome: c.f.desc || 'Recorrente', previsto: c.dif >= 0.015 ? c.o.valor : null };
+      I.cat[c.i] = c.f.cat || ''; I.cat0[c.i] = I.cat[c.i]; I.org[c.i] = 'recorrente';
+    });
+    I.comb = {}; I.movs.forEach((m, i) => { if (m.valor < 0 && !I.fix[i] && COMB_RE.test(E.normalizaDesc(m.desc))) I.comb[i] = { on: true, preco: '', km: '' }; });   // o que parece combustível vem marcado; dá para desmarcar
     I.grupos = E.gruposMovimentos(I.movs);
   }
   function impIniciar(texto, nome) {
@@ -3406,7 +3501,11 @@ tr.sub td:first-child { padding-left: 18px; }
     if (!imp || !imp.cat) return;
     if (k === 'sel') imp.sel[a] = el.checked;
     else if (k === 'sug') { imp.sug = imp.sug || { saldo: true, rec: {}, rend: {}, feito: false }; if (a === 'saldo') imp.sug.saldo = el.checked; else if ((a === 'rec' || a === 'rend') && /^\d+$/.test(p[2] || '')) imp.sug[a][+p[2]] = el.checked; }
+    else if ((k === 'cat' || k === 'gcat') && el.value === NOVA_CAT) { novaCat = { alvo: k + ':' + a }; setTimeout(() => { const e = document.getElementById('nc-nome'); if (e && e.focus) e.focus(); }, 0); }
     else if (k === 'cat') imp.cat[a] = el.value;
+    else if (k === 'comb') { const c = imp.comb[a] = imp.comb[a] || { on: false, preco: '', km: '' }; c.on = !!el.checked; }
+    else if (k === 'cprec' || k === 'ckm') { const c = imp.comb[a] = imp.comb[a] || { on: true, preco: '', km: '' }; c[k === 'cprec' ? 'preco' : 'km'] = String(el.value || '').replace(',', '.').trim(); }
+    else if (k === 'gcomb') { const g = (imp.grupos || [])[+a]; if (g) g.idx.forEach(i => { if (imp.movs[i].valor < 0 && !imp.fix[i]) { const c = imp.comb[i] = imp.comb[i] || { on: false, preco: '', km: '' }; c.on = !!el.checked; } }); }
     else if (k === 'gcat' || k === 'gsel') { const g = (imp.grupos || [])[+a]; if (g) g.idx.forEach(i => { if (k === 'gsel') { if (!imp.dup[i]) imp.sel[i] = el.checked; } else if (imp.movs[i].valor < 0 && !imp.fix[i]) imp.cat[i] = el.value; }); }
     else if (k === 'vista') imp.vista = el.value === 'lista' ? 'lista' : 'grupos';
     else if (k === 'conta') imp.conta = el.value;
@@ -3419,23 +3518,43 @@ tr.sub td:first-child { padding-left: 18px; }
     const catsPorChave = {}, aprendidas = new Set();   // o mesmo comerciante com categorias diferentes (como MB WAY) não cria regra
     I.movs.forEach((m, i) => { if (!I.sel[i] || m.valor >= 0 || I.fix[i]) return; const k = E.chaveDesc(m.desc); if (k) (catsPorChave[k] = catsPorChave[k] || new Set()).add(I.cat[i] || ''); });
     const mistos = new Set(Object.keys(catsPorChave).filter(k => catsPorChave[k].size > 1));
+    if (!S.combustivel) S.combustivel = { abast: [] }; if (!Array.isArray(S.combustivel.abast)) S.combustivel.abast = [];
+    let nComb = 0, nKmIgn = 0; const refP = refPrecoComb(), nAbast0 = S.combustivel.abast.length;
+    const abastDe = (m, cb) => {   // um gasto de combustível vira também um abastecimento, com litros (valor ÷ preço) e, se bater certo com os outros, os km
+      const A = S.combustivel.abast, valor = Math.abs(m.valor);
+      if (A.length >= 5000 || A.slice(0, nAbast0).some(a => a.data === m.data && Math.abs(num(a.valor) - valor) < 0.005)) return;   // só os que já existiam antes desta importação: dois abastecimentos iguais no mesmo extrato contam os dois
+      const preco = parseFloat(cb.preco) > 0 ? parseFloat(cb.preco) : refP, litros = preco > 0 ? Math.round(valor / preco * 100) / 100 : '';
+      const km0 = Math.round(parseFloat(cb.km)), kmDe = a => parseFloat(a.kmConta);   // arredonda antes de comparar: 1000,4 passa a 1000 e já não pode ser igual ao anterior
+      const anteriores = A.filter(a => a.data && a.data <= m.data && isFinite(kmDe(a))).map(kmDe), seguintes = A.filter(a => a.data && a.data > m.data && isFinite(kmDe(a))).map(kmDe);
+      const maxAntes = anteriores.reduce((x, y) => Math.max(x, y), -Infinity), minDepois = seguintes.reduce((x, y) => Math.min(x, y), Infinity);   // vale o maior km até esta data e o menor depois dela, mesmo com vários abastecimentos no mesmo dia
+      let km = '';
+      if (isFinite(km0) && km0 > 0 && km0 <= 2e6 && km0 > maxAntes && km0 < minDepois) km = km0; else if (cb.km) nKmIgn++;
+      A.push({ data: m.data, valor, litros, kmConta: km, posto: limpaTexto(m.desc, 60) }); nComb++;
+    };
     I.movs.forEach((m, i) => {
       if (!I.sel[i]) return;
       if (m.valor < 0 && I.fix[i]) {
         S.gastos.push({ data: m.data, desc: I.fix[i].nome, cat: I.cat[i] || '', valor: Math.abs(m.valor), conta: I.conta, notas: 'Importado do extrato', fixa: I.fix[i].id, ocorr: I.fix[i].ocorr }); g++; rc++;
       } else if (m.valor < 0) {
         S.gastos.push({ data: m.data, desc: m.desc, cat: I.cat[i] || '', valor: Math.abs(m.valor), conta: I.conta, notas: 'Importado do extrato' }); g++;
+        if ((I.comb[i] || {}).on) abastDe(m, I.comb[i]);
         if (I.cat[i] && I.cat[i] !== I.cat0[i] && !mistos.has(E.chaveDesc(m.desc))) { const k = E.chaveDesc(m.desc); if (k && !aprendidas.has(k)) { aprendidas.add(k); E.aprender(S.importacao.regras, m.desc, I.cat[i]); ap++; } }
       } else { S.extras.push({ data: m.data, tipo: 'Outro', desc: m.desc, origem: 'Extrato', valor: m.valor, freq: 'Única', ate: '', conta: I.conta, contar: 'Não', notas: 'Importado do extrato' }); r++; }
       if (m.data > ultimo) ultimo = m.data;
     });
     if (ultimo) gastoMes = ultimo.slice(0, 7);
-    imp = { movs: [], msg: g + ' gastos e ' + r + ' receitas importados' + (rc ? ' (' + rc + ' ligado' + (rc > 1 ? 's' : '') + ' a recorrentes, marcados como pagos)' : '') + (ap ? '. Aprendi ' + ap + ' regra' + (ap > 1 ? 's' : '') + ' com as suas correções' : '') + '.' };
+    imp = { movs: [], msg: g + ' gastos e ' + r + ' receitas importados' + (rc ? ' (' + rc + ' ligado' + (rc > 1 ? 's' : '') + ' a recorrentes, marcados como pagos)' : '') + (nComb ? '. ' + nComb + (nComb > 1 ? ' abastecimentos registados' : ' abastecimento registado') + ' em Combustível' + (nKmIgn ? ' (km ignorado em ' + nKmIgn + ', por não bater com os outros abastecimentos)' : '') : '') + (ap ? '. Aprendi ' + ap + ' regra' + (ap > 1 ? 's' : '') + ' com as suas correções' : '') + '.' };
     queueSave(); render();
   }
   /* Arranque pelo extrato: propõe preencher o saldo, os recorrentes e os rendimentos mensais com o que o extrato mostra */
+  function sugestoesImp(I) {
+    const base = E.sugestoesExtrato(I.movs, S), desde = addDiasIso(hojeIso(), -200);
+    const hist = S.gastos.filter(g => !g.fixa && g.data && dataOk(g.data) && g.data >= desde && num(g.valor) > 0).map(g => ({ data: g.data, desc: g.desc, valor: -num(g.valor) }));
+    const novos = I.movs.filter((m, i) => !I.dup[i]), comb = E.sugestoesExtrato(novos.concat(hist), S);   // o que já está registado não conta duas vezes
+    return Object.assign({}, comb, { saldo: base.saldo, proximoMes: base.proximoMes || comb.proximoMes });
+  }
   function impSugestoesHtml(I) {
-    const sg = E.sugestoesExtrato(I.movs, S); I.sug = I.sug || { saldo: true, rec: {}, rend: {}, feito: false };
+    const sg = sugestoesImp(I); I.sug = I.sug || { saldo: true, rec: {}, rend: {}, feito: false };
     if (I.sug.feito) return '<section class="card"><h2>⚡ Preenchido com este extrato</h2><p class="note">Aplicado o que escolheu. Pode rever em Recorrentes, Rendimentos e Definições. Falta importar os movimentos, mais abaixo.</p></section>';
     const conta = I.conta, campo = conta === 'Principal' ? 'saldoPrincipal' : conta === 'Revolut' ? 'revolut' : '';
     const poderSaldo = sg.saldo && campo && num(S.press[campo]) === 0, vazioAgora = !S.periodos.length && !S.fixas.length && !S.extras.length && S.gastos.every(g => g.notas === 'Importado do extrato');
@@ -3452,7 +3571,7 @@ tr.sub td:first-child { padding-left: 18px; }
   }
   function impSugestoesAplicar() {
     const I = imp; if (!I || !I.movs || !I.sug || I.sug.feito) return;
-    const sg = E.sugestoesExtrato(I.movs, S), antes = JSON.stringify({ fixas: S.fixas, extras: S.extras, press: S.press }), feito = [];
+    const sg = sugestoesImp(I), antes = JSON.stringify({ fixas: S.fixas, extras: S.extras, press: S.press }), feito = [];
     const campo = I.conta === 'Principal' ? 'saldoPrincipal' : I.conta === 'Revolut' ? 'revolut' : '';
     const vazioAgora = !S.periodos.length && !S.fixas.length && !S.extras.length && S.gastos.every(g => g.notas === 'Importado do extrato'), temSal = S.periodos.some(p => p.salMin === 'Sim' || num(p.bruto) > 0);
     if (sg.saldo && campo && num(S.press[campo]) === 0 && I.sug.saldo !== false) { S.press[campo] = sg.saldo.valor; feito.push('saldo inicial'); if (vazioAgora && sg.proximoMes) { S.press.mesInicial = sg.proximoMes; feito.push('plano a começar em ' + mesLongo(sg.proximoMes)); } }
@@ -3467,6 +3586,32 @@ tr.sub td:first-child { padding-left: 18px; }
     aviso(feito.length ? 'Preenchido: ' + feito.join(', ') + '.' : 'Nada para aplicar.', feito.length ? () => { const o = JSON.parse(antes); S.fixas = o.fixas; S.extras = o.extras; S.press = o.press; if (imp && imp.sug) imp.sug.feito = false; queueSave(); render(); } : null, 'Desfazer', 12000);
   }
 
+  function novaCatHtml() {
+    if (!novaCat) return '';
+    return '<div class="modal baixo" data-act="nc-fechar"><div class="sheet" role="dialog" aria-modal="true" aria-label="Nova categoria"><div class="row sh-topo"><h2>Nova categoria</h2><button class="x" data-act="nc-fechar" aria-label="Fechar">×</button></div>' +
+      '<div class="fields"><div class="field"><label for="nc-nome">Nome</label><input type="text" id="nc-nome" maxlength="40" placeholder="ex.: Vending" autocomplete="off" value="' + esc(novaCat.nome || '') + '"></div><div class="field"><label for="nc-ico">Ícone (opcional)</label><input type="text" id="nc-ico" maxlength="8" placeholder="📦" autocomplete="off" value="' + esc(novaCat.ico || '') + '"></div></div>' +
+      '<p class="note">Fica já escolhida' + (/^gcat/.test(novaCat.alvo) ? ' para todos os movimentos do grupo' : ' para este movimento') + '. A cor e o ícone podem mudar depois em Categorias.</p>' +
+      '<div class="row" style="margin-top:12px"><button type="button" class="btn pri" data-act="nc-criar">Criar e escolher</button><button type="button" class="btn" data-act="nc-fechar">Cancelar</button></div></div></div>';
+  }
+  function novaCatCriar() {
+    if (!novaCat || !imp || !imp.cat) { novaCat = null; return; }
+    const nome = limpaTexto((document.getElementById('nc-nome') || {}).value, 40).replace(/[<>]/g, ' ').trim(), ico = limpaTexto((document.getElementById('nc-ico') || {}).value, 8).trim();
+    if (!nome) { aviso('Escreva o nome da categoria.'); return; }
+    if (!Array.isArray(S.categorias)) S.categorias = [];
+    let c = S.categorias.find(x => String(x.nome).toLowerCase() === nome.toLowerCase());
+    if (!c) { if (S.categorias.length >= 100) { aviso('No máximo 100 categorias.'); return; } c = { nome, icone: ico || '📦', cor: PALETA[S.categorias.length % PALETA.length][1], limite: '', periodo: 'Mensal' }; S.categorias.push(c); }
+    const p = novaCat.alvo.split(':'), n = +p[1];
+    if (p[0] === 'cat') { if (imp.movs[n]) imp.cat[n] = c.nome; }
+    else { const g = (imp.grupos || [])[n]; if (g) g.idx.forEach(i => { if (imp.movs[i].valor < 0 && !imp.fix[i]) imp.cat[i] = c.nome; }); }
+    novaCat = null; queueSave(); renderKeep();
+  }
+  const refPrecoComb = () => (R && R.cb && R.cb.precoUsado) || 0;
+  function combCampos(I, i) {
+    const c = I.comb[i] || {}, val = Math.abs(I.movs[i].valor), p = parseFloat(c.preco) > 0 ? parseFloat(c.preco) : refPrecoComb(), ref = refPrecoComb();
+    return '<div class="comb-campos"><label>€/litro <input type="number" step="any" min="0" inputmode="decimal" data-imp="cprec:' + i + '" value="' + esc(c.preco || '') + '" placeholder="' + (ref ? f2.format(ref) : '0,00') + '" aria-label="Preço por litro"></label>' +
+      '<label>Km no conta-quilómetros <input type="number" step="1" min="0" inputmode="numeric" data-imp="ckm:' + i + '" value="' + esc(c.km || '') + '" placeholder="opcional" aria-label="Quilómetros do conta-quilómetros"></label>' +
+      '<span class="muted">' + (p > 0 ? '≈ ' + f2.format(val / p) + ' L' : 'Sem preço: escreva o €/litro para calcular os litros') + '</span></div>';
+  }
   function tabImportar() {
     const I = imp, regras = S.importacao.regras, tem = I && I.movs && I.movs.length;
     const caixa = '<section class="card"><h2>Importar extrato do banco</h2><p class="lead">Carregue o extrato em CSV, Excel (.xlsx) ou PDF, ou cole o texto. A app propõe a categoria de cada movimento, avisa dos que já estão registados, e só importa o que confirmar. O extrato é lido no seu navegador e não é enviado para lado nenhum. Para ler um PDF, o navegador descarrega o leitor de PDF (pdf.js) do cdnjs, uma só vez, e o ficheiro fica no seu computador.</p><div class="fields">' +
@@ -3488,26 +3633,26 @@ tr.sub td:first-child { padding-left: 18px; }
         const m = I.movs[i];
         const saida = m.valor < 0, o = I.org[i];
         return '<tr' + (I.dup[i] ? ' class="muted"' : '') + '><td><input type="checkbox" data-imp="sel:' + i + '"' + (I.sel[i] ? ' checked' : '') + ' aria-label="Importar o movimento de ' + dataPt(m.data) + ': ' + esc(m.desc) + '"></td><td>' + dataPt(m.data) + '</td><td class="l">' + esc(m.desc) + '</td><td class="' + (saida ? '' : 'good') + '">' + eur(m.valor) + '</td>' +
-          '<td class="l">' + (saida ? '<select data-imp="cat:' + i + '" aria-label="Categoria de ' + dataPt(m.data) + ': ' + esc(m.desc) + '"><option value=""></option>' + catNomes().map(c => '<option' + (c === I.cat[i] ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</select>' : '<span class="chip">Receita</span>') + '</td>' +
-          '<td class="l">' + (saida ? (o === 'recorrente' ? '<span class="chip acc">Recorrente: ' + esc(I.fix[i].nome) + '</span>' : o === 'regra' ? '<span class="chip good">Regra</span>' : o === 'sugestão' ? '<span class="chip warn">Sugestão</span>' : '<span class="chip">Sem categoria</span>') : '') + (I.dup[i] ? ' <span class="chip warn">' + (I.dupMotivo[i] === 'repetido' ? 'Repetido no ficheiro' : I.dupMotivo[i] === 'proximo' ? 'Já registado (data próxima)' : 'Já registado') + '</span>' : '') + '</td></tr>';
+          '<td class="l">' + (saida ? '<select data-imp="cat:' + i + '" aria-label="Categoria de ' + dataPt(m.data) + ': ' + esc(m.desc) + '"><option value=""></option>' + catNomes().map(c => '<option' + (c === I.cat[i] ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '<option value="' + NOVA_CAT + '">＋ Nova categoria…</option></select>' : '<span class="chip">Receita</span>') + '</td>' +
+          '<td class="l">' + (saida && !I.fix[i] ? '<label class="comb-op"><input type="checkbox" data-imp="comb:' + i + '"' + ((I.comb[i] || {}).on ? ' checked' : '') + ' aria-label="Contar como combustível: ' + esc(m.desc) + '"> ⛽ Combustível</label>' + ((I.comb[i] || {}).on ? combCampos(I, i) : '') : '') + (saida ? (o === 'recorrente' ? '<span class="chip acc">Recorrente: ' + esc(I.fix[i].nome) + (I.fix[i].previsto != null ? ' (previsto ' + eur(I.fix[i].previsto) + ')' : '') + '</span> <button type="button" class="btn mini" data-act="imp-desligar:' + i + '" aria-label="Não é o recorrente ' + esc(I.fix[i].nome) + '" title="Não é este pagamento recorrente">✕</button>' : o === 'regra' ? '<span class="chip good">Regra</span>' : o === 'sugestão' ? '<span class="chip warn">Sugestão</span>' : '<span class="chip">Sem categoria</span>') : '') + (I.dup[i] ? ' <span class="chip warn">' + (I.dupMotivo[i] === 'repetido' ? 'Repetido no ficheiro' : I.dupMotivo[i] === 'proximo' ? 'Já registado (data próxima)' : 'Já registado') + '</span>' : '') + '</td></tr>';
       };
       const vistaGrupos = I.vista !== 'lista';
       const linhas = vistaGrupos ? (I.grupos || []).map((g, gi) => {
         if (g.idx.length === 1) return linhaMov(g.idx[0]);   // um movimento sozinho não precisa de grupo
         const said = g.idx.filter(i => I.movs[i].valor < 0 && !I.fix[i]), cats = Array.from(new Set(said.map(i => I.cat[i] || ''))), comum = cats.length === 1 ? cats[0] : null;
-        const livres = g.idx.filter(i => !I.dup[i]), nSel = livres.filter(i => I.sel[i]).length, nDupG = g.idx.length - livres.length, ab = !!I.aberto[g.chave];
-        const selG = said.length ? '<select data-imp="gcat:' + gi + '" aria-label="Categoria de todos os movimentos de ' + esc(g.nome) + '">' + (comum === null ? '<option value="" selected>Várias categorias</option>' : '<option value=""></option>') + catNomes().map(c => '<option' + (c === comum ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</select>' : (g.idx.some(i => I.movs[i].valor < 0) ? '<span class="chip acc">Recorrentes</span>' : '<span class="chip">Receitas</span>');
+        const nFixG = g.idx.filter(i => I.fix[i]).length, livres = g.idx.filter(i => !I.dup[i]), nSel = livres.filter(i => I.sel[i]).length, nDupG = g.idx.length - livres.length, ab = !!I.aberto[g.chave];
+        const selG = said.length ? '<select data-imp="gcat:' + gi + '" aria-label="Categoria de todos os movimentos de ' + esc(g.nome) + '">' + (comum === null ? '<option value="" selected>Várias categorias</option>' : '<option value=""></option>') + catNomes().map(c => '<option' + (c === comum ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '<option value="' + NOVA_CAT + '">＋ Nova categoria…</option></select>' : (g.idx.some(i => I.movs[i].valor < 0) ? '<span class="chip acc">Recorrentes</span>' : '<span class="chip">Receitas</span>');
         return '<tr class="grupo"><td><input type="checkbox" data-imp="gsel:' + gi + '"' + (livres.length && nSel === livres.length ? ' checked' : '') + (livres.length ? '' : ' disabled') + ' aria-label="Importar todos os movimentos de ' + esc(g.nome) + '"></td>' +
           '<td><button type="button" class="btn mini" data-act="imp-grp:' + gi + '" aria-expanded="' + ab + '" aria-label="' + (ab ? 'Fechar' : 'Ver') + ' os movimentos de ' + esc(g.nome) + '">' + (ab ? '▾' : '▸') + ' ' + g.idx.length + '</button></td>' +
-          '<td class="l"><b>' + esc(g.nome) + '</b>' + (nSel !== livres.length && nSel ? ' <span class="muted">(' + nSel + ' de ' + livres.length + ' marcados)</span>' : '') + (nDupG ? ' <span class="chip warn">' + nDupG + ' já registado' + (nDupG > 1 ? 's' : '') + '</span>' : '') + '</td><td class="' + cls(g.total) + '">' + eur(g.total) + '</td><td class="l">' + selG + '</td>' +
-          '<td class="l">' + (comum === null ? '<span class="muted">Abra o grupo para ver cada um</span>' : '') + '</td></tr>' + (ab ? g.idx.map(i => linhaMov(i).replace(/^<tr(?: class="([^"]*)")?>/, (x, c) => '<tr class="sub' + (c ? ' ' + c : '') + '">')).join('') : '');
+          '<td class="l"><b>' + esc(g.nome) + '</b>' + (nSel !== livres.length && nSel ? ' <span class="muted">(' + nSel + ' de ' + livres.length + ' marcados)</span>' : '') + (nDupG ? ' <span class="chip warn">' + nDupG + ' já registado' + (nDupG > 1 ? 's' : '') + '</span>' : '') + (nFixG ? ' <span class="chip acc">' + nFixG + (nFixG > 1 ? ' ligados a recorrentes' : ' ligado a um recorrente') + '</span>' : '') + '</td><td class="' + cls(g.total) + '">' + eur(g.total) + '</td><td class="l">' + selG + '</td>' +
+          '<td class="l">' + (said.length ? '<label class="comb-op"><input type="checkbox" data-imp="gcomb:' + gi + '"' + (said.every(i => (I.comb[i] || {}).on) ? ' checked' : '') + ' aria-label="Contar todos como combustível: ' + esc(g.nome) + '"> ⛽ Combustível</label>' : '') + (comum === null ? '<span class="muted">Abra o grupo para ver cada um</span>' : '') + '</td></tr>' + (ab ? g.idx.map(i => linhaMov(i).replace(/^<tr(?: class="([^"]*)")?>/, (x, c) => '<tr class="sub' + (c ? ' ' + c : '') + '">')).join('') : '');
       }).join('') : I.movs.map((m, i) => linhaMov(i)).join('');
       const nSaidas = I.movs.filter(m => m.valor < 0).length, nDup = I.movs.filter((m, i) => I.dup[i]).length;
       const kpisI = '<div class="grid">' + kpi('Movimentos lidos', String(I.movs.length), nSaidas + ' saídas e ' + (I.movs.length - nSaidas) + ' entradas') + kpi('A importar', String(sel.length), 'Marcados na lista') +
         kpi('Valor selecionado', eur(total), '', cls(total)) + kpi('Duplicados', String(nDup), nDup ? 'Ficam de fora (mesma data e valor, ou data próxima e mesma descrição)' : 'Nenhum') + '</div>';
       rev = precosHtml(false) + impSugestoesHtml(I) + '<section><h2>Movimentos' + (I.nome ? ' de ' + esc(I.nome) : '') + '</h2>' + kpisI + mapa +
         '<div class="row" style="margin:12px 0"><label class="muted" for="imp-vista">Ver</label><select id="imp-vista" data-imp="vista"><option value="grupos"' + (vistaGrupos ? ' selected' : '') + '>Agrupado por tipo de gasto</option><option value="lista"' + (vistaGrupos ? '' : ' selected') + '>Todos os movimentos</option></select><label class="muted" for="imp-conta">Conta</label><select id="imp-conta" data-imp="conta">' + LISTAS.contas.map(c => '<option value="' + esc(c) + '"' + (c === I.conta ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</select><button class="btn" data-act="imp-todos">Marcar ou desmarcar tudo</button></div>' +
-        (vistaGrupos ? '<p class="note">Os movimentos parecidos estão juntos (por exemplo todos os de MB WAY ou de VENDING). Escolha a categoria do grupo de uma vez; se um grupo tiver gastos de tipos diferentes, abra-o (▸) e mude só os que precisar.</p>' : '') + '<div class="tablewrap tall"><table class="sticky"><thead><tr><th></th><th>' + (vistaGrupos ? 'Movimentos' : 'Data') + '</th><th class="l">Descrição</th><th>Valor</th><th class="l">Categoria</th><th class="l">Origem</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
+        (vistaGrupos ? '<p class="note">Os movimentos parecidos estão juntos (por exemplo todos os de MB WAY ou de VENDING). Escolha a categoria do grupo de uma vez; se um grupo tiver gastos de tipos diferentes, abra-o (▸) e mude só os que precisar.</p>' : '') + '<div class="tablewrap tall"><table class="sticky imp-tab"><thead><tr><th></th><th>' + (vistaGrupos ? 'Movimentos' : 'Data') + '</th><th class="l">Descrição</th><th>Valor</th><th class="l">Categoria</th><th class="l">Origem</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
         '<div class="row" style="margin-top:12px"><button class="btn pri" data-act="imp-ok"' + (sel.length ? '' : ' disabled') + '>Importar ' + sel.length + ' movimento' + (sel.length === 1 ? '' : 's') + '</button><button class="btn" data-act="imp-cancelar">Cancelar</button><span class="muted">Selecionado: <b>' + eur(total) + '</b>. Os que já parecem registados (mesma data e valor) vêm desmarcados. Receitas entram em Rendimentos, sem contar no plano. Pagamentos iguais a um recorrente por pagar ficam ligados a ele, como pagos.</span></div>' +
         '<p class="note" style="margin-top:8px">Quando escolher uma categoria diferente da proposta, a app aprende a regra para esse comerciante e usa-a nos próximos extratos. Se o mesmo comerciante ficar com categorias diferentes (como pagamentos MB WAY), não cria regra.</p></section>';
     }
@@ -3623,7 +3768,7 @@ tr.sub td:first-child { padding-left: 18px; }
       return '<tr><td>' + icoBtn(b + 'icone', c.icone, c.cor, 'Ícone de ' + c.nome) + '</td><td class="l">' + inp(b + 'nome', { t: 'text', aria: 'Nome da categoria' }) + '</td><td>' + inp(b + 'cor', { t: 'color', aria: 'Cor' }) + '</td><td>' + uso(c.nome) + '</td><td>' + delBtn('categorias', i) + '</td></tr>';
     }).join('');
     return '<section><h2>Categorias e ícones</h2><p class="lead">Use as categorias nos pagamentos recorrentes e nos gastos. Ao mudar o nome, os registos existentes acompanham.</p>' +
-      '<div class="tablewrap"><table><thead><tr><th>Ícone</th><th class="l">Nome</th><th>Cor</th><th>Em uso</th><th></th></tr></thead><tbody>' + (rowsC || '<tr><td colspan="5" class="empty">Sem categorias.</td></tr>') + '</tbody></table></div>' +
+      '<div class="tablewrap"><table class="cat-tab"><thead><tr><th>Ícone</th><th class="l">Nome</th><th>Cor</th><th>Em uso</th><th></th></tr></thead><tbody>' + (rowsC || '<tr><td colspan="5" class="empty">Sem categorias.</td></tr>') + '</tbody></table></div>' +
       '<div class="row" style="margin-top:12px">' + addBtn('categorias', 'Nova categoria') + '</div></section>';
   }
 
@@ -3915,6 +4060,7 @@ tr.sub td:first-child { padding-left: 18px; }
   const focaveis = d => Array.from(d.querySelectorAll('a[href],button,input,select,textarea,[tabindex]:not([tabindex="-1"])')).filter(e => !e.disabled && !e.hidden && e.type !== 'hidden' && e.offsetParent !== null);
   function recompute() { diaMudou(); R = E.calc(S); AP = E.apoios(S, hojeYm); }
   function render() {
+    if (novaCat) { const n = document.getElementById('nc-nome'), c = document.getElementById('nc-ico'); if (n && n.value != null) novaCat.nome = String(n.value); if (c && c.value != null) novaCat.ico = String(c.value); }   // o que já escreveu na folha "Nova categoria" sobrevive a um desenho novo (p. ex. uma alteração vinda de outro aparelho)
     recompute();
     if (!boasVista && nuvemPronta && appVazia() && !boasDispensada()) { boas = true; boasVista = true; }
     if (boas && !appVazia()) boas = false;   // chegaram dados (da nuvem ou de uma cópia): a janela deixa de fazer sentido
@@ -3929,7 +4075,10 @@ tr.sub td:first-child { padding-left: 18px; }
     if (mainEl.dataset) mainEl.dataset.pagina = tab;   // não usar data-tab: o gestor de cliques trataria qualquer clique dentro do main como mudar de separador
     if (tab !== 'recorrentes') fixaSheet = null; if (tab !== 'plano') planoSheet = null; if (tab !== 'rendimentos') rendSheet = null; if (tab !== 'despesas') gastoSheet = null; if (tab !== 'poupanca') { objSheet = null; contaSheet = null; }
     if (detSheet && detSheet.tab !== tab) detSheet = null; if (simSheet && simSheet.tab !== tab) simSheet = null;
-    mainEl.innerHTML = renomeiaContas(corpo + fixaHtml() + rendHtml() + gastoHtml() + objHtml() + contaHtml() + planoHtml() + detHtml() + simHtml() + rapidoHtml() + boasHtml() + pickerHtml() + calHtml() + menuHtml());
+    const ovSel = '.drawer, .sheet', ovChave = e => (e.getAttribute && e.getAttribute('aria-label')) || '', ovAntes = {}, ovLista = Array.from(document.querySelectorAll(ovSel)), tinhaOv = ovLista.length > 0;   // uma gaveta ou folha já aberta não volta ao topo nem volta a deslizar quando se escolhe uma opção lá dentro
+    ovLista.forEach(e => { const k = ovChave(e); if (!(k in ovAntes)) ovAntes[k] = e.scrollTop || 0; });   // o scroll guarda-se pelo nome da folha, e não pela posição: abrir um seletor por cima de uma folha não a manda para o topo
+    mainEl.innerHTML = renomeiaContas(corpo + fixaHtml() + rendHtml() + gastoHtml() + objHtml() + contaHtml() + planoHtml() + detHtml() + simHtml() + rapidoHtml() + boasHtml() + pickerHtml() + corPickerHtml() + novaCatHtml() + calHtml() + menuHtml());
+    if (tinhaOv) { Array.from(document.querySelectorAll('.drawer-bg, .modal, .drawer, .sheet')).forEach(e => { if (e.classList && e.classList.add) e.classList.add('sem-anim'); }); const usados = {}; Array.from(document.querySelectorAll(ovSel)).forEach(e => { const k = ovChave(e); if (usados[k] || !ovAntes[k]) return; usados[k] = true; e.scrollTop = ovAntes[k]; }); }
     if (tab === 'despesas') filtraLista('g'); else if (tab === 'rendimentos') filtraLista('r');
     const dlg = dialogoTopo();
     Array.from(document.querySelectorAll('header.top, #main > *')).forEach(e => {   // com uma folha aberta, o resto da página fica inerte (leitores de ecrã e teclado)
@@ -4239,8 +4388,8 @@ tr.sub td:first-child { padding-left: 18px; }
       }
       return;
     }
-    if (ev.key === 'Escape' && (menu || picker || calSheet || fixaSheet != null || rendSheet != null || planoSheet || detSheet || simSheet || rapido || gastoSheet != null || objSheet != null || contaSheet)) {   // com o seletor de ícones por cima de uma folha, fecha só o seletor
-      if (picker && fixaSheet != null) picker = null; else { if (boas) boasFechar(); menu = null; picker = null; calSheet = null; fixaSheet = null; rendSheet = null; planoSheet = null; detSheet = null; simSheet = null; rapido = null; gastoSheet = null; objSheet = null; contaSheet = null; }
+    if (ev.key === 'Escape' && (menu || picker || calSheet || fixaSheet != null || rendSheet != null || planoSheet || detSheet || simSheet || rapido || gastoSheet != null || objSheet != null || contaSheet || corPick || novaCat)) {   // com o seletor de ícones por cima de uma folha, fecha só o seletor
+      if (novaCat) novaCat = null; else if (corPick) corPick = null; else if (picker && fixaSheet != null) picker = null; else { if (boas) boasFechar(); menu = null; picker = null; calSheet = null; fixaSheet = null; rendSheet = null; planoSheet = null; detSheet = null; simSheet = null; rapido = null; gastoSheet = null; objSheet = null; contaSheet = null; }
       resetArm = false; apagarArm = false; renderKeep(); return;
     }
     if (ev.key === '/' && !escreve && !ev.ctrlKey && !ev.metaKey && !ev.altKey) { ev.preventDefault(); menu = 'ir'; renderKeep(); setTimeout(() => { const q = document.getElementById('ir-q'); if (q && q.focus) q.focus(); }, 0); return; }
@@ -4265,7 +4414,7 @@ tr.sub td:first-child { padding-left: 18px; }
   document.addEventListener('input', ev => { if (ev.target && ev.target.id === 'g-busca') filtraLista('g'); if (ev.target && ev.target.id === 'r-busca') filtraLista('r'); });
   document.addEventListener('input', ev => { if (ev.target && ev.target.id === 'irs-bruto') { irsSim = Math.max(0, parseFloat(ev.target.value) || 0); const o = document.getElementById('irs-out'); if (o) o.innerHTML = irsSimHtml(irsSim); } });
   document.addEventListener('input', ev => { if (ev.target && ev.target.id === 'v-km') { const o = document.getElementById('v-out'); if (o && R) o.textContent = eur((parseFloat(ev.target.value) || 0) * R.cb.consumoUsado / 100 * R.cb.precoUsado); } });
-  document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && calSheet) { calSheet = null; render(); return; } if (ev.key === 'Escape' && picker) { picker = null; render(); return; } if (ev.key === 'Enter' && ev.target && /^g-/.test(ev.target.id || '')) { ev.preventDefault(); document.querySelector('[data-act="gasto-add"]').click(); } if (ev.key === 'Enter' && !ev.isComposing && ev.target && /^q-/.test(ev.target.id || '') && rapido) { ev.preventDefault(); rapidoGuardar(); return; } if (ev.key === 'Enter' && ev.target && /^a-/.test(ev.target.id || '')) { ev.preventDefault(); document.querySelector('[data-act="abast-add"]').click(); } });
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && calSheet) { calSheet = null; render(); return; } if (ev.key === 'Escape' && picker) { picker = null; render(); return; } if (ev.key === 'Enter' && ev.target && /^g-/.test(ev.target.id || '')) { ev.preventDefault(); document.querySelector('[data-act="gasto-add"]').click(); } if (ev.key === 'Enter' && !ev.isComposing && ev.target && /^nc-/.test(ev.target.id || '') && novaCat) { ev.preventDefault(); novaCatCriar(); return; } if (ev.key === 'Enter' && !ev.isComposing && ev.target && /^q-/.test(ev.target.id || '') && rapido) { ev.preventDefault(); rapidoGuardar(); return; } if (ev.key === 'Enter' && ev.target && /^a-/.test(ev.target.id || '')) { ev.preventDefault(); document.querySelector('[data-act="abast-add"]').click(); } });
   document.addEventListener('click', async ev => {
     const gb = ev.target.closest('[data-grupo]');
     if (gb) { const g = gruposVisiveis().find(x => x[0] === gb.dataset.grupo); if (!g) return; tab = (ultimaAba[g[0]] && g[2].indexOf(ultimaAba[g[0]]) >= 0) ? ultimaAba[g[0]] : g[2][0]; try { history.replaceState(null, '', '#' + tab); } catch (e) { } animar = true; render(); window.scrollTo(0, 0); return; }
@@ -4400,6 +4549,7 @@ tr.sub td:first-child { padding-left: 18px; }
     else if (act === 'exportar' && (a1 === 'g' || a1 === 'r')) exportarCsv(a1);
     else if (act === 'ui-ordem') { const ks = BLOCOS_INICIO.map(b => b[0]), c = uiCfg(), ord = ks.slice().sort((x, y) => { const ix = c.inicioOrdem.indexOf(x), iy = c.inicioOrdem.indexOf(y); return (ix < 0 ? 100 + ks.indexOf(x) : ix) - (iy < 0 ? 100 + ks.indexOf(y) : iy); }), i = ord.indexOf(a1), j = i + (+a2); if (i >= 0 && j >= 0 && j < ord.length) { ord[i] = ord[j]; ord[j] = a1; uiSet(u => { u.inicioOrdem = ord; }); renderKeep(); } }
     else if (act === 'ui-cor-repor') { uiSet(u => { u.aspeto = Object.assign({}, u.aspeto); delete u.aspeto.cor; }); renderKeep(); }
+    else if (act === 'imp-desligar') { const i = +a1; if (imp && imp.fix && imp.fix[i]) { delete imp.fix[i]; const c = E.categorizar(imp.movs[i].desc, S.importacao.regras, S.categorias); imp.cat[i] = c.cat; imp.cat0[i] = c.cat; imp.org[i] = c.origem; renderKeep(); } }
     else if (act === 'imp-grp') { const g = imp && imp.grupos && imp.grupos[+a1]; if (g) { imp.aberto[g.chave] = !imp.aberto[g.chave]; renderKeep(); } }
     else if (act === 'imp-todos') { if (imp && imp.cat) { const alguma = imp.movs.some((m, i) => !imp.sel[i] && !imp.dup[i]); imp.movs.forEach((m, i) => { imp.sel[i] = alguma && !imp.dup[i]; }); renderKeep(); } }
     else if (act === 'imp-cancelar') { impOp++; imp = null; render(); }
@@ -4460,6 +4610,12 @@ tr.sub td:first-child { padding-left: 18px; }
     }
     else if (act === 'g-data') { const d = document.getElementById('g-data'); if (d) d.value = addDiasIso(hojeIso(), -(+a1)); }
     else if (act === 'pick') { picker = a1; render(); const f1 = document.querySelector('.emojis button'); if (f1) f1.focus(); }
+    else if (act === 'cor') { corPick = a1; render(); const f1 = document.querySelector('.cor-op'); if (f1 && f1.focus) f1.focus(); }
+    else if (act === 'nc-fechar') { if (ev.target === b || b.tagName === 'BUTTON') { novaCat = null; renderKeep(); } }
+    else if (act === 'nc-criar') novaCatCriar();
+    else if (act === 'cor-fechar') { if (ev.target === b || (b.classList && b.classList.contains('x'))) { corPick = null; render(); } }
+    else if (act === 'cor-set') { const c = PALETA[+a1]; if (corPick && c) { setP(corPick, c[1]); corPick = null; queueSave(); render(); } }
+    else if (act === 'cor-custom') { const c = String((document.getElementById('cor-custom') || {}).value || ''); if (corPick && /^#[0-9a-fA-F]{6}$/.test(c)) { setP(corPick, c); corPick = null; queueSave(); render(); } }
     else if (act === 'picker-close') { if (ev.target === b || b.classList.contains('x')) { picker = null; render(); } }
     else if (act === 'setico') { const i = +a1; if (picker) { setP(picker, i < 0 ? '' : EMOJIS[i]); picker = null; queueSave(); render(); } }
     else if (act === 'ico-custom') { const v = (document.getElementById('ico-custom').value || '').trim(); if (picker && v) { setP(picker, v); picker = null; queueSave(); render(); } }
