@@ -748,6 +748,33 @@ tr.sub td:first-child { padding-left: 18px; }
 .comb-campos input { width: 100px; min-width: 0; }
 .comb-campos .muted { font-size: 12px; }
 
+/* Caixas de texto alinhadas (1.35.0): nos formulários, o texto de todas as caixas começa à esquerda, como as etiquetas
+   (os números só ficam à direita nas colunas das tabelas e na caixa grande do valor). Campos empilhados têm espaço entre si. */
+.form { display: grid; gap: 12px; }
+.field input[type=number], .field input[type=date], .field input[type=time], .field input[type=text], .field input[type=search], .field input[type=password], .field select, .field textarea { text-align: left; }
+.field .valorbox input { text-align: right; }
+.field input[type=color] { width: 100%; height: var(--ctl); }
+.row.horiz { align-items: center; }
+.horiz-n { gap: 6px; flex-wrap: nowrap; }
+.horiz-n input { width: 84px; }
+.inv-lista { display: grid; gap: var(--gap, 12px); margin-top: 14px; }
+.inv-card { border: 1px solid var(--line); border-radius: var(--r-sm, 8px); padding: 14px; background: var(--surface); }
+.inv-card .sh-topo { justify-content: space-between; margin-bottom: 10px; }
+
+/* Telemóvel (1.35.2): nada alarga a página. Os itens de uma grelha podem encolher abaixo do seu conteúdo, e a nota do fecho do mês quebra linha. */
+.novo > *, .card > *, section > * { min-width: 0; }
+.valorbox { min-width: 0; max-width: 100%; }
+td.nota-quebra { white-space: normal; min-width: 200px; }
+.field { grid-template-columns: minmax(0, 1fr); }   /* um campo nunca fica mais largo que a sua coluna */
+.comb { flex-wrap: wrap; }
+.comb input { flex: 1 1 130px; }
+.calg { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+@media (max-width: 360px) { .cal .cd { min-height: 0; } .cal .calg { gap: 3px; } }
+table.quebra td { white-space: normal; }
+@media (max-width: 600px) { .catchips.grelha { grid-template-columns: repeat(2, minmax(0, 1fr)); } .catchips.grelha .catchip { min-width: 0; white-space: normal; text-align: left; line-height: 1.2; } }
+@media (max-width: 340px) { .catchips.grelha { grid-template-columns: minmax(0, 1fr); } }
+.nw { white-space: nowrap; }
+
 </style>
 </head>
 <body>
@@ -1087,10 +1114,14 @@ tr.sub td:first-child { padding-left: 18px; }
     const tl = taxaPoupanca(pr).tanl;   // juros da Revolut: sobre o saldo do mês anterior, enquanto for positivo
     // outras contas poupança criadas pela pessoa: cada uma com o seu saldo, a sua taxa e o que lá põe por mês (sai da poupança principal)
     const ex = contasPoupancaExtra(S).map(c => ({ nome: c.nome, b: num(c.saldo), tl: taxaPoupanca({ revolutTanb: c.tanb, revolutImposto: c.imposto }).tanl, ap: Math.max(0, num(c.aporte)), juros: 0 }));
+    // investimentos: o que se põe por mês sai da poupança principal e fica a valer no investimento, que cresce ao rendimento esperado (se houver), como taxa efetiva anual: 6% ao ano dá 6% ao fim de 12 meses. Não é despesa.
+    const iv = investimentos(S).map(c => Object.assign({ v: c.atual, tm: Math.pow(1 + c.rend / 100, 1 / 12) - 1, m0: c.inicio ? mk(c.inicio) : '', totAporte: 0, totRend: 0 }, c));
     months.forEach(mo => {
       mo.saldo = mo.liq - (mo.X !== null && mo.contaX === 'Cartão refeição' ? mo.X : 0) + mo.G + mo.H + (mo.cartao === 'Não' ? mo.subs : 0) - mo.totalDesp;
       let apx = 0, bx = 0; ex.forEach(c => { const j = c.b > 0 ? c.b * c.tl / 12 : 0; c.b += c.ap + j; c.juros += j; apx += c.ap; bx += c.b; });
-      mo.juros = q > 0 ? q * tl / 12 : 0; q += mo.saldo + mo.juros - apx; mo.acum = q + bx; mo.contasExtra = ex.map(c => c.b);
+      let ai = 0, vi = 0; iv.forEach(c => { const g = c.v > 0 ? c.v * c.tm : 0, a = c.aporte > 0 && (!c.m0 || c.m0 <= mo.key) ? c.aporte : 0; c.v += g + a; c.totRend += g; c.totAporte += a; ai += a; vi += c.v; });
+      mo.invAporte = ai; mo.invValor = vi;
+      mo.juros = q > 0 ? q * tl / 12 : 0; q += mo.saldo + mo.juros - apx - ai; mo.acum = q + bx; mo.contasExtra = ex.map(c => c.b);
       mo.jurosR = s > 0 ? s * tl / 12 : 0; s += num(mo.man.transf) + mo.jurosR; mo.revolutReal = s;
     });
 
@@ -1150,13 +1181,17 @@ tr.sub td:first-child { padding-left: 18px; }
       const falta = has(o.meta) ? Math.max(0, num(o.meta) - num(o.poupado)) : null;
       let meses = null;
       if (o.data) { const t = parse(o.data); meses = Math.max(1, (t.y - hp.y) * 12 + t.m - hp.m); }
-      return Object.assign({}, o, { falta, meses, porMes: falta !== null && meses ? falta / meses : null, prog: num(o.meta) ? Math.min(1, num(o.poupado) / num(o.meta)) : null });
+      const vencido = !!(o.data && /^\d{4}-\d{2}-\d{2}$/.test(String(o.data)) && String(o.data) < hojeFull && falta !== null && falta > 0);   // a data já passou e ainda falta poupar
+      return Object.assign({}, o, { falta, meses, vencido, porMes: falta !== null && meses ? falta / meses : null, prog: num(o.meta) ? Math.min(1, num(o.poupado) / num(o.meta)) : null });
     });
     const reservaMin = Math.max(0, num(pr.reservaMin));
     const necessarioMes = objetivos.reduce((a, o) => a + (o.porMes || 0), 0);
 
+    const invLista = iv.map(c => { const ganho = c.atual - c.investido; return { i: c.i, nome: c.nome, tipo: c.tipo, investido: c.investido, atual: c.atual, atualDefinido: c.atualDefinido, ganho, rent: c.investido > 0 ? ganho / c.investido : null, aporte: c.aporte, rend: c.rend, inicio: c.inicio, fim: c.v, totAporte: c.totAporte, totRend: c.totRend }; });
+    const invSoma = k => invLista.reduce((a, c) => a + c[k], 0), invTot = { n: invLista.length, investido: invSoma('investido'), atual: invSoma('atual'), ganho: invSoma('ganho'), aporte: invSoma('aporte'), fim: invSoma('fim'), totAporte: invSoma('totAporte'), totRend: invSoma('totRend') };
+    invTot.rent = invTot.investido > 0 ? invTot.ganho / invTot.investido : null;
     const horas = horasCalc(S, months);
-    return { cb, months, horas, extras: extrasRes, fases, tot, rotuloIni: fases[0].fase, rotuloFim: fases[fases.length - 1].fase, cenarios, propostas, contas, minPrincipal, deslocMes: deslocMes(num(pI.km), num(pI.portagens)),
+    return { cb, months, horas, investimentos: invLista, inv: invTot, extras: extrasRes, fases, tot, rotuloIni: fases[0].fase, rotuloFim: fases[fases.length - 1].fase, cenarios, propostas, contas, minPrincipal, deslocMes: deslocMes(num(pI.km), num(pI.portagens)),
       fixasMensal, fixasPorConta, fixasPorCat, fixasSoMensais: S.fixas.reduce((a, f) => a + (f.period === 'Mensal' && f.ativa !== 'Não' ? num(f.valor) : 0), 0),
       fixasAnuais: S.fixas.reduce((a, f) => a + (f.period === 'Anual' && f.ativa !== 'Não' ? num(f.valor) : 0), 0),
       contasExtra: contasPoupancaExtra(S).map((c, i) => ({ nome: c.nome, fim: months.length ? months[N - 1].contasExtra[i] : num(c.saldo), aporte: Math.max(0, num(c.aporte)) })), reservaMin, poupancaLivre: Math.max(0, months[N - 1].acum - reservaMin), objetivos, necessarioMes, cabe: tot.media >= necessarioMes, poupancaPrevista: months[N - 1].acum, horizonte: N, poupancaReal: num(pr.revolut) + months.reduce((a, x) => a + num(x.man.transf), 0) };
@@ -1573,7 +1608,7 @@ tr.sub td:first-child { padding-left: 18px; }
      Para além do último período definido, repete-se o último (é o que periodoAt já faz). */
   function semRendimento(S, R) {
     const months = R.months || [], m = months[0];
-    const poupanca = (m ? num(m.acum) - num(m.saldo) - num(m.juros) : 0) + num(((S || {}).press || {}).saldoPrincipal);
+    const poupanca = (m ? num(m.acum) - num(m.saldo) - num(m.juros) + num(m.invAporte) : 0) + num(((S || {}).press || {}).saldoPrincipal);   // o que se investiu no 1.º mês não saiu do que havia antes
     const despesaMensal = months.length ? months.reduce((a, x) => a + num(x.totalDesp), 0) / months.length : 0;
     return { poupanca, despesaMensal, meses: despesaMensal > 0 ? poupanca / despesaMensal : null };
   }
@@ -1586,12 +1621,12 @@ tr.sub td:first-child { padding-left: 18px; }
     let acum = R.months.length ? num(pr.revolut) + contasPoupancaExtra(S).reduce((a, c) => a + num(c.saldo), 0) : 0, base = acum, entra = 0, sai = 0, juros = 0;
     const out = R.months.map((m, i) => {
       const ano = Math.floor(i / 12), fs = Math.pow(1 + gs, ano), fd = Math.pow(1 + gd, ano);
-      const e = (m.saldo + m.totalDesp) * fs, s = m.totalDesp * fd, j = acum > 0 ? acum * rp : 0;
-      acum += e - s + j; entra += e; sai += s; juros += j;
-      return { i, ym: m.ym, key: m.key, fase: m.fase, entra: e, sai: s, juros: j, saldo: e - s + j, acum, acumSemPremissas: m.acum, entraAcum: entra, saiAcum: sai, jurosAcum: juros };
+      const e = (m.saldo + m.totalDesp) * fs, s = m.totalDesp * fd, j = acum > 0 ? acum * rp : 0, ai = num(m.invAporte);   // o que se investe sai da poupança
+      acum += e - s + j - ai; entra += e; sai += s; juros += j;
+      return { i, ym: m.ym, key: m.key, fase: m.fase, entra: e, sai: s, juros: j, saldo: e - s + j, invAporte: ai, invValor: num(m.invValor), acum, acumSemPremissas: m.acum, entraAcum: entra, saiAcum: sai, jurosAcum: juros };
     });
     const marcos = [6, 12, 24, 36, 60, 120].filter(n => n <= out.length).map(n => { const m = out[n - 1]; return Object.assign({ meses: n, vermelhos: out.slice(0, n).filter(x => x.saldo < 0).length }, m); });
-    const anos = []; out.forEach(m => { const a = m.ym.slice(0, 4); let x = anos[anos.length - 1]; if (!x || x.ano !== a) { x = { ano: a, meses: 0, entra: 0, sai: 0, juros: 0, saldo: 0, fim: 0 }; anos.push(x); } x.meses++; x.entra += m.entra; x.sai += m.sai; x.juros += m.juros; x.saldo += m.saldo; x.fim = m.acum; });
+    const anos = []; out.forEach(m => { const a = m.ym.slice(0, 4); let x = anos[anos.length - 1]; if (!x || x.ano !== a) { x = { ano: a, meses: 0, entra: 0, sai: 0, juros: 0, saldo: 0, inv: 0, fim: 0 }; anos.push(x); } x.meses++; x.entra += m.entra; x.sai += m.sai; x.juros += m.juros; x.saldo += m.saldo; x.inv += m.invAporte; x.fim = m.acum; });
     const objetivos = R.objetivos.map(o => { let quando = null; if (o.falta !== null && o.falta !== undefined) { if (o.falta <= 0) quando = out.length ? out[0].ym : null; else { const alvo = base + o.falta + R.reservaMin; const h = out.find(x => x.acum >= alvo); quando = h ? h.ym : null; } } return { nome: o.nome, falta: o.falta, quando, data: o.data || '' }; });
     const primeiroVermelho = out.find(x => x.saldo < 0) || null;
     return { meses: out, marcos, anos, objetivos, primeiroVermelho, base, ultimoPeriodo: R.months.length ? R.months[R.months.length - 1].fase : '', primeiroSemReserva: out.find(x => x.acum < 0) || null,
@@ -1601,6 +1636,9 @@ tr.sub td:first-child { padding-left: 18px; }
   const taxaPoupanca = pr => { pr = pr || {}; const tanb = Math.max(0, num(pr.revolutTanb)) / 100, imp = has(pr.revolutImposto) ? Math.min(100, Math.max(0, num(pr.revolutImposto))) / 100 : 0.28; return { tanb, imp, tanl: tanb * (1 - imp) }; };
   /* Arranque pelo extrato: o que se pode preencher sozinho a partir dos movimentos. O saldo é o do movimento mais recente; os recorrentes e os rendimentos mensais são
      os que aparecem em 2 ou mais meses com valores parecidos (até 15% de diferença). */
+  const limpaNome = s => { const t = String(s || '').replace(/\b\d{7,}\b/g, ' ').replace(/\s+/g, ' ').trim(); return t || String(s || '').trim(); };   // sem as referências e telefones compridos
+  // o que há de comum nas descrições de cada mês (a referência muda, o resto não), sem a palavra "ref" no fim
+  const nomeComum = descs => { const L = descs.map(d => String(d || '').trim().split(/\s+/)), ok = L[0].filter(t => L.every(l => l.some(x => x.toLowerCase() === t.toLowerCase()))); while (ok.length > 1 && /^(ref|referencia|ref\.|nr|n\.?º)$/i.test(ok[ok.length - 1])) ok.pop(); return ok.join(' ').slice(0, 60).trim(); };
   const sugestoesExtrato = (movs, S) => {
     movs = (movs || []).filter(m => m && /^\d{4}-\d{2}-\d{2}$/.test(String(m.data || '')) && isFinite(m.valor));
     let saldo = null;
@@ -1619,6 +1657,10 @@ tr.sub td:first-child { padding-left: 18px; }
       (grupos[k] = grupos[k] || []).push(m);
     });
     const med = a => { const b = a.slice().sort((x, y) => x - y), h = b.length >> 1; return b.length % 2 ? b[h] : (b[h - 1] + b[h]) / 2; };
+    // já está registado como recorrente (ou rendimento mensal) da pessoa: o mesmo comerciante, ou o mesmo valor ao cêntimo quase no mesmo dia do mês
+    const registado = (saida, nome, v, dia) => !!S && (saida
+      ? (S.fixas || []).some(f => chaveDesc(f.desc) === chaveDesc(nome) || (f.ativa !== 'Não' && Math.abs(num(f.valor) - v) < 0.005 && (!has(f.dia) || Math.abs(num(f.dia) - dia) <= 6)))
+      : (S.extras || []).some(x => x.freq === 'Mensal' && (chaveDesc(x.desc) === chaveDesc(nome) || (Math.abs(num(x.valor) - v) < 0.005 && (!x.data || Math.abs(+String(x.data).slice(8, 10) - dia) <= 6)))));
     const out = { saldo, recorrentes: [], rendimentos: [] };
     const ultimo = movs.reduce((a, m) => m.data > a ? m.data : a, '');
     Object.keys(grupos).forEach(k => {
@@ -1629,11 +1671,32 @@ tr.sub td:first-child { padding-left: 18px; }
       const nomes = {}; bons.forEach(m => { const n = String(m.desc || '').trim().slice(0, 60); nomes[n] = (nomes[n] || 0) + 1; });
       const nome = Object.keys(nomes).sort((a, b) => nomes[b] - nomes[a])[0] || '';
       const dia = Math.min(28, Math.max(1, Math.round(med(bons.map(m => +m.data.slice(8, 10))))));
-      const cj = S && (saida ? (S.fixas || []).some(f => chaveDesc(f.desc) === chaveDesc(nome)) : (S.extras || []).some(e => e.freq === 'Mensal' && chaveDesc(e.desc) === chaveDesc(nome)));
-      if (cj) return;
-      (saida ? out.recorrentes : out.rendimentos).push({ nome, valor: Math.round(md * 100) / 100, dia, meses: meses.size });
+      if (registado(saida, nome, md, dia)) return;
+      (saida ? out.recorrentes : out.rendimentos).push({ nome: limpaNome(nome), valor: Math.round(md * 100) / 100, dia, meses: meses.size, chave: k.slice(2), valores: bons.map(m => Math.round(Math.abs(m.valor) * 100)), exato: false });
     });
-    ['recorrentes', 'rendimentos'].forEach(l => { out[l].sort((a, b) => b.valor - a.valor); out[l] = out[l].slice(0, 15); });
+    /* 2.º passo: o mesmo valor, ao cêntimo, em meses seguidos. Se um pagamento se repete todos os meses com o mesmo valor, é recorrente, mesmo que a descrição mude
+       (referências, datas, "pagamento de serviços" de entidades diferentes). Um só movimento por mês e quase no mesmo dia. Também serve para o salário e outros rendimentos mensais. */
+    const porValor = {};
+    movs.forEach(m => { if (PROPRIA.test(normalizaDesc(m.desc))) return; const c = Math.round(Math.abs(m.valor) * 100); if (!c) return; (porValor[(m.valor < 0 ? 's|' : 'e|') + c] = porValor[(m.valor < 0 ? 's|' : 'e|') + c] || []).push(m); });
+    Object.keys(porValor).forEach(k => {
+      const g = porValor[k], saida = k[0] === 's', c = +k.slice(2), v = c / 100;
+      if (v < (saida ? 1 : 5)) return;
+      if ((saida ? out.recorrentes : out.rendimentos).some(x => Math.round(x.valor * 100) === c || (x.valores || []).indexOf(c) >= 0)) return;   // já proposto pelo comerciante
+      const porMes = {}; g.forEach(m => { const ym = m.data.slice(0, 7); (porMes[ym] = porMes[ym] || []).push(m); });
+      const meses = Object.keys(porMes).sort(), seguinte = ym => addM(ym + '-01', 1).slice(0, 7);
+      const seguidos = meses.filter((ym, i) => (i > 0 && seguinte(meses[i - 1]) === ym) || (i < meses.length - 1 && seguinte(ym) === meses[i + 1]));
+      const usados = seguidos.filter(ym => porMes[ym].length === 1);   // um só por mês
+      if (usados.length < 2) return;
+      const ms = usados.map(ym => porMes[ym][0]), dias = ms.map(m => +m.data.slice(8, 10)).sort((a, b) => a - b);
+      if (dias[dias.length - 1] - dias[0] > 6) return;   // quase no mesmo dia de cada mês
+      const chaves = new Set(ms.map(m => chaveDesc(m.desc) || normalizaDesc(m.desc).slice(0, 14)));
+      if (chaves.size > 1 && v < 5 && usados.length < 3) return;   // valores pequenos com descrições diferentes: pode ser coincidência
+      const nomes = {}; ms.forEach(m => { const n = String(m.desc || '').trim().slice(0, 60); nomes[n] = (nomes[n] || 0) + 1; });
+      const nome = nomeComum(ms.map(m => m.desc)) || Object.keys(nomes).sort((a, b) => nomes[b] - nomes[a])[0] || '', dia = Math.min(28, Math.max(1, Math.round(med(dias))));
+      if (registado(saida, nome, v, dia)) return;
+      (saida ? out.recorrentes : out.rendimentos).push({ nome: limpaNome(nome), valor: v, dia, meses: usados.length, chave: chaves.size === 1 ? Array.from(chaves)[0] : '', valores: [c], exato: true });
+    });
+    ['recorrentes', 'rendimentos'].forEach(l => { out[l].sort((a, b) => b.valor - a.valor); out[l] = out[l].slice(0, 30); });
     out.proximoMes = ultimo ? addM(ultimo.slice(0, 7) + '-01', 1) : '';
     return out;
   };
@@ -1798,7 +1861,17 @@ tr.sub td:first-child { padding-left: 18px; }
       .filter(c => { const k = c.nome.toLowerCase(); if (!c.nome || vistos.has(k)) return false; vistos.add(k); return true; });
   }
   const contasPoupancaExtra = S => contasExtra(S).filter(c => c.tipo === 'Poupança');
-  root.PlannerEngine = { contasExtra, contasPoupancaExtra, grupoDesc, gruposMovimentos, linhasDeXlsx, fechoMes, reservaAnuais, liquidezMes, subidasPreco, ritmoObjetivo, calc, previsao, semRendimento, taxaPoupanca, sugestoesExtrato, apoios, simularApoio, horizonte, abaixoDoMinimo, combustivel, addM, mk, num, has, parse, fixaEquiv, ocorrencias, periodoAt, salMinAno, ymd, pad, limiteMensal, orcMes, PERIODOS_ORC, irsRetencao, irsTaxa, irsAplicado, IRS_TABELA_I_2026, pascoa, feriadosNacionais, feriadosSet, expandir, expandirPontes, horaDe, horasDias, bancoHoras, saldoFerias, TIPOS_DIA, estudanteAtivo,
+  /* Investimentos (ações, ETF, cripto…): o que já pôs (investido), quanto vale agora (atual, se estiver em branco conta o investido), quanto põe por mês (aporte, a partir de "inicio")
+     e o rendimento anual esperado, opcional (0 se estiver em branco: não se inventa nada). Valores brutos, sem impostos nem comissões. */
+  const TIPOS_INVESTIMENTO = ['Ações', 'ETF e fundos', 'Cripto', 'Obrigações e certificados', 'PPR', 'Outro'];
+  function investimentos(S) {
+    const dataReal = t => { const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(String(t || '')); if (!m) return ''; const mo = +m[2], d = m[3] == null ? 1 : +m[3]; return mo >= 1 && mo <= 12 && d >= 1 && d <= dim(+m[1], mo) ? m[1] + '-' + m[2] + '-' + String(d).padStart(2, '0') : ''; };   // 2026-99-99 não é uma data; só o mês (2026-12) vale como o dia 1
+    return (S && Array.isArray(S.investimentos) ? S.investimentos : []).map((c, i) => ({ c, i })).filter(x => x.c && typeof x.c === 'object').slice(0, 30).map(({ c, i }) => ({ i,   // i: o lugar na lista da pessoa (as entradas inválidas saltam-se, mas o resultado fica no cartão certo)
+      nome: String(c.nome == null ? '' : c.nome).replace(/[\u0000-\u001F\u007F]/g, ' ').trim().slice(0, 40), tipo: TIPOS_INVESTIMENTO.indexOf(c.tipo) >= 0 ? c.tipo : 'Outro',
+      investido: Math.max(0, num(c.investido)), atual: has(c.atual) ? Math.max(0, num(c.atual)) : Math.max(0, num(c.investido)), atualDefinido: has(c.atual),
+      aporte: Math.max(0, num(c.aporte)), rend: Math.max(-100, Math.min(1000, num(c.rend))), inicio: dataReal(c.inicio) }));
+  }
+  root.PlannerEngine = { investimentos, TIPOS_INVESTIMENTO, contasExtra, contasPoupancaExtra, grupoDesc, gruposMovimentos, linhasDeXlsx, fechoMes, reservaAnuais, liquidezMes, subidasPreco, ritmoObjetivo, calc, previsao, semRendimento, taxaPoupanca, sugestoesExtrato, apoios, simularApoio, horizonte, abaixoDoMinimo, combustivel, addM, mk, num, has, parse, fixaEquiv, ocorrencias, periodoAt, salMinAno, ymd, pad, limiteMensal, orcMes, PERIODOS_ORC, irsRetencao, irsTaxa, irsAplicado, IRS_TABELA_I_2026, pascoa, feriadosNacionais, feriadosSet, expandir, expandirPontes, horaDe, horasDias, bancoHoras, saldoFerias, TIPOS_DIA, estudanteAtivo,
     parseNumero, parseData, parseCSV, detectarColunas, movimentosDeCSV, movimentosDeTexto, movimentosDePdf, conferirSaldos, normalizaDesc, chaveDesc, categorizar, aprender, jaRegistado, duplicados };
   if (typeof module !== 'undefined') module.exports = root.PlannerEngine;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -2024,7 +2097,7 @@ tr.sub td:first-child { padding-left: 18px; }
   const LATERAL = { importar: 'Dia a dia', categorias: 'Dia a dia', trabcfg: 'Trabalho', propostas: 'Planeamento', apoios: 'Planeamento', definicoes: 'Menu' };
   const ultimaAba = {};
   /* Personalização: o que a pessoa escolhe mostrar, a ordem do Início, tipos próprios, alertas e aspeto. Guardado em S.ui (só existe depois de mudar alguma coisa). */
-  const BLOCOS_INICIO = [['lembretes', 'Lembretes', /<h2>Lembretes</], ['pode', 'Quanto posso gastar?', /Quanto posso gastar\?/], ['pagamentos', 'Próximos pagamentos', /<h2>Próximos pagamentos</], ['graficos', 'Gráficos', /<h2>Em gráficos</], ['poupanca', 'Poupança acumulada', /Poupança acumulada</]];
+  const BLOCOS_INICIO = [['lembretes', 'Lembretes', /<h2>Lembretes</], ['pode', 'Quanto posso gastar?', /Quanto posso gastar\?/], ['pagamentos', 'Próximos pagamentos', /<h2>Próximos pagamentos</], ['graficos', 'Gráficos', /<h2>Em gráficos</], ['poupanca', 'Poupança acumulada', /Poupança acumulada</], ['investimentos', 'Investimentos', /Investimentos<\/h2>/]];
   const listaTxt = (x, n) => (Array.isArray(x) ? x : []).map(v => String(v == null ? '' : v).replace(/[\u0000-\u001F\u007F]/g, ' ').trim().slice(0, 40)).filter(Boolean).slice(0, n || 30);
   function uiCfg() {
     const u = (S && S.ui && typeof S.ui === 'object') ? S.ui : {}, al = u.alertas || {}, as = u.aspeto || {};
@@ -2294,7 +2367,7 @@ tr.sub td:first-child { padding-left: 18px; }
   let irsSim = 1000;
   function irsSimHtml(b) {
     const ret = E.irsRetencao(b), ss = b * num(S.press.ss);
-    return '<table class="mini"><tbody><tr><td>Retenção de IRS</td><td><b>' + eur(ret) + '</b> (' + pctTxt(E.irsTaxa(b)) + ')</td></tr><tr><td>Segurança Social (' + pctTxt(num(S.press.ss)) + ')</td><td>' + eur(ss) + '</td></tr><tr class="tot"><td>Salário líquido</td><td>' + eur(b - ret - ss) + '</td></tr></tbody></table>';
+    return '<div class="tablewrap"><table class="mini"><tbody><tr><td>Retenção de IRS</td><td><b>' + eur(ret) + '</b> (' + pctTxt(E.irsTaxa(b)) + ')</td></tr><tr><td>Segurança Social (' + pctTxt(num(S.press.ss)) + ')</td><td>' + eur(ss) + '</td></tr><tr class="tot"><td>Salário líquido</td><td>' + eur(b - ret - ss) + '</td></tr></tbody></table></div>';
   }
 
   /* ---------- acesso por caminho ---------- */
@@ -2791,6 +2864,34 @@ tr.sub td:first-child { padding-left: 18px; }
       '<div class="row" style="margin-top:14px"><button type="button" class="btn" data-act="boas:fim">Agora não</button></div></div></div>';
   }
 
+  /* Ao entrar na versão web sem a ligação ao OneDrive (o navegador apagou a configuração, falta entrar ou a sessão terminou), a app pede para entrar */
+  const LS_NUVEM_NAO = 'planner-nuvem-nao', ID_AZURE = /^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$/;
+  let nuvemAsk = false;
+  const nuvemSilenciada = () => { try { return localStorage.getItem(LS_NUVEM_NAO) === '1'; } catch (e) { return false; } };
+  function nuvemAskHtml() {
+    if (!nuvemAsk || !window.Nuvem || !nuvemDisponivel()) return '';
+    const est = window.Nuvem.estado(), op = (a, t, cls) => '<button type="button" class="btn' + (cls ? ' ' + cls : '') + '" data-act="' + a + '">' + t + '</button>';
+    let corpo;
+    if (est === 'ligado') corpo = '<p class="lead">Já está ligado ao OneDrive neste aparelho.</p>';
+    else if (est === 'sem-config') corpo = '<p class="lead">A ligação ao OneDrive não está configurada neste aparelho. Se já a usou antes, o navegador pode tê-la apagado. Escreva o <b>ID da aplicação</b> (o mesmo do registo no Azure) e entre com a sua conta Microsoft para voltar a ter os dados.</p>' +
+      '<div class="fields">' + field('ID da aplicação (cliente)', '<input type="text" id="nuvem-ask-id" maxlength="60" placeholder="Cole aqui o ID" autocomplete="off" spellcheck="false">', 'Está no registo da aplicação, no Azure. Tem este aspeto: 00000000-0000-0000-0000-000000000000.') + '</div>' +
+      '<div class="row" style="margin-top:12px">' + op('nask-id', 'Guardar e entrar', 'pri') + op('nask-passos', 'Ainda não tenho o registo') + '</div>';
+    else corpo = '<p class="lead">' + (est === 'sessao-expirada' ? 'A sessão do OneDrive terminou (a Microsoft só a mantém 24 horas nas apps de navegador). ' : 'Falta entrar com a sua conta Microsoft neste aparelho. ') + 'Até entrar, o que alterar fica guardado só aqui e segue para o OneDrive quando entrar.</p>' +
+      '<div class="row" style="margin-top:12px">' + op('nask-entrar', 'Entrar na Microsoft', 'pri') + '</div>';
+    return '<div class="modal baixo" data-act="nask-fechar"><div class="sheet" role="dialog" aria-modal="true" aria-label="Entrar no OneDrive"><div class="row sh-topo"><h2>☁️ Entrar no OneDrive</h2><button class="x" data-act="nask-fechar" aria-label="Fechar">×</button></div>' + corpo +
+      '<div class="row" style="margin-top:14px">' + op('nask-fechar', 'Agora não') + op('nask-nunca', 'Não voltar a perguntar neste aparelho') + '</div></div></div>';
+  }
+  function pedirEntradaNuvem() {   // à entrada: com a app vazia, quem pergunta é a janela de boas-vindas
+    if (nuvemAsk || !nuvemDisponivel() || nuvemSilenciada() || (appVazia() && !boasDispensada())) return;
+    nuvemAsk = true; render();
+  }
+  async function nuvemAskEntrar(comId) {
+    const N = window.Nuvem; if (!N || !nuvemDisponivel()) return;
+    let v = '';
+    if (comId) { v = String((document.getElementById('nuvem-ask-id') || {}).value || '').trim(); if (!ID_AZURE.test(v)) { aviso('O ID da aplicação tem este formato: 00000000-0000-0000-0000-000000000000.'); return; } }
+    try { if (comId) N.configurar({ clientId: v }); if (dirty || saving) { clearTimeout(saveT); await flush(); } await N.entrar(); } catch (e) { aviso('Não foi possível abrir a entrada da Microsoft.'); }
+  }
+
   function primeiraVezHtml() {   // app sem dados: diz como começar
     if (!appVazia()) return '';
     return '<section class="card sec"><h2>👋 Por onde começar</h2><p>A app está vazia. Pode <b>carregar uma cópia</b> (.json) que já tenha guardado, ou preencher os dados à mão, a começar pelos contratos nas Definições.' + (nuvemDisponivel() ? ' Para o iPhone e o PC partilharem os dados, ligue o OneDrive.' : '') + '</p>' +
@@ -2839,7 +2940,8 @@ tr.sub td:first-child { padding-left: 18px; }
       '<section class="card"><h2>🐷 Poupança acumulada</h2><p class="lead">Previsão para os ' + R.months.length + ' meses do plano, a partir do saldo da Revolut e do saldo previsto de cada mês.</p>' +
       '<div class="chartbox" data-chart="poupanca">' + chart(R.months.map(m => m.acum), R.months.map(m => m.revolutReal), R.months.map(m => mesTxt(m.ym)), null, 'poupanca') + '</div><p class="note center">Toque num mês do gráfico para ver as contas desse mês.</p>' +
       '<div class="legend"><span><span class="sw"></span>Prevista: ' + eur(R.poupancaPrevista, 0) + ' em ' + mesLongo(R.months[R.months.length - 1].ym) + '</span><span><span class="sw b"></span>Real na Revolut: ' + eur(R.poupancaReal, 0) + '</span></div>' +
-      '<div class="row" style="margin-top:12px"><button type="button" class="btn" data-act="sim">🔮 E se…? Simular mudanças</button><span class="muted">Veja o que mudaria no plano se recebesse ou gastasse mais ou menos.</span></div></section>' + lembreteCopia();
+      '<div class="row" style="margin-top:12px"><button type="button" class="btn" data-act="sim">🔮 E se…? Simular mudanças</button><span class="muted">Veja o que mudaria no plano se recebesse ou gastasse mais ou menos.</span></div></section>' +
+      (R.inv && R.inv.n ? '<section class="card"><h2>📈 Investimentos</h2><p class="lead">O que já investiu, quanto vale agora e quanto põe por mês (sai da poupança do plano).</p><div class="grid">' + k('Valor atual', eur(R.inv.atual, 0), 'Investido: ' + eur(R.inv.investido, 0), '', 'poupanca') + k('Ganho ou perda', (R.inv.ganho > 0 ? '+' : '') + eur(R.inv.ganho, 0), R.inv.rent != null ? pctTxt(R.inv.rent) : '', R.inv.ganho < 0 ? ' neg-v' : R.inv.ganho > 0 ? ' good' : '', 'poupanca') + k('Põe por mês', eur(R.inv.aporte, 0), 'No fim do plano: ' + eur(R.inv.fim, 0), '', 'poupanca') + '</div></section>' : '') + lembreteCopia();
   }
 
   function tabApoios() {
@@ -2942,8 +3044,8 @@ tr.sub td:first-child { padding-left: 18px; }
   }
   function fechoHtml() {
     const ym = E.mk(E.addM(hojeYm + '-01', -1)), f = E.fechoMes(S, R, ym), hist = Array.isArray(S.fechos) ? S.fechos : [];
-    const linha = (nome, prev, real) => '<tr><td class="l">' + esc(nome) + '</td><td>' + esc(prev == null ? 'Sem previsão' : eur(prev)) + '</td><td>' + esc(real == null ? 'sem dados reais' : eur(real)) + '</td></tr>';
-    return '<section class="card"><h2>Fecho do mês</h2><p class="lead">' + esc(mesLongo(ym + '-01')) + ': o que estava previsto e o que registou. Guarde o fecho para ficar com o histórico.</p><table class="mini"><thead><tr><th></th><th>Previsto</th><th>Real registado</th></tr></thead><tbody>' + linha('Rendimentos', f.previstoRend, f.realRend) + linha('Despesas', f.previstoDesp, f.realDesp) + linha('Saldo do mês', f.previstoSaldo, f.realSaldo) + linha('Contas no fim do mês', f.contasPrev, f.contasReal) + (f.contasReal == null ? '<tr><td class="l" colspan="3"><span class="muted">Para comparar o saldo das contas, escreva o saldo real desse mês em <a href="#" data-act="ir:poupanca">Poupança e contas</a>.</span></td></tr>' : '') + '</tbody></table><p class="note">' + esc(f.nota) + '</p><button type="button" class="btn" data-act="fecho-guardar">Guardar fecho</button><h3>Histórico</h3>' + (hist.length ? hist.slice().sort((a, b) => b.ym.localeCompare(a.ym)).map(x => {
+    const linha = (nome, prev, real) => '<tr><td class="l">' + esc(nome) + '</td><td>' + (prev == null ? esc('Sem previsão') : '<span class="nw">' + esc(eur(prev)) + '</span>') + '</td><td>' + (real == null ? esc('sem dados reais') : '<span class="nw">' + esc(eur(real)) + '</span>') + '</td></tr>';
+    return '<section class="card"><h2>Fecho do mês</h2><p class="lead">' + esc(mesLongo(ym + '-01')) + ': o que estava previsto e o que registou. Guarde o fecho para ficar com o histórico.</p><div class="tablewrap"><table class="mini quebra"><thead><tr><th></th><th>Previsto</th><th>Real registado</th></tr></thead><tbody>' + linha('Rendimentos', f.previstoRend, f.realRend) + linha('Despesas', f.previstoDesp, f.realDesp) + linha('Saldo do mês', f.previstoSaldo, f.realSaldo) + linha('Contas no fim do mês', f.contasPrev, f.contasReal) + (f.contasReal == null ? '<tr><td class="l nota-quebra" colspan="3"><span class="muted">Para comparar o saldo das contas, escreva o saldo real desse mês em <a href="#" data-act="ir:poupanca">Poupança e contas</a>.</span></td></tr>' : '') + '</tbody></table></div><p class="note">' + esc(f.nota) + '</p><button type="button" class="btn" data-act="fecho-guardar">Guardar fecho</button><h3>Histórico</h3>' + (hist.length ? hist.slice().sort((a, b) => b.ym.localeCompare(a.ym)).map(x => {
       const tem = x.realDesp != null && x.previstoDesp != null, dif = num(x.realDesp) - num(x.previstoDesp);
       return '<p>' + esc(mesLongo(x.ym + '-01') + ' · ' + (tem ? 'Despesas: ' + (dif > 0 ? '+' : '') + eur(dif) + ' face ao previsto' + (num(x.previstoDesp) ? ' (' + pctTxt(dif / Math.abs(num(x.previstoDesp))) + ')' : '') : 'sem dados reais ou previsão') + (x.contasReal != null && x.contasPrev != null ? ' · Contas: ' + (num(x.contasReal) - num(x.contasPrev) > 0 ? '+' : '') + eur(num(x.contasReal) - num(x.contasPrev)) + ' face ao previsto' : '') + (x.nota ? ' · ' + x.nota : '')) + '</p>';
     }).join('') : '<p class="note">Ainda não há fechos guardados.</p>') + '</section>';
@@ -2979,6 +3081,7 @@ tr.sub td:first-child { padding-left: 18px; }
   }
   function tabPlano() {
     const head = ['Mês', 'Período', 'Dias de trabalho', 'Km/dia', 'Salário bruto', 'Salário líquido', 'Rendimento manual (líq.)', 'Conta onde entra', 'Subsídios férias/Natal', 'Outros extras', 'Subsídio alimentação', 'Preço combustível €/L', 'Combustível', 'Portagens', 'Manutenção carro', 'Despesas fixas', 'Extras / imprevistos', 'Gastos registados', 'Gastos variáveis (plano)', 'Total despesas', 'Saldo do mês', 'Poupança acumulada (prevista)', 'Transferido para a Revolut (real)', 'Saldo Revolut (real)', 'Notas'];
+    const comInvT = !!(R.inv && R.inv.n); if (comInvT) head.splice(21, 0, 'Investido (aporte)');   // depois do saldo do mês
     const linhasTudo = () => R.months.map(m => {
       const k = m.key, base = 'plano.' + k + '.';
       return '<tr' + (m.key === hojeYm ? ' style="outline:2px solid var(--accent);outline-offset:-2px"' : '') + '><td>' + mesLongo(m.ym) + '</td><td class="l">' + esc(m.fase) + '</td>' +
@@ -2989,7 +3092,7 @@ tr.sub td:first-child { padding-left: 18px; }
         '<td>' + inp(base + 'preco', { ph: f2.format(m.preco), aria: 'Preço combustível ' + k }) + '</td>' +
         '<td>' + eur(m.comb) + '</td><td>' + eur(m.port) + '</td><td>' + eur(m.manut) + '</td><td>' + eur(m.fixas) + '</td>' +
         '<td>' + inp(base + 'extras', { aria: 'Extras ' + k }) + '</td><td>' + eur(m.gastosMes) + '</td><td>' + eur(m.varPlano) + '</td><td>' + eur(m.totalDesp) + '</td>' +
-        '<td class="' + cls(m.saldo) + '"><b>' + eur(m.saldo) + '</b></td><td class="' + cls(m.acum) + '">' + eur(m.acum) + '</td>' +
+        '<td class="' + cls(m.saldo) + '"><b>' + eur(m.saldo) + '</b></td>' + (comInvT ? '<td>' + eur(m.invAporte) + '</td>' : '') + '<td class="' + cls(m.acum) + '">' + eur(m.acum) + '</td>' +
         '<td>' + inp(base + 'transf', { aria: 'Transferido para a Revolut ' + k }) + '</td><td class="' + cls(m.revolutReal) + '">' + eur(m.revolutReal) + '</td>' +
         '<td class="l">' + inp(base + 'notas', { t: 'text', aria: 'Notas ' + k }) + '</td></tr>';
     }).join('');
@@ -2998,24 +3101,27 @@ tr.sub td:first-child { padding-left: 18px; }
     const HORIZ = [[6, '6 meses'], [12, '1 ano'], [24, '2 anos'], [36, '3 anos'], [48, '4 anos'], [60, '5 anos'], [120, '10 anos']];
     const fimPlano = R.months[R.months.length - 1], subs = S.extras.filter(e => /^Subsídio/.test(e.tipo || '') && e.contar === 'Sim' && e.data);
     const ultSub = subs.filter(e => e.freq !== 'Anual').map(e => e.data.slice(0, 4)).sort().pop(), temAnual = subs.some(e => e.freq === 'Anual');
-    const horizHtml = '<div class="row" style="margin-top:14px"><span class="muted">Até onde vai o plano</span><div class="seg" role="group" aria-label="Horizonte do plano">' + HORIZ.map(h => '<button type="button" data-act="horiz:' + h[0] + '" aria-pressed="' + (R.horizonte === h[0]) + '">' + h[1] + '</button>').join('') + '</div><span class="muted">Acaba em ' + mesLongo(fimPlano.ym) + '</span></div>' +
+    // a duração do plano é da pessoa: atalhos (6 meses a 10 anos) ou o número de meses que quiser, de 6 a 240
+    const horizLinha = id => '<div class="row horiz" style="margin-top:14px"><span class="muted">Duração do plano</span><div class="seg" role="group" aria-label="Duração do plano">' + HORIZ.map(h => '<button type="button" data-act="horiz:' + h[0] + '" aria-pressed="' + (R.horizonte === h[0]) + '">' + h[1] + '</button>').join('') + '</div>' +
+      '<label class="row horiz-n" for="' + id + '"><span class="muted">ou</span><input type="number" id="' + id + '" data-horiz="1" min="6" max="240" step="1" inputmode="numeric" value="' + R.horizonte + '" aria-label="Duração do plano, em meses (de 6 a 240)"><span class="muted">meses</span></label><span class="muted">Acaba em ' + mesLongo(fimPlano.ym) + '</span></div>';
+    const horizHtml = horizLinha('horiz-n') +
       (ultSub && !temAnual && fimPlano.key.slice(0, 4) > ultSub ? '<p class="note" style="margin-top:10px">Os subsídios de férias e de Natal estão escritos só até ' + ultSub + '. Para os anos seguintes, acrescente-os em Rendimentos com "Repete?" em Anual. Sem isso, o plano conta menos rendimento do que vai ter.</p>' : '');
     const kpisP = '<div class="grid">' + kpi('Poupança prevista', eur(R.poupancaPrevista, 0), 'No fim de ' + mesLongo(R.months[R.months.length - 1].ym), cls(R.poupancaPrevista)) + kpi('Real na Revolut', eur(R.poupancaReal, 0), 'O que já registou', cls(R.poupancaReal)) +
-      kpi('Saldo médio por mês', eur(R.tot.media, 0), 'Média dos ' + R.months.length + ' meses', cls(R.tot.media)) + kpi('Meses no vermelho', String(neg.length), neg.length ? 'O primeiro é ' + mesLongo(neg[0].ym) : 'Nenhum mês com saldo negativo', neg.length ? ' bad' : ' good') + '</div>';
+      kpi('Saldo médio por mês', eur(R.tot.media, 0), 'Média dos ' + R.months.length + ' meses', cls(R.tot.media)) + kpi('Meses no vermelho', String(neg.length), neg.length ? 'O primeiro é ' + mesLongo(neg[0].ym) : 'Nenhum mês com saldo negativo', neg.length ? ' bad' : ' good') + (R.inv && R.inv.n ? kpi('Investimentos no fim', eur(R.inv.fim, 0), 'Põe ' + eur(R.inv.aporte, 0) + ' por mês, a sair da poupança') : '') + '</div>';
     const fase = R.fases.concat([R.tot]).map(f => '<tr' + (f === R.tot ? ' class="tot"' : '') + '><td>' + esc(f.fase) + '</td><td>' + f.meses + '</td><td>' + eur(f.rend, 0) + '</td><td>' + eur(f.subs, 0) + '</td><td>' + eur(f.desp, 0) + '</td><td class="' + cls(f.saldo) + '">' + eur(f.saldo, 0) + '</td><td class="' + cls(f.media) + '">' + eur(f.media, 0) + '</td></tr>').join('');
     return '<section><h2>Plano mensal</h2><p class="lead">O plano todo de uma vez: o que entra, o que sai e quanto sobra em cada mês. Escolha até onde quer ver. Em baixo estão o resumo por período de trabalho e o plano ano a ano, onde se edita.</p>' + kpisP + horizHtml +
       '<div class="row" style="margin-top:12px"><button type="button" class="btn" data-act="sim">🔮 E se…? Simular mudanças</button><span class="muted">Sem mexer nos seus dados.</span></div></section>' +
       (window.Chart ? '<section><h2>Saldo mês a mês</h2><div class="chartbox on tall" data-chart="plano-saldo" role="img" aria-label="Saldo de cada mês e poupança acumulada"></div><p class="note center">Toque numa barra para abrir as contas desse mês.</p></section>' : '') +
       '<section><h2>Resumo por período de trabalho</h2><div class="tablewrap"><table><thead><tr><th class="l">Período de trabalho</th><th>Meses</th><th>Rendimento líquido</th><th>Subsídio alimentação</th><th>Total despesas</th><th>Saldo total</th><th>Saldo médio por mês</th></tr></thead><tbody>' + fase + '</tbody></table></div>' +
       '<p class="note" style="margin-top:8px">Poupança prevista no fim do plano: <b>' + eur(R.poupancaPrevista, 0) + '</b>. Real na Revolut (registada): <b>' + eur(R.poupancaReal, 0) + '</b>.</p></section>' +
-      '<section><h2>Plano mensal (' + R.months.length + ' meses)</h2>' +
+      '<section><h2>Plano mensal (' + R.months.length + ' meses)</h2>' + horizLinha('horiz-n2').replace(' style="margin-top:14px"', ' style="margin:0 0 12px"') +
       '<div class="row" style="margin:0 0 12px"><div class="seg" role="group" aria-label="Como ver o plano">' + [['resumo', 'Por ano'], ['tudo', 'Tabela completa']].map(v => '<button type="button" data-act="plano-vista:' + v[0] + '" aria-pressed="' + (planoVista === v[0]) + '">' + v[1] + '</button>').join('') + '</div></div>' +
       (planoVista !== 'tudo' ? '<p class="lead">Um ano de cada vez. Toque no ano para o abrir ou fechar, e num mês para ver as contas todas e alterar valores. O ponto ao lado do mês indica que tem valores escritos à mão.</p>' +
         anosPlano().map(blocoAno).join('') +
         '<p class="note" style="margin-top:10px">Nos ' + R.months.length + ' meses: entra <b>' + eur(sum('saldo') + sum('totalDesp'), 0) + '</b>, sai <b>' + eur(sum('totalDesp'), 0) + '</b>, sobra <b>' + eur(sum('saldo'), 0) + '</b>.</p></section>' :
       '<p class="lead">Os campos com texto azul podem ser alterados. Dias de trabalho e preço do combustível seguem o cálculo se ficarem vazios. O rendimento manual serve para meses em que o valor vem junto, como a bolsa do IEFP. Se deixar em branco, usa a bolsa que indicou em Apoios.</p>' +
-      '<div class="tablewrap tall"><table class="sticky"><thead><tr class="grp"><th colspan="2"></th><th colspan="9">O que entra</th><th colspan="9">O que sai</th><th colspan="4">Resultado</th><th></th></tr><tr>' + head.map((h, i) => '<th' + (i < 2 || i === 24 ? ' class="l"' : '') + '>' + h + '</th>').join('') + '</tr></thead><tbody>' + linhasTudo() +
-      '<tr class="tot"><td>Total</td><td></td><td>' + f0.format(sum('dias')) + '</td><td></td><td></td><td>' + eur(sum('liq'), 0) + '</td><td></td><td></td><td>' + eur(sum('G'), 0) + '</td><td>' + eur(sum('H'), 0) + '</td><td>' + eur(sum('subs'), 0) + '</td><td></td><td>' + eur(sum('comb'), 0) + '</td><td>' + eur(sum('port'), 0) + '</td><td>' + eur(sum('manut'), 0) + '</td><td>' + eur(sum('fixas'), 0) + '</td><td>' + eur(sum('extra'), 0) + '</td><td>' + eur(sum('gastosMes'), 0) + '</td><td>' + eur(sum('varPlano'), 0) + '</td><td>' + eur(sum('totalDesp'), 0) + '</td><td class="' + cls(sum('saldo')) + '">' + eur(sum('saldo'), 0) + '</td><td></td><td>' + eur(R.months.reduce((a, m) => a + num(m.man.transf), 0), 0) + '</td><td></td><td></td></tr></tbody></table></div></section>') + fechoHtml();
+      '<div class="tablewrap tall"><table class="sticky"><thead><tr class="grp"><th colspan="2"></th><th colspan="9">O que entra</th><th colspan="9">O que sai</th><th colspan="' + (comInvT ? 5 : 4) + '">Resultado</th><th></th></tr><tr>' + head.map((h, i) => '<th' + (i < 2 || i === head.length - 1 ? ' class="l"' : '') + '>' + h + '</th>').join('') + '</tr></thead><tbody>' + linhasTudo() +
+      '<tr class="tot"><td>Total</td><td></td><td>' + f0.format(sum('dias')) + '</td><td></td><td></td><td>' + eur(sum('liq'), 0) + '</td><td></td><td></td><td>' + eur(sum('G'), 0) + '</td><td>' + eur(sum('H'), 0) + '</td><td>' + eur(sum('subs'), 0) + '</td><td></td><td>' + eur(sum('comb'), 0) + '</td><td>' + eur(sum('port'), 0) + '</td><td>' + eur(sum('manut'), 0) + '</td><td>' + eur(sum('fixas'), 0) + '</td><td>' + eur(sum('extra'), 0) + '</td><td>' + eur(sum('gastosMes'), 0) + '</td><td>' + eur(sum('varPlano'), 0) + '</td><td>' + eur(sum('totalDesp'), 0) + '</td><td class="' + cls(sum('saldo')) + '">' + eur(sum('saldo'), 0) + '</td>' + (comInvT ? '<td>' + eur(sum('invAporte'), 0) + '</td>' : '') + '<td></td><td>' + eur(R.months.reduce((a, m) => a + num(m.man.transf), 0), 0) + '</td><td></td><td></td></tr></tbody></table></div></section>') + fechoHtml();
   }
 
   /* ---------- plano: um ano de cada vez, e a folha de um mês ---------- */
@@ -3032,7 +3138,8 @@ tr.sub td:first-child { padding-left: 18px; }
     const fim = P.meses[n - 1];
     const rot = m => m < 12 ? m + ' meses' : (m / 12) + (m === 12 ? ' ano' : ' anos');
     const marcos = P.marcos.map(m => '<tr><td class="l">' + rot(m.meses) + '</td><td>' + esc(mesLongo(m.ym)) + '</td><td>' + eur(m.entraAcum, 0) + '</td><td>' + eur(m.saiAcum, 0) + '</td><td class="' + cls(m.acum) + '"><b>' + eur(m.acum, 0) + '</b></td><td class="' + cls((m.acum - P.base) / m.meses) + '">' + eur((m.acum - P.base) / m.meses, 0) + '</td><td>' + m.vermelhos + '</td></tr>').join('');
-    const anos = P.anos.map(a => '<tr><td class="l">' + a.ano + (a.meses < 12 ? ' (' + a.meses + ' meses)' : '') + '</td><td>' + eur(a.entra, 0) + '</td><td>' + eur(a.sai, 0) + '</td><td class="' + cls(a.saldo) + '">' + eur(a.saldo, 0) + '</td><td class="' + cls(a.fim) + '">' + eur(a.fim, 0) + '</td></tr>').join('');
+    const comInv = P.anos.some(a => a.inv > 0);   // com investimentos, a poupança no fim é a do ano anterior mais a sobra, menos o que se investiu
+    const anos = P.anos.map(a => '<tr><td class="l">' + a.ano + (a.meses < 12 ? ' (' + a.meses + ' meses)' : '') + '</td><td>' + eur(a.entra, 0) + '</td><td>' + eur(a.sai, 0) + '</td><td class="' + cls(a.saldo) + '">' + eur(a.saldo, 0) + '</td>' + (comInv ? '<td>' + eur(a.inv, 0) + '</td>' : '') + '<td class="' + cls(a.fim) + '">' + eur(a.fim, 0) + '</td></tr>').join('');
     const obj = P.objetivos.filter(o => o.falta !== null && o.falta !== undefined).map(o => '<tr><td class="l">' + esc(o.nome || 'Sem nome') + ritmoHtml(o) + '</td><td>' + (o.falta > 0 ? eur(o.falta, 0) : 'Já atingido') + '</td><td>' + (o.data ? esc(mesLongo(o.data.slice(0, 7) + '-01')) : '—') + '</td><td>' + (o.falta <= 0 ? '—' : o.quando ? esc(mesLongo(o.quando)) : 'Não chega em ' + (n / 12) + ' anos') + '</td></tr>').join('');
     const a1 = P.marcos.find(m => m.meses === 12), a3 = P.marcos.find(m => m.meses === 36), a5 = P.marcos.find(m => m.meses === 60);
     const kp = '<div class="grid">' + (a1 ? kpi('Daqui a 1 ano', eur(a1.acum, 0), 'Poupança em ' + mesLongo(a1.ym), cls(a1.acum)) : '') + (a3 ? kpi('Daqui a 3 anos', eur(a3.acum, 0), 'Poupança em ' + mesLongo(a3.ym), cls(a3.acum)) : '') + (a5 ? kpi('Daqui a 5 anos', eur(a5.acum, 0), 'Poupança em ' + mesLongo(a5.ym), cls(a5.acum)) : '') +
@@ -3048,7 +3155,7 @@ tr.sub td:first-child { padding-left: 18px; }
       (ultSub && !temAnual && fim.key.slice(0, 4) > ultSub ? '<p class="note" style="margin-top:10px">Os subsídios de férias e de Natal estão escritos só até ' + ultSub + '. Para os anos seguintes, acrescente-os em Rendimentos com "Repete?" em Anual, ou a previsão conta menos rendimento do que vai ter.</p>' : '') + '</section>' +
       '<section><h2>Poupança ao longo do tempo</h2>' + seg + '<div class="chartbox">' + chart(vis.map(m => m.acum), vis.map(m => m.acumSemPremissas), vis.map(m => mesTxt(m.ym)), 'Poupança acumulada prevista nos próximos ' + sintAnos + (sintAnos === 1 ? ' ano' : ' anos')) + '</div>' + (tem ? '<p class="note center">Linha cheia: com premissas. Linha mais fraca: sem premissas.</p>' : '') + '</section>' +
       '<section><h2>Marcos</h2><div class="tablewrap"><table><thead><tr><th class="l">Daqui a</th><th>Mês</th><th>Entra (acumulado)</th><th>Sai (acumulado)</th><th>Poupança</th><th>Sobra média por mês</th><th>Meses no vermelho</th></tr></thead><tbody>' + marcos + '</tbody></table></div></section>' +
-      '<section><h2>Ano a ano</h2><div class="tablewrap"><table><thead><tr><th class="l">Ano</th><th>Entra</th><th>Sai</th><th>Sobra no ano</th><th>Poupança no fim</th></tr></thead><tbody>' + anos + '</tbody></table></div></section>' +
+      '<section><h2>Ano a ano</h2><div class="tablewrap"><table><thead><tr><th class="l">Ano</th><th>Entra</th><th>Sai</th><th>Sobra no ano</th>' + (comInv ? '<th>Investido</th>' : '') + '<th>Poupança no fim</th></tr></thead><tbody>' + anos + '</tbody></table></div>' + (comInv ? '<p class="note" style="margin-top:8px">O que investe sai da poupança: a poupança no fim é a do ano anterior, mais a sobra, menos o investido. O mês no vermelho conta só o que gasta a mais do que recebe, antes de investir.</p>' : '') + '</section>' +
       (obj ? '<section><h2>Objetivos de poupança</h2><p class="lead">Quando a previsão chega ao que falta para cada objetivo, se toda a poupança fosse para ele.</p><div class="tablewrap"><table><thead><tr><th class="l">Objetivo</th><th>Falta</th><th>Data que definiu</th><th>Previsão chega em</th></tr></thead><tbody>' + obj + '</tbody></table></div></section>' : '') + liquidezHtml();
   }
 
@@ -3067,12 +3174,13 @@ tr.sub td:first-child { padding-left: 18px; }
   }
   function blocoAno(g) {
     const s = f => g.ms.reduce((a, m) => a + f(m), 0), ab = anoAberto(g.ano), sal = s(m => m.saldo), ult = g.ms[g.ms.length - 1];
+    const comInv = !!(R.inv && R.inv.n);   // com investimentos, aparece o que se investe em cada mês
     const linha = m => '<tr class="clic' + (m.key === hojeYm ? ' hoje' : '') + '" data-act="plano-mes:' + m.key + '"><td class="l"><button type="button" class="lnk" aria-label="Ver e alterar ' + mesLongo(m.ym) + '">' + MES[+m.key.slice(5) - 1] + '</button>' + (editadoMes(m) ? '<span class="pto" title="Tem valores escritos à mão"></span>' : '') + '</td>' +
-      '<td>' + eur(entraMes(m), 0) + '</td><td>' + eur(m.totalDesp, 0) + '</td><td class="' + cls(m.saldo) + '"><b>' + eur(m.saldo, 0) + '</b></td><td class="so-largo' + cls(m.acum) + '">' + eur(m.acum, 0) + '</td></tr>';
+      '<td>' + eur(entraMes(m), 0) + '</td><td>' + eur(m.totalDesp, 0) + '</td><td class="' + cls(m.saldo) + '"><b>' + eur(m.saldo, 0) + '</b></td>' + (comInv ? '<td>' + eur(m.invAporte, 0) + '</td>' : '') + '<td class="so-largo' + cls(m.acum) + '">' + eur(m.acum, 0) + '</td></tr>';
     return '<div class="ano' + (ab ? ' aberto' : '') + '"><button type="button" class="ano-h" data-act="plano-ano:' + g.ano + '" aria-expanded="' + ab + '"><span class="ano-t">' + g.ano + '<small>' + g.ms.length + (g.ms.length === 1 ? ' mês' : ' meses') + '</small></span>' +
       '<span class="ano-n"><small>Entra</small>' + eur(s(entraMes), 0) + '</span><span class="ano-n"><small>Sai</small>' + eur(s(m => m.totalDesp), 0) + '</span><span class="ano-n' + cls(sal) + '"><small>Saldo</small><b>' + eur(sal, 0) + '</b></span>' +
       '<span class="ano-n so-largo' + cls(ult.acum) + '"><small>Poupança no fim</small>' + eur(ult.acum, 0) + '</span><span class="chev" aria-hidden="true">›</span></button>' +
-      (ab ? '<div class="tablewrap"><table class="plano-r"><thead><tr><th class="l">Mês</th><th>Entra</th><th>Sai</th><th>Saldo</th><th class="so-largo">Poupança</th></tr></thead><tbody>' + g.ms.map(linha).join('') + '</tbody></table></div>' : '') + '</div>';
+      (ab ? '<div class="tablewrap"><table class="plano-r"><thead><tr><th class="l">Mês</th><th>Entra</th><th>Sai</th><th>Saldo</th>' + (comInv ? '<th>Investido</th>' : '') + '<th class="so-largo">Poupança</th></tr></thead><tbody>' + g.ms.map(linha).join('') + '</tbody></table></div>' : '') + '</div>';
   }
   function planoHtml() {
     const i = planoSheet ? R.months.findIndex(x => x.key === planoSheet) : -1, m = R.months[i];
@@ -3099,7 +3207,7 @@ tr.sub td:first-child { padding-left: 18px; }
       lin('Gastos variáveis (plano)' + peq('Gastos já registados: ' + eur(m.gastosMes) + (m.combReg > 0 ? '. Destes, ' + eur(m.combReg) + ' são de combustível, que já conta na linha Combustível' + (m.combExtra > 0 ? ' (aqui só entra o que passou da estimativa: ' + eur(m.combExtra) + ')' : '') : '')), eur(m.varPlano)) +
       lin('Total que sai', eur(m.totalDesp), 'tot') + '</tbody></table></div>' +
       '<h3>Resultado</h3><div class="tablewrap"><table class="mini def"><tbody>' +
-      lin('Saldo do mês', '<b>' + eur(m.saldo) + '</b>', cls(m.saldo)) + lin('Poupança acumulada (prevista)', eur(m.acum), cls(m.acum)) +
+      lin('Saldo do mês', '<b>' + eur(m.saldo) + '</b>', cls(m.saldo)) + (m.invAporte > 0 ? lin('Investido neste mês' + peq('Sai da poupança e fica nos investimentos'), eur(m.invAporte)) + lin('Saldo depois de investir', '<b>' + eur(m.saldo - m.invAporte) + '</b>', cls(m.saldo - m.invAporte)) : '') + lin('Poupança acumulada (prevista)', eur(m.acum), cls(m.acum)) + (m.invValor > 0 ? lin('Investimentos (valor no fim do mês)', eur(m.invValor)) : '') +
       lin('Transferido para a Revolut (real)', inp(base + 'transf', { aria: 'Transferido para a Revolut ' + k })) + lin('Saldo Revolut (real)', eur(m.revolutReal), cls(m.revolutReal)) + '</tbody></table></div>' +
       '<div style="margin-top:12px">' + field('Notas', inp(base + 'notas', { t: 'text', aria: 'Notas ' + k })) + '</div>' +
       '<div class="row sh-fim"><span></span><button type="button" class="btn pri" data-act="plano-ok">Feito</button></div></div></div>';
@@ -3393,6 +3501,11 @@ tr.sub td:first-child { padding-left: 18px; }
       if (!manterMapa || !I.map) I.map = E.detectarColunas(I.rows);
       I.movs = I.map.ok ? E.movimentosDeCSV(I.rows, I.map, { despesasPositivas: I.despPos }) : [];
     } else I.movs = E.movimentosDeTexto(I.texto, { despesasPositivas: true });
+    {   // linhas com conteúdo que não deram um movimento (títulos, totais, linhas sem data ou sem valor): a pessoa confere se não falta nenhum
+      const cheia = r => Array.isArray(r) ? r.some(c => String(c == null ? '' : c).trim() !== '') : String(r || '').trim() !== '';
+      const linhasF = I.modo === 'pdf' ? null : (I.modo === 'csv' || I.modo === 'xlsx') ? (I.map && I.map.ok ? (I.rows || []).slice(I.map.header + 1).filter(cheia).length : null) : String(I.texto || '').split(/\r?\n/).filter(cheia).length;
+      I.naoLidas = linhasF == null ? 0 : Math.max(0, linhasF - I.movs.length);
+    }
     I.movs.forEach(m => { m.desc = limpaTexto(m.desc, 200); });
     if (I.movs.length > LIM.movimentos) { I.movs = I.movs.slice(0, LIM.movimentos); aviso('Só os primeiros ' + LIM.movimentos + ' movimentos foram lidos.'); }
     I.sel = {}; I.cat = {}; I.cat0 = {}; I.org = {}; I.dup = {}; I.dupMotivo = {}; I.aberto = I.aberto || {};
@@ -3417,14 +3530,14 @@ tr.sub td:first-child { padding-left: 18px; }
       for (let k = primeiraDesde(addDiasIso(m.data, -12)); k < pend.length && pend[k].data <= fim; k++) {
         const o = pend[k];
         const f = S.fixas[o.idx], dd = difDias(o.data, m.data), dif = Math.abs(o.valor - v), kf = E.chaveDesc(f.desc);
-        const descBate = !!kf && (nm.indexOf(' ' + kf + ' ') >= 0), exato = dif < 0.015, parecido = dif <= Math.max(1, 0.15 * o.valor);   // a palavra inteira: "seguro" não liga a "seguros"
+        const descBate = !!kf && (nm.indexOf(' ' + kf + ' ') >= 0), exato = dif < 0.005, parecido = dif <= Math.max(1, 0.15 * o.valor);   // exato: o mesmo valor, ao cêntimo (10,00 não é 9,99)   // a palavra inteira: "seguro" não liga a "seguros"
         const score = exato && descBate ? 0 : exato && dd <= 10 ? 1 : descBate && parecido ? 2 : null;
         if (score !== null) cand.push({ i, o, f, score, dd, dif });
       }
     });
     cand.sort((x, y) => x.score - y.score || x.dd - y.dd || x.dif - y.dif).forEach(c => {
       const k = c.o.id + '|' + c.o.data; if (I.fix[c.i] || usadas.has(k)) return; usadas.add(k);
-      I.fix[c.i] = { id: c.o.id, ocorr: c.o.data, nome: c.f.desc || 'Recorrente', previsto: c.dif >= 0.015 ? c.o.valor : null };
+      I.fix[c.i] = { id: c.o.id, ocorr: c.o.data, nome: c.f.desc || 'Recorrente', previsto: c.dif >= 0.005 ? c.o.valor : null };
       I.cat[c.i] = c.f.cat || ''; I.cat0[c.i] = I.cat[c.i]; I.org[c.i] = 'recorrente';
     });
     I.comb = {}; I.movs.forEach((m, i) => { if (m.valor < 0 && !I.fix[i] && COMB_RE.test(E.normalizaDesc(m.desc))) I.comb[i] = { on: true, preco: '', km: '' }; });   // o que parece combustível vem marcado; dá para desmarcar
@@ -3560,8 +3673,8 @@ tr.sub td:first-child { padding-left: 18px; }
     const poderSaldo = sg.saldo && campo && num(S.press[campo]) === 0, vazioAgora = !S.periodos.length && !S.fixas.length && !S.extras.length && S.gastos.every(g => g.notas === 'Importado do extrato');
     if (!poderSaldo && !sg.recorrentes.length && !sg.rendimentos.length) return '';
     const temSal = S.periodos.some(p => p.salMin === 'Sim' || num(p.bruto) > 0), padrao = tp => tp === 'rend' ? !temSal : true, marcado = (tp, i) => I.sug[tp][i] === undefined ? padrao(tp) : I.sug[tp][i];
-    const lin = (tp, i, x) => '<tr><td><input type="checkbox" data-imp="sug:' + tp + ':' + i + '"' + (marcado(tp, i) ? ' checked' : '') + ' aria-label="Adicionar ' + esc(x.nome) + '"></td><td class="l">' + esc(x.nome) + '</td><td>' + eur(x.valor) + '</td><td>dia ' + x.dia + '</td><td>' + x.meses + ' meses</td></tr>';
-    const tab = (titulo, tp, l, nota) => l.length ? '<h3 style="margin-top:12px">' + titulo + '</h3><p class="note">' + nota + '</p><div class="tablewrap"><table><thead><tr><th></th><th class="l">Descrição</th><th>Valor</th><th>Dia</th><th>Visto em</th></tr></thead><tbody>' + l.map((x, i) => lin(tp, i, x)).join('') + '</tbody></table></div>' : '';
+    const lin = (tp, i, x) => '<tr><td><input type="checkbox" data-imp="sug:' + tp + ':' + i + '"' + (marcado(tp, i) ? ' checked' : '') + ' aria-label="Adicionar ' + esc(x.nome) + '"></td><td class="l">' + esc(x.nome) + (x.exato ? ' <span class="muted" title="O mesmo valor, ao cêntimo, todos os meses">· mesmo valor</span>' : '') + '</td><td>' + eur(x.valor) + '</td><td>dia ' + x.dia + '</td><td>' + x.meses + ' meses</td></tr>';
+    const tab = (titulo, tp, l, nota) => l.length ? '<h3 style="margin-top:12px">' + titulo + '</h3><p class="note">' + nota + '</p><div class="tablewrap"><table class="quebra"><thead><tr><th></th><th class="l">Descrição</th><th>Valor</th><th>Dia</th><th>Visto em</th></tr></thead><tbody>' + l.map((x, i) => lin(tp, i, x)).join('') + '</tbody></table></div>' : '';
     return '<section class="card"><h2>⚡ Preencher a app com este extrato</h2><p class="lead">Além de importar os movimentos, a app pode preencher já o resto. Escolha o que quer aplicar. Nada é aplicado sem carregar no botão, e pode desfazer.</p>' +
       (poderSaldo ? '<label class="row"><input type="checkbox" data-imp="sug:saldo"' + (I.sug.saldo !== false ? ' checked' : '') + '> Usar <b>' + eur(sg.saldo.valor) + '</b> (saldo de ' + dataPt(sg.saldo.data) + ') como saldo inicial da conta ' + esc(conta) + (vazioAgora ? '. O plano passa a começar em ' + (sg.proximoMes ? mesLongo(sg.proximoMes) : 'o mês seguinte') + ', para não contar duas vezes o que o extrato já inclui.' : '. O saldo é de ' + dataPt(sg.saldo.data) + ': se for diferente do saldo no início do plano, ajuste o mês inicial em Definições.') + '</label>' : '') +
       tab('Pagamentos que se repetem', 'rec', sg.recorrentes, 'Passam a ser pagamentos recorrentes mensais, a contar a partir de ' + (sg.proximoMes ? mesLongo(sg.proximoMes) : 'o mês seguinte') + ' (os meses do extrato ficam pelos movimentos).') +
@@ -3629,12 +3742,15 @@ tr.sub td:first-child { padding-left: 18px; }
           field('Sinal', '<label class="row"><input type="checkbox" data-imp="despPos"' + (I.despPos ? ' checked' : '') + '> As saídas vêm com valor positivo</label>') + '</div></details>';
       } else if (I.modo === 'pdf') mapa = '<p class="note">Lido do PDF pelas posições das colunas (data, descrição, montante e saldo). ' + (I.conf && I.conf.total ? '<span class="chip ' + (I.conf.ok === I.conf.total ? 'good' : 'warn') + '">Saldos conferidos: ' + I.conf.ok + ' de ' + I.conf.total + '</span>' : '') + '</p>';
       else mapa = '<p class="note">Lido como texto colado. Quando há dois valores na linha, o último é o saldo. Se o texto marca as saídas com \"-\", o que não tem sinal é entrada, senão conta como saída. Confirme sempre os valores e os sinais.</p>';
+      const repSug = (() => { const sg = sugestoesImp(I); return sg.recorrentes.concat(sg.rendimentos); })();   // propostas de "pagamentos que se repetem"
+      const repete = i => { const m = I.movs[i], c = Math.round(Math.abs(m.valor) * 100), k = E.chaveDesc(m.desc) || E.normalizaDesc(m.desc).slice(0, 14); return repSug.some(x => (x.valores || []).indexOf(c) >= 0 && (x.exato || x.chave === k)); };
+      const chipRepete = i => !I.fix[i] && repete(i) ? ' <span class="chip acc" title="O mesmo pagamento aparece em meses seguidos. Veja a proposta \'Pagamentos que se repetem\', no topo.">🔁 Repete todos os meses</span>' : '';
       const linhaMov = i => {
         const m = I.movs[i];
         const saida = m.valor < 0, o = I.org[i];
         return '<tr' + (I.dup[i] ? ' class="muted"' : '') + '><td><input type="checkbox" data-imp="sel:' + i + '"' + (I.sel[i] ? ' checked' : '') + ' aria-label="Importar o movimento de ' + dataPt(m.data) + ': ' + esc(m.desc) + '"></td><td>' + dataPt(m.data) + '</td><td class="l">' + esc(m.desc) + '</td><td class="' + (saida ? '' : 'good') + '">' + eur(m.valor) + '</td>' +
           '<td class="l">' + (saida ? '<select data-imp="cat:' + i + '" aria-label="Categoria de ' + dataPt(m.data) + ': ' + esc(m.desc) + '"><option value=""></option>' + catNomes().map(c => '<option' + (c === I.cat[i] ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '<option value="' + NOVA_CAT + '">＋ Nova categoria…</option></select>' : '<span class="chip">Receita</span>') + '</td>' +
-          '<td class="l">' + (saida && !I.fix[i] ? '<label class="comb-op"><input type="checkbox" data-imp="comb:' + i + '"' + ((I.comb[i] || {}).on ? ' checked' : '') + ' aria-label="Contar como combustível: ' + esc(m.desc) + '"> ⛽ Combustível</label>' + ((I.comb[i] || {}).on ? combCampos(I, i) : '') : '') + (saida ? (o === 'recorrente' ? '<span class="chip acc">Recorrente: ' + esc(I.fix[i].nome) + (I.fix[i].previsto != null ? ' (previsto ' + eur(I.fix[i].previsto) + ')' : '') + '</span> <button type="button" class="btn mini" data-act="imp-desligar:' + i + '" aria-label="Não é o recorrente ' + esc(I.fix[i].nome) + '" title="Não é este pagamento recorrente">✕</button>' : o === 'regra' ? '<span class="chip good">Regra</span>' : o === 'sugestão' ? '<span class="chip warn">Sugestão</span>' : '<span class="chip">Sem categoria</span>') : '') + (I.dup[i] ? ' <span class="chip warn">' + (I.dupMotivo[i] === 'repetido' ? 'Repetido no ficheiro' : I.dupMotivo[i] === 'proximo' ? 'Já registado (data próxima)' : 'Já registado') + '</span>' : '') + '</td></tr>';
+          '<td class="l">' + (saida && !I.fix[i] ? '<label class="comb-op"><input type="checkbox" data-imp="comb:' + i + '"' + ((I.comb[i] || {}).on ? ' checked' : '') + ' aria-label="Contar como combustível: ' + esc(m.desc) + '"> ⛽ Combustível</label>' + ((I.comb[i] || {}).on ? combCampos(I, i) : '') : '') + (saida ? (o === 'recorrente' ? '<span class="chip acc">Recorrente: ' + esc(I.fix[i].nome) + (I.fix[i].previsto != null ? ' (previsto ' + eur(I.fix[i].previsto) + ')' : '') + '</span> <button type="button" class="btn mini" data-act="imp-desligar:' + i + '" aria-label="Não é o recorrente ' + esc(I.fix[i].nome) + '" title="Não é este pagamento recorrente">✕</button>' : o === 'regra' ? '<span class="chip good">Regra</span>' : o === 'sugestão' ? '<span class="chip warn">Sugestão</span>' : '<span class="chip">Sem categoria</span>') : '') + chipRepete(i) + (I.dup[i] ? ' <span class="chip warn">' + (I.dupMotivo[i] === 'repetido' ? 'Repetido no ficheiro' : I.dupMotivo[i] === 'proximo' ? 'Já registado (data próxima)' : 'Já registado') + '</span>' : '') + '</td></tr>';
       };
       const vistaGrupos = I.vista !== 'lista';
       const linhas = vistaGrupos ? (I.grupos || []).map((g, gi) => {
@@ -3650,7 +3766,8 @@ tr.sub td:first-child { padding-left: 18px; }
       const nSaidas = I.movs.filter(m => m.valor < 0).length, nDup = I.movs.filter((m, i) => I.dup[i]).length;
       const kpisI = '<div class="grid">' + kpi('Movimentos lidos', String(I.movs.length), nSaidas + ' saídas e ' + (I.movs.length - nSaidas) + ' entradas') + kpi('A importar', String(sel.length), 'Marcados na lista') +
         kpi('Valor selecionado', eur(total), '', cls(total)) + kpi('Duplicados', String(nDup), nDup ? 'Ficam de fora (mesma data e valor, ou data próxima e mesma descrição)' : 'Nenhum') + '</div>';
-      rev = precosHtml(false) + impSugestoesHtml(I) + '<section><h2>Movimentos' + (I.nome ? ' de ' + esc(I.nome) : '') + '</h2>' + kpisI + mapa +
+      const porRever = I.naoLidas > 0 ? '<p class="note"><span class="chip warn">' + I.naoLidas + (I.naoLidas === 1 ? ' linha por rever' : ' linhas por rever') + '</span> ' + (I.naoLidas === 1 ? 'Uma linha do ficheiro não foi lida' : I.naoLidas + ' linhas do ficheiro não foram lidas') + ' como movimento (por exemplo títulos, totais, ou linhas sem data ou sem valor). Confirme no extrato que não falta nenhum movimento.</p>' : '';
+      rev = precosHtml(false) + impSugestoesHtml(I) + '<section><h2>Movimentos' + (I.nome ? ' de ' + esc(I.nome) : '') + '</h2>' + kpisI + porRever + mapa +
         '<div class="row" style="margin:12px 0"><label class="muted" for="imp-vista">Ver</label><select id="imp-vista" data-imp="vista"><option value="grupos"' + (vistaGrupos ? ' selected' : '') + '>Agrupado por tipo de gasto</option><option value="lista"' + (vistaGrupos ? '' : ' selected') + '>Todos os movimentos</option></select><label class="muted" for="imp-conta">Conta</label><select id="imp-conta" data-imp="conta">' + LISTAS.contas.map(c => '<option value="' + esc(c) + '"' + (c === I.conta ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</select><button class="btn" data-act="imp-todos">Marcar ou desmarcar tudo</button></div>' +
         (vistaGrupos ? '<p class="note">Os movimentos parecidos estão juntos (por exemplo todos os de MB WAY ou de VENDING). Escolha a categoria do grupo de uma vez; se um grupo tiver gastos de tipos diferentes, abra-o (▸) e mude só os que precisar.</p>' : '') + '<div class="tablewrap tall"><table class="sticky imp-tab"><thead><tr><th></th><th>' + (vistaGrupos ? 'Movimentos' : 'Data') + '</th><th class="l">Descrição</th><th>Valor</th><th class="l">Categoria</th><th class="l">Origem</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
         '<div class="row" style="margin-top:12px"><button class="btn pri" data-act="imp-ok"' + (sel.length ? '' : ' disabled') + '>Importar ' + sel.length + ' movimento' + (sel.length === 1 ? '' : 's') + '</button><button class="btn" data-act="imp-cancelar">Cancelar</button><span class="muted">Selecionado: <b>' + eur(total) + '</b>. Os que já parecem registados (mesma data e valor) vêm desmarcados. Receitas entram em Rendimentos, sem contar no plano. Pagamentos iguais a um recorrente por pagar ficam ligados a ele, como pagos.</span></div>' +
@@ -3719,15 +3836,39 @@ tr.sub td:first-child { padding-left: 18px; }
     const m2 = document.getElementById('po-msg'); if (m2) m2.textContent = txt;
   }
 
+  /* Investimentos (ações, ETF, cripto…): quanto já investiu, quanto vale agora, quanto põe por mês, e o que isso dá no plano */
+  function investHtml() {
+    const L = Array.isArray(S.investimentos) ? S.investimentos : [], f = R.investimentos || [], T = R.inv || { n: 0 }, fimP = R.months[R.months.length - 1];
+    const sinal = x => (x > 0 ? '+' : '') + eur(x, 0);
+    const kps = L.length ? '<div class="grid">' + kpi('Total investido', eur(T.investido, 0), 'O que já pôs') + kpi('Valor atual', eur(T.atual, 0), 'Segundo o que escreveu') +
+      kpi('Ganho ou perda', sinal(T.ganho), T.rent != null ? pctTxt(T.rent) + ' sobre o investido' : 'Ainda sem valor investido', T.ganho < 0 ? ' neg-v' : T.ganho > 0 ? ' good' : '') + kpi('Põe por mês', eur(T.aporte, 0), 'Sai da poupança do plano') + '</div>' : '';
+    const cartoes = L.map((c, i) => {
+      const b = 'investimentos.' + i + '.', x = f.find(y => y.i === i);
+      const res = x ? '<p class="note" style="margin-top:8px">' + (x.atualDefinido ? 'Ganho ou perda: <b class="' + (x.ganho < 0 ? 'neg-v' : x.ganho > 0 ? 'good' : '') + '">' + sinal(x.ganho) + (x.rent != null ? ' (' + pctTxt(x.rent) + ')' : '') + '</b>. ' : 'Sem valor atual: conta o valor investido. ') +
+        'No fim do plano (' + mesLongo(fimP.ym) + '): <b>' + eur(x.fim, 0) + '</b>' + (x.totAporte > 0 || x.totRend !== 0 ? ' (põe ' + eur(x.totAporte, 0) + ' e rende ' + eur(x.totRend, 0) + ')' : '') + '.</p>' : '';
+      return '<div class="inv-card"><div class="row sh-topo"><b>' + esc(c && c.nome ? c.nome : 'Investimento ' + (i + 1)) + '</b>' + delBtn('investimentos', i) + '</div><div class="fields">' +
+        field('Nome', inp(b + 'nome', { t: 'text', max: 40, ph: 'ex.: ETF mundo', aria: 'Nome do investimento' })) + field('Tipo', inp(b + 'tipo', { t: 'sel', list: E.TIPOS_INVESTIMENTO, aria: 'Tipo de investimento' })) +
+        field('Já investido (€)', inp(b + 'investido', { ph: '0', aria: 'Total já investido' }), 'O total que já pôs.') + field('Valor atual (€)', inp(b + 'atual', { ph: x ? String(Math.round(x.atual * 100) / 100) : '0', aria: 'Valor atual' }), 'Em branco conta o valor investido. Atualize quando quiser.') +
+        field('Põe por mês (€)', inp(b + 'aporte', { ph: '0', aria: 'Valor que põe por mês' }), 'Sai da poupança do plano.') + field('A partir de (opcional)', inp(b + 'inicio', { t: 'date', aria: 'Começa a pôr dinheiro a partir de' }), 'Em branco: desde o início do plano.') +
+        field('Rendimento esperado (% ao ano)', inp(b + 'rend', { ph: '0', aria: 'Rendimento esperado, em percentagem ao ano' }), 'Opcional, taxa efetiva anual: 6 dá 6% ao fim de 12 meses. Em branco, o plano não inventa rendimento.') + '</div>' + res + '</div>';
+    }).join('');
+    const porTipo = {}; f.forEach(c => { porTipo[c.tipo] = (porTipo[c.tipo] || 0) + c.atual; });
+    const tipos = Object.keys(porTipo).filter(k => porTipo[k] > 0).sort((a, b) => porTipo[b] - porTipo[a]);
+    const repartir = tipos.length > 1 && T.atual > 0 ? '<p class="note">Repartição do valor atual: ' + tipos.map(k => esc(k) + ' ' + pctTxt(porTipo[k] / T.atual)).join(' · ') + '.</p>' : '';
+    const fim = L.length ? '<p class="note" style="margin-top:10px">No fim do plano (' + mesLongo(fimP.ym) + '): investimentos <b>' + eur(T.fim, 0) + '</b>, poupança <b>' + eur(R.poupancaPrevista, 0) + '</b>, juntos <b>' + eur(T.fim + R.poupancaPrevista, 0) + '</b>. Até lá põe <b>' + eur(T.totAporte, 0) + '</b> nos investimentos.</p>' : '';
+    return '<section><h2>Investimentos</h2><p class="lead">Ações, ETF, fundos, cripto… Escreva quanto já investiu, quanto vale agora e quanto põe por mês. O que põe por mês sai da poupança prevista do plano (não é despesa) e passa a valer como investimento. Valores brutos, sem impostos nem comissões, e o rendimento esperado é só uma estimativa sua.</p>' + kps +
+      (cartoes ? '<div class="inv-lista">' + cartoes + '</div>' : '<div class="empty">Ainda sem investimentos. Acrescente o primeiro em baixo.</div>') + repartir + fim +
+      '<div class="row" style="margin-top:12px">' + addBtn('investimentos', 'Novo investimento') + '</div></section>';
+  }
   function tabPoupanca() {
     { const cm0 = R.contas.filter(c => c.E !== null), cm = cm0.length ? cm0 : R.contas.slice(0, 6), g = (c, k) => num((S.contas[c.key] || {})[k]); contasDados = cm.length ? { labels: cm.map(c => mesTxt(c.ym)), p: cm.map(c => g(c, 'principal')), r: cm.map(c => g(c, 'revolut')), c: cm.map(c => g(c, 'cartao')) } : null; }
     const PRI = { Alta: 0, 'Média': 1, Baixa: 2 }, ordemObj = R.objetivos.map((o, i) => i).sort((a, b) => (PRI[S.objetivos[a].prioridade] ?? 1.5) - (PRI[S.objetivos[b].prioridade] ?? 1.5) || a - b);
     const cartoes = R.objetivos.length ? '<div class="paylist duas" id="ob-lista">' + ordemObj.map(i => [R.objetivos[i], i]).map(([o, i]) => {
       const so = S.objetivos[i] || {}, pc = Math.min(100, Math.round((o.prog || 0) * 100));
-      return '<button type="button" class="pay ob" data-act="obj:' + i + '">' + chipIco('🎯', '#F48FB1') + '<span class="pt"><span class="sr">Editar </span><b>' + esc(so.nome || 'Sem nome') + '</b>' + ritmoHtml(so) + '<span class="muted">' + eur(num(so.poupado), 0) + ' de ' + eur(num(so.meta), 0) + (o.falta > 0 ? ' · faltam ' + eur(o.falta, 0) : o.falta === 0 ? ' · meta atingida' : '') + (o.meses != null && o.falta > 0 ? ' · ' + eur(o.porMes) + ' por mês' : '') + '</span>' +
+      return '<button type="button" class="pay ob" data-act="obj:' + i + '">' + chipIco('🎯', '#F48FB1') + '<span class="pt"><span class="sr">Editar </span><b>' + esc(so.nome || 'Sem nome') + '</b>' + (o.vencido ? ' <span class="chip bad">Prazo ultrapassado</span>' : '') + ritmoHtml(so) + '<span class="muted">' + eur(num(so.poupado), 0) + ' de ' + eur(num(so.meta), 0) + (o.falta > 0 ? ' · faltam ' + eur(o.falta, 0) : o.falta === 0 ? ' · meta atingida' : '') + (o.meses != null && o.falta > 0 ? ' · ' + eur(o.porMes) + ' por mês' : '') + '</span>' +
         '<span class="bar ' + (pc >= 100 ? 'ok' : '') + '" role="progressbar" aria-label="' + esc(so.nome || 'Objetivo') + '" aria-valuenow="' + pc + '" aria-valuemin="0" aria-valuemax="100"><i style="width:' + pc + '%"></i></span></span><span class="pv">' + pc + ' %</span><span class="chev" aria-hidden="true">›</span></button>';
     }).join('') + '</div>' : '<div class="empty">Ainda sem objetivos. Acrescente o primeiro em baixo.</div>';
-    return poupancaHtml() + contasExtraHtml() + reservaHtml() + '<section><h2>Objetivos de poupança</h2><p class="lead">Defina a meta e a data. O planner calcula quanto tem de pôr de lado por mês.</p>' + cartoes +
+    return poupancaHtml() + contasExtraHtml() + investHtml() + reservaHtml() + '<section><h2>Objetivos de poupança</h2><p class="lead">Defina a meta e a data. O planner calcula quanto tem de pôr de lado por mês.</p>' + cartoes +
       '<div class="row" style="margin-top:12px">' + addBtn('objetivos', 'Novo objetivo') + '<span class="muted">Toque num objetivo para o alterar ou para registar uma poupança.</span></div>' +
       '<div class="grid" style="margin-top:14px"><div class="kpi"><div class="l">Total necessário por mês</div><div class="v">' + eur(R.necessarioMes) + '</div></div><div class="kpi"><div class="l">Saldo médio previsto por mês</div><div class="v' + cls(R.tot.media) + '">' + eur(R.tot.media) + '</div></div><div class="kpi"><div class="l">Cabe no orçamento?</div><div class="v ' + (R.cabe ? 'good' : 'bad') + '">' + (R.cabe ? 'Sim' : 'Não') + '</div><div class="s">' + (R.cabe ? '' : 'Ajuste metas ou prazos.') + '</div></div></div></section>' +
       '<section><h2>Contas no fim de cada mês</h2><p class="lead">Anote o saldo real da principal, da Revolut e do cartão refeição. O total em dinheiro não inclui o cartão refeição. O saldo previsto parte do último saldo real.</p>' +
@@ -3740,7 +3881,7 @@ tr.sub td:first-child { padding-left: 18px; }
   function tabPropostas() {
     const todas = S.propostas.map((o, i) => ({ o, i, r: R.propostas[i] })), at = todas.filter(x => !x.o.arquivada), arq = todas.filter(x => x.o.arquivada);
     const ref = at[0], dif = x => ref ? x.r.sobraAno - ref.r.sobraAno : 0;
-    const rowIn = (label, key, extra) => '<tr><td class="l">' + label + '</td>' + at.map(x => '<td>' + inp('propostas.' + x.i + '.' + key, extra || {}) + '</td>').join('') + '</tr>';
+    const rowIn = (label, key, extra) => '<tr><td class="l">' + label + '</td>' + at.map(x => '<td>' + inp('propostas.' + x.i + '.' + key, Object.assign({ aria: String(label).replace(/<[^>]*>/g, '') + ': ' + (x.o.nome || 'Opção ' + (x.i + 1)) }, extra || {})) + '</td>').join('') + '</tr>';
     const rowOut = (label, f, strong) => '<tr' + (strong ? ' class="tot"' : '') + '><td class="l">' + label + '</td>' + at.map(x => { const v = f(x); return '<td class="' + (v < 0 ? 'neg-v' : '') + '">' + eur(v) + '</td>'; }).join('') + '</tr>';
     propDados = { nomes: at.map((x, k) => x.o.nome || ('Opção ' + (k + 1))), sobra: at.map(x => x.r.sobraMes) };
     const melhor = at.length ? propDados.sobra.indexOf(Math.max.apply(null, propDados.sobra)) : -1;
@@ -3826,7 +3967,7 @@ tr.sub td:first-child { padding-left: 18px; }
     }
     return '<section class="card sec"><h2 id="def-sincronizacao">Sincronização, cópias de segurança e instalação</h2><p class="lead">O iPhone e o PC partilham os mesmos dados. Aqui vê o estado, as cópias e como pôr a app no ecrã inicial.</p>' +
       '<h3>Sincronização entre o iPhone e o PC</h3>' + lig + (entradaErro ? '<p class="note bad">A última tentativa de entrar falhou: ' + esc(entradaErro) + '</p>' : '') +
-      '<table class="mini" style="margin-top:14px"><tbody><tr><td class="l">Última gravação ' + onde + '</td><td>' + (ligada ? horaTxt(ultimaOk) : '—') + '</td></tr><tr><td class="l">Última alteração recebida de outro aparelho</td><td>' + (ligada ? horaTxt(ultimaRemota) : '—') + '</td></tr></tbody></table>' +
+      '<table class="mini quebra" style="margin-top:14px"><tbody><tr><td class="l">Última gravação ' + onde + '</td><td>' + (ligada ? horaTxt(ultimaOk) : '—') + '</td></tr><tr><td class="l">Última alteração recebida de outro aparelho</td><td>' + (ligada ? horaTxt(ultimaRemota) : '—') + '</td></tr></tbody></table>' +
       '<div class="row" style="margin-top:10px"><button type="button" class="btn" data-act="sync-agora">Sincronizar agora</button><span class="muted">Envia o que falta e traz o que o outro aparelho guardou.</span></div>' +
       '<h3 style="margin-top:18px">Cópias de segurança</h3>' +
       '<p><b>Automáticas, ' + onde + ':</b> uma por dia, com os dados com que o dia começou, e ficam as últimas ' + COPIAS_N + '. Servem para voltar atrás se algo correr mal.</p>' + auto +
@@ -3919,6 +4060,7 @@ tr.sub td:first-child { padding-left: 18px; }
       field('Manutenção do carro (€/km)', inp(pr + 'manut'), 'Pneus, óleo, travões.') +
       field('Dias de trabalho por mês (padrão)', inp(pr + 'dias'), 'Só para cenários e comparações.') +
       field('Mês inicial do plano', inp(pr + 'mesInicial', { t: 'date' })) +
+      field('Duração do plano (meses)', '<input type="number" id="horiz-n3" data-horiz="1" min="6" max="240" step="1" inputmode="numeric" value="' + R.horizonte + '" aria-label="Duração do plano, em meses (de 6 a 240)">', 'De 6 a 240 meses (20 anos). Também se muda no Plano mensal.') +
       field('Dia em que recebe o salário', '<input type="number" inputmode="numeric" min="1" max="31" step="1" data-p="press.diaSalario" data-t="num" value="' + esc(S.press.diaSalario == null ? '' : S.press.diaSalario) + '" placeholder="ex.: 28" aria-label="Dia em que recebe o salário">', 'De 1 a 31. Usado no calendário de liquidez (Síntese).') +
       field('Dias de férias por ano', inp(pr + 'diasFerias'), 'Mínimo legal: 22 dias úteis.') +
       field('Calcular os feriados nacionais?', inp(pr + 'feriadosAuto', { t: 'sel', list: LISTAS.simnao }), 'Sim: Páscoa, Sexta-feira Santa, Corpo de Deus e os fixos, em qualquer ano. A lista manual serve para o feriado municipal e extras.') +
@@ -4012,7 +4154,7 @@ tr.sub td:first-child { padding-left: 18px; }
   /* A app sem nenhuma informação da pessoa: ficam só as regras (IRS, salário mínimo, acréscimos) e as categorias, sem limites */
   function dadosVazios() {
     const v = clone(DEFAULTS);
-    ['contasExtra', 'fechos', 'fixas', 'gastos', 'extras', 'objetivos', 'feriados', 'pontes', 'ferias', 'saltadas', 'periodos', 'propostas'].forEach(k => { v[k] = []; });
+    ['contasExtra', 'investimentos', 'fechos', 'fixas', 'gastos', 'extras', 'objetivos', 'feriados', 'pontes', 'ferias', 'saltadas', 'periodos', 'propostas'].forEach(k => { v[k] = []; });
     v.plano = {}; v.contas = {}; v.horas = { saldoInicial: 0, meses: {}, registo: [] };
     v.combustivel.abast = []; v.importacao = { regras: [] };
     v.apoios.ledger = {}; v.apoios.outrosAdultos = ''; v.apoios.sims = [];
@@ -4077,7 +4219,7 @@ tr.sub td:first-child { padding-left: 18px; }
     if (detSheet && detSheet.tab !== tab) detSheet = null; if (simSheet && simSheet.tab !== tab) simSheet = null;
     const ovSel = '.drawer, .sheet', ovChave = e => (e.getAttribute && e.getAttribute('aria-label')) || '', ovAntes = {}, ovLista = Array.from(document.querySelectorAll(ovSel)), tinhaOv = ovLista.length > 0;   // uma gaveta ou folha já aberta não volta ao topo nem volta a deslizar quando se escolhe uma opção lá dentro
     ovLista.forEach(e => { const k = ovChave(e); if (!(k in ovAntes)) ovAntes[k] = e.scrollTop || 0; });   // o scroll guarda-se pelo nome da folha, e não pela posição: abrir um seletor por cima de uma folha não a manda para o topo
-    mainEl.innerHTML = renomeiaContas(corpo + fixaHtml() + rendHtml() + gastoHtml() + objHtml() + contaHtml() + planoHtml() + detHtml() + simHtml() + rapidoHtml() + boasHtml() + pickerHtml() + corPickerHtml() + novaCatHtml() + calHtml() + menuHtml());
+    mainEl.innerHTML = renomeiaContas(corpo + fixaHtml() + rendHtml() + gastoHtml() + objHtml() + contaHtml() + planoHtml() + detHtml() + simHtml() + rapidoHtml() + boasHtml() + nuvemAskHtml() + pickerHtml() + corPickerHtml() + novaCatHtml() + calHtml() + menuHtml());
     if (tinhaOv) { Array.from(document.querySelectorAll('.drawer-bg, .modal, .drawer, .sheet')).forEach(e => { if (e.classList && e.classList.add) e.classList.add('sem-anim'); }); const usados = {}; Array.from(document.querySelectorAll(ovSel)).forEach(e => { const k = ovChave(e); if (usados[k] || !ovAntes[k]) return; usados[k] = true; e.scrollTop = ovAntes[k]; }); }
     if (tab === 'despesas') filtraLista('g'); else if (tab === 'rendimentos') filtraLista('r');
     const dlg = dialogoTopo();
@@ -4144,9 +4286,20 @@ tr.sub td:first-child { padding-left: 18px; }
     }
   }
   const novoId = () => 'f' + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
+  const CHAVES_TEXTO = new Set(['id', 'cat', 'desc', 'icone', 'period', 'inicio', 'fim', 'ativa', 'conta', 'notas', 'data', 'tipo', 'origem', 'freq', 'ate', 'contar', 'salMin', 'cartao', 'irsModo', 'nome', 'cor', 'periodo', 'de', 'nota', 'repete', 'desconta', 'fixa', 'ocorr', 'prioridade', 'posto', 'obs', 'tarefas', 'disciplina', 'dispensa', 'i1', 'f1', 'i2', 'f2']);
+  const CHAVES_DATA = new Set(['data', 'inicio', 'fim', 'ate', 'de', 'ocorr']);
+  const soObjetos = l =>(Array.isArray(l) ? l : []).filter(x => x && typeof x === 'object' && !Array.isArray(x));
+  /* Um ficheiro estragado ou mexido à mão pode trazer, num campo de texto, um número, uma lista ou nada. O texto passa a texto (ou vazio) e o que não devia ser uma lista ou um objeto sai, para o resto da app não rebentar. */
+  function sanearTipos(out) {
+    const texto = x => { Object.keys(x).forEach(k => { const v = x[k]; if (CHAVES_TEXTO.has(k)) { if (typeof v !== 'string') x[k] = (typeof v === 'number' && isFinite(v)) || typeof v === 'boolean' ? String(v) : ''; if (CHAVES_DATA.has(k) && x[k] !== '' && !dataOk(x[k])) x[k] = ''; } else if (v !== null && typeof v === 'object' && k !== 'meses' && k !== 'anos') x[k] = ''; }); };   // uma data que não existe fica em branco (a app já as recusa quando se escrevem)
+    ['contasExtra', 'investimentos', 'fixas', 'gastos', 'extras', 'periodos', 'categorias', 'feriados', 'pontes', 'ferias', 'objetivos', 'propostas', 'salMin'].forEach(k => { if (Array.isArray(out[k])) out[k].forEach(texto); });
+    if (out.horas && typeof out.horas === 'object') { out.horas.registo = soObjetos(out.horas.registo); out.horas.registo.forEach(texto); }
+    if (out.combustivel && typeof out.combustivel === 'object') { out.combustivel.abast = soObjetos(out.combustivel.abast); out.combustivel.abast.forEach(texto); }
+    ['plano', 'contas'].forEach(k => { if (!out[k] || typeof out[k] !== 'object' || Array.isArray(out[k])) out[k] = {}; });
+  }
   function merge(base, saved) {
     saved = seguro(saved == null ? {} : clone(saved));   // os dados recebidos da conta vêm congelados (só de leitura): trabalha-se sempre sobre uma cópia
-    ['contasExtra', 'fechos', 'fixas', 'gastos', 'extras', 'periodos', 'categorias', 'feriados', 'pontes', 'ferias', 'objetivos', 'propostas', 'salMin', 'saltadas'].forEach(k => { if (k in saved && !Array.isArray(saved[k])) delete saved[k]; else if (k in saved && k !== 'saltadas') saved[k] = saved[k].filter(x => x && typeof x === 'object' && !Array.isArray(x)); });
+    ['contasExtra', 'investimentos', 'fechos', 'fixas', 'gastos', 'extras', 'periodos', 'categorias', 'feriados', 'pontes', 'ferias', 'objetivos', 'propostas', 'salMin', 'saltadas'].forEach(k => { if (k in saved && !Array.isArray(saved[k])) delete saved[k]; else if (k in saved && k !== 'saltadas') saved[k] = saved[k].filter(x => x && typeof x === 'object' && !Array.isArray(x)); });
     const out = clone(base);
     Object.keys(saved || {}).forEach(k => { out[k] = saved[k]; });
     out.press = Object.assign(clone(base.press), seguro(saved.press));
@@ -4187,7 +4340,7 @@ tr.sub td:first-child { padding-left: 18px; }
       (out.periodos || []).forEach(p => { if (p.irsModo == null) p.irsModo = num(p.irs) === 0 ? 'Automático' : 'Manual'; if (!p.tipo) p.tipo = /bolsa/i.test(p.desc || '') ? 'Bolsa' : /stágio/i.test(p.desc || '') ? 'Estágio' : 'Contrato'; });
       (out.propostas || []).forEach(o => { if (o.irsModo == null) o.irsModo = num(o.irs) === 0 ? 'Automático' : 'Manual'; });
     }
-    if (!out.horas) out.horas = clone(base.horas);   // versão 1.5: horas e férias
+    if (!out.horas || typeof out.horas !== 'object' || Array.isArray(out.horas)) out.horas = clone(base.horas);   // versão 1.5: horas e férias
     if (!Array.isArray(out.horas.registo)) out.horas.registo = [];
     if (!out.horas.meses) out.horas.meses = {};
     ['mesInicial'].forEach(k => { if (!/^\d{4}-\d{2}-\d{2}$/.test(String(out.press[k])) || !dataOk(String(out.press[k]))) out.press[k] = base.press[k]; });
@@ -4210,6 +4363,7 @@ tr.sub td:first-child { padding-left: 18px; }
     if ((saved.ver || 1) < 12) {   // versão 1.18.0: rendimento anual dos outros adultos (24 271,51 €, confirmado pela utilizadora). Só preenche se estava em branco
       if (!E.has(out.apoios.outrosAdultos) && E.has(base.apoios.outrosAdultos)) out.apoios.outrosAdultos = base.apoios.outrosAdultos;
     }
+    sanearTipos(out);
     out.ver = 12;
     return out;
   }
@@ -4284,7 +4438,7 @@ tr.sub td:first-child { padding-left: 18px; }
         const N = window.Nuvem, r = await N.concluirEntrada();
         if (r.estado === 'erro') { entradaErro = r.mensagem || 'Não foi possível entrar.'; aviso('Não foi possível entrar no OneDrive: ' + entradaErro); }
         N.onEstado(e => { if (e !== 'ligado') { setStatus('off', textoNuvem(e)); if (tab === 'definicoes') renderKeep(); } });
-        if (N.estado() !== 'ligado') { setStatus('off', textoNuvem(N.estado())); if (tab === 'definicoes') renderKeep(); return; }
+        if (N.estado() !== 'ligado') { setStatus('off', textoNuvem(N.estado())); if (tab === 'definicoes') renderKeep(); pedirEntradaNuvem(); return; }
         db = N.db(); uid = 'u'; nuvem = true; if (r.estado === 'ok') aviso('Entrou no OneDrive. A sincronizar…');
       }
       if (!db || !uid) { setStatus('off', 'Guardado só neste aparelho'); return; }
@@ -4326,6 +4480,7 @@ tr.sub td:first-child { padding-left: 18px; }
     objetivos: () => ({ inicio: hojeIso(), nome: '', meta: '', data: '', poupado: 0, conta: 'Revolut' }),
     'importacao.regras': () => ({ padrao: '', cat: '', n: 0 }),
     contasExtra: () => ({ nome: 'Nova conta ' + ((S.contasExtra || []).length + 1), tipo: 'Poupança', saldo: 0, tanb: '', imposto: '', aporte: 0 }),
+    investimentos: () => ({ nome: '', tipo: 'Ações', investido: '', atual: '', aporte: '', inicio: '', rend: '' }),
     propostas: () => ({ nome: 'Nova opção', tipo: 'Contrato', bruto: 920, irs: 0, irsModo: 'Automático', subs: 0, km: 0, port: 0, dias: 22 }),
     periodos: () => ({ inicio: '', tipo: 'Contrato', desc: '', salMin: 'Não', bruto: '', irsModo: 'Automático', irs: 0, subs: '', cartao: 'Sim', km: '', portagens: '', notas: '' }),
     salMin: () => ({ ano: '', valor: '', nota: '' }), feriados: () => ({ data: '', nome: '', repete: 'Não' }), pontes: () => ({ inicio: '', ate: '', desc: '', desconta: 'Não', repete: 'Não' }), ferias: () => ({ de: '', ate: '' })
@@ -4334,6 +4489,7 @@ tr.sub td:first-child { padding-left: 18px; }
     const el = ev.target;
     if (el.dataset && el.dataset.imp) { impChange(el); return; }
     if (el.dataset && el.dataset.ui) { uiChange(el); return; }
+    if (el.dataset && el.dataset.horiz) { const v = Math.round(Number(String(el.value || '').replace(',', '.'))); if (!isFinite(v) || v < 6 || v > 240) { aviso('A duração do plano é um número de meses entre 6 e 240. Ficou o valor anterior.'); renderKeep(); return; } S.press.horizonte = v; queueSave(); renderKeep(); return; }
     if (el.dataset && el.dataset.filtro) { filtroAtual[el.dataset.filtro] = el.value; filtraLista(el.dataset.filtro); return; }
     if (el.dataset && el.dataset.copia) { carregarCopia(el.files && el.files[0]); try { el.value = ''; } catch (e) { } return; }
     if (el.dataset && el.dataset.local === 'gastoMes') { gastoMes = el.value; renderKeep(); return; }
@@ -4388,8 +4544,8 @@ tr.sub td:first-child { padding-left: 18px; }
       }
       return;
     }
-    if (ev.key === 'Escape' && (menu || picker || calSheet || fixaSheet != null || rendSheet != null || planoSheet || detSheet || simSheet || rapido || gastoSheet != null || objSheet != null || contaSheet || corPick || novaCat)) {   // com o seletor de ícones por cima de uma folha, fecha só o seletor
-      if (novaCat) novaCat = null; else if (corPick) corPick = null; else if (picker && fixaSheet != null) picker = null; else { if (boas) boasFechar(); menu = null; picker = null; calSheet = null; fixaSheet = null; rendSheet = null; planoSheet = null; detSheet = null; simSheet = null; rapido = null; gastoSheet = null; objSheet = null; contaSheet = null; }
+    if (ev.key === 'Escape' && (menu || picker || calSheet || fixaSheet != null || rendSheet != null || planoSheet || detSheet || simSheet || rapido || gastoSheet != null || objSheet != null || contaSheet || corPick || novaCat || nuvemAsk)) {   // com o seletor de ícones por cima de uma folha, fecha só o seletor
+      if (nuvemAsk) nuvemAsk = false; else if (novaCat) novaCat = null; else if (corPick) corPick = null; else if (picker && fixaSheet != null) picker = null; else { if (boas) boasFechar(); menu = null; picker = null; calSheet = null; fixaSheet = null; rendSheet = null; planoSheet = null; detSheet = null; simSheet = null; rapido = null; gastoSheet = null; objSheet = null; contaSheet = null; }
       resetArm = false; apagarArm = false; renderKeep(); return;
     }
     if (ev.key === '/' && !escreve && !ev.ctrlKey && !ev.metaKey && !ev.altKey) { ev.preventDefault(); menu = 'ir'; renderKeep(); setTimeout(() => { const q = document.getElementById('ir-q'); if (q && q.focus) q.focus(); }, 0); return; }
@@ -4424,6 +4580,8 @@ tr.sub td:first-child { padding-left: 18px; }
     if (act === 'add') {
       if (a1 === 'contasExtra' && !Array.isArray(S.contasExtra)) S.contasExtra = [];
       if (a1 === 'contasExtra' && S.contasExtra.length >= 20) { aviso('No máximo 20 contas.'); return; }
+      if (a1 === 'investimentos' && !Array.isArray(S.investimentos)) S.investimentos = [];
+      if (a1 === 'investimentos' && S.investimentos.length >= 30) { aviso('No máximo 30 investimentos.'); return; }
       getP(a1).push(NEW[a1]()); queueSave();
       if (a1 === 'fixas') fixaSheet = S.fixas.length - 1;   // um recorrente ou um rendimento novo abre logo na folha de edição
       if (a1 === 'extras') rendSheet = S.extras.length - 1;
@@ -4477,7 +4635,7 @@ tr.sub td:first-child { padding-left: 18px; }
       if (a1 === 'g' || a1 === 'r') { menu = null; rapido = { tipo: a1, valor: '', desc: '', data: hojeIso(), cat: ultimaCat(a1), conta: rapidoDefaults[a1].conta, novo: true, catEscolhida: false }; renderKeep(); setTimeout(() => { const e = document.getElementById('q-valor'); if (e && e.focus) e.focus(); }, 0); }
     }
     else if (act === 'boas-fechar') { if (ev.target === b || b.classList.contains('x')) { boasFechar(); renderKeep(); } }
-    else if (act === 'boas') { boasFechar(); if (a1 === 'extrato') vaiPara('importar'); else if (a1 === 'copia') { menu = 'lateral'; renderKeep(); } else if (a1 === 'nuvem') vaiPara('definicoes', 'def-sincronizacao'); else if (a1 === 'mao') vaiPara('definicoes', 'def-contratos'); else renderKeep(); }
+    else if (act === 'boas') { boasFechar(); if (a1 === 'extrato') vaiPara('importar'); else if (a1 === 'copia') { menu = 'lateral'; renderKeep(); } else if (a1 === 'nuvem') { nuvemAsk = true; renderKeep(); } else if (a1 === 'mao') vaiPara('definicoes', 'def-contratos'); else renderKeep(); }
     else if (act === 'rapido-fechar') { if (ev.target === b || b.classList.contains('x')) { lerRapido(); rapido = null; renderKeep(); } }
     else if (act === 'rapido-ok') { if (rapido) rapidoGuardar(); }
     else if (act === 'q-cat') {
@@ -4612,6 +4770,10 @@ tr.sub td:first-child { padding-left: 18px; }
     else if (act === 'pick') { picker = a1; render(); const f1 = document.querySelector('.emojis button'); if (f1) f1.focus(); }
     else if (act === 'cor') { corPick = a1; render(); const f1 = document.querySelector('.cor-op'); if (f1 && f1.focus) f1.focus(); }
     else if (act === 'nc-fechar') { if (ev.target === b || b.tagName === 'BUTTON') { novaCat = null; renderKeep(); } }
+    else if (act === 'nask-fechar') { if (ev.target === b || b.tagName === 'BUTTON') { nuvemAsk = false; renderKeep(); } }
+    else if (act === 'nask-nunca') { nuvemAsk = false; try { localStorage.setItem(LS_NUVEM_NAO, '1'); } catch (e) { } renderKeep(); aviso('Está bem, não volto a perguntar neste aparelho. Pode entrar quando quiser em Definições, Sincronização.'); }
+    else if (act === 'nask-passos') { nuvemAsk = false; vaiPara('definicoes', 'def-sincronizacao'); }
+    else if (act === 'nask-id' || act === 'nask-entrar') await nuvemAskEntrar(act === 'nask-id');
     else if (act === 'nc-criar') novaCatCriar();
     else if (act === 'cor-fechar') { if (ev.target === b || (b.classList && b.classList.contains('x'))) { corPick = null; render(); } }
     else if (act === 'cor-set') { const c = PALETA[+a1]; if (corPick && c) { setP(corPick, c[1]); corPick = null; queueSave(); render(); } }
