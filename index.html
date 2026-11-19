@@ -723,7 +723,7 @@ tr.sub td:first-child { padding-left: 18px; }
   .imp-tab thead { display: none; }
   .imp-tab, .imp-tab tbody { display: block; width: 100%; }
   .imp-tab tr { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "sel desc val" "sel data data" "sel cat cat" "sel org org"; gap: 4px 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
-  .imp-tab td { padding: 0; border: 0; min-width: 0; text-align: left; }
+  .imp-tab td { padding: 0; border: 0; min-width: 0; text-align: left; white-space: normal; }
   .imp-tab td:nth-child(1) { grid-area: sel; align-self: start; padding-top: 2px; }
   .imp-tab td:nth-child(2) { grid-area: data; font-size: 13px; color: var(--muted); }
   .imp-tab td:nth-child(3) { grid-area: desc; font-weight: 600; overflow-wrap: anywhere; }
@@ -732,7 +732,10 @@ tr.sub td:first-child { padding-left: 18px; }
   .imp-tab td:nth-child(6) { grid-area: org; }
   .imp-tab td:nth-child(5):empty, .imp-tab td:nth-child(6):empty { display: none; }
   .imp-tab select { width: 100%; max-width: none; }
-  .imp-tab tr.sub { padding-left: 14px; background: var(--head); }
+  .imp-tab tr.sub { margin-left: 10px; padding: 10px 0 10px 12px; border-left: 3px solid var(--accent); background: transparent; }
+  .imp-tab tr.grupo { background: var(--accent-soft); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin: 10px 0 4px; }
+  .imp-tab tr.grupo td { background: transparent; }
+  .imp-tab tr.grupo td:nth-child(3) { font-weight: 400; }
   .imp-tab tr.grupo td:nth-child(2) { font-weight: 400; }
 }
 @media (max-width: 600px) {
@@ -742,8 +745,8 @@ tr.sub td:first-child { padding-left: 18px; }
 }
 
 /* Importar: combustível */
-.comb-op { display: flex; gap: 6px; align-items: center; font-size: 13px; margin-top: 4px; cursor: pointer; }
-.comb-campos { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: end; margin-top: 6px; }
+.comb-campos { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: end; margin: 6px 0 4px; padding: 8px 10px; background: var(--head); border-radius: 8px; }
+.comb-tit { flex: 1 1 100%; font-size: 12px; font-weight: 600; color: var(--muted); }
 .comb-campos label { display: grid; gap: 2px; font-size: 12px; color: var(--muted); }
 .comb-campos input { width: 100px; min-width: 0; }
 .comb-campos .muted { font-size: 12px; }
@@ -787,7 +790,7 @@ table.quebra td { white-space: normal; }
 <main id="main"></main>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </div>
-<script id="seed" type="application/json">{"press": {"ss": 0.11, "kmExtra": 0, "manut": 0.02, "dias": 22, "mesInicial": "2026-10-01", "inicioLic": "2027-09-01", "horasDia": 8, "diasFerias": 22, "saldoPrincipal": 0, "revolut": 0, "gasoleoManual": 2.3, "consumoManual": 6, "usarPrecoMedido": "Sim", "usarConsumoMedido": "Sim", "horizonte": 36, "horasSemana": 35, "regimeExtras": "Ainda não sei", "acr1": 0.25, "acr2": 0.375, "acr3": 0.5, "estudante": {"ativo": "Não", "de": "", "ate": "", "dias": [1, 1, 1, 1, 1], "limiteSemana": 6, "limiteProvas": 4}, "feriadosAuto": "Sim"}, "periodos": [], "salMin": [{"ano": 2026, "valor": 920, "nota": "DGERT — retribuição mínima mensal garantida 2026"}, {"ano": 2027, "valor": 970, "nota": "Previsto: acordo de Concertação Social e proposta de OE 2027. Falta o decreto-lei"}, {"ano": 2028, "valor": 1020, "nota": "Acordo tripartido de outubro de 2024: subidas de 50 € por ano até 1 020 € em 2028 (falta o decreto-lei)"}, {"ano": 2029, "valor": 1100, "nota": "Meta do programa do Governo (1 100 €); ainda não consta de um acordo. Por confirmar"}], "fixas": [], "extras": [], "gastos": [], "feriados": [], "pontes": [], "plano": {}, "contas": {}, "objetivos": [], "ferias": [], "combustivel": {"nRecente": 4, "iva": 0.23, "abast": []}, "propostas": [], "ver": 12, "importacao": {"regras": []}, "saltadas": [], "horas": {"saldoInicial": 0, "meses": {}, "registo": []}, "categorias": [{"nome": "Carro", "icone": "🚗", "cor": "#0D6A73", "limite": "", "periodo": "Mensal"}, {"nome": "Portagens", "icone": "🛣️", "cor": "#7A6A4F", "limite": "", "periodo": "Mensal"}, {"nome": "Comunicações", "icone": "📱", "cor": "#3B6FD4", "limite": "", "periodo": "Mensal"}, {"nome": "Estudos", "icone": "🎓", "cor": "#7A52C7", "limite": "", "periodo": "Mensal"}, {"nome": "Lazer", "icone": "🎮", "cor": "#D1488A", "limite": "", "periodo": "Mensal"}, {"nome": "Saúde", "icone": "💊", "cor": "#C94B3B", "limite": "", "periodo": "Mensal"}, {"nome": "Subscrições", "icone": "🔁", "cor": "#B07A12", "limite": "", "periodo": "Mensal"}, {"nome": "Casa", "icone": "🏠", "cor": "#4F8A3A", "limite": "", "periodo": "Mensal"}, {"nome": "Alimentação", "icone": "🛒", "cor": "#D9822B", "limite": "", "periodo": "Mensal"}, {"nome": "Restauração", "icone": "🍽️", "cor": "#E0A030", "limite": "", "periodo": "Mensal"}, {"nome": "Compras", "icone": "🛍️", "cor": "#8E5BB8", "limite": "", "periodo": "Mensal"}, {"nome": "Prendas", "icone": "🎁", "cor": "#E0607E", "limite": "", "periodo": "Mensal"}, {"nome": "Transportes", "icone": "🚌", "cor": "#2F8F9D", "limite": "", "periodo": "Mensal"}, {"nome": "Transferências", "icone": "🔄", "cor": "#5B7FA6", "limite": "", "periodo": "Mensal"}, {"nome": "Animais", "icone": "🐾", "cor": "#A0683A", "limite": "", "periodo": "Mensal"}, {"nome": "Outros", "icone": "📦", "cor": "#6B7C87", "limite": "", "periodo": "Mensal"}], "orcamento": {"geral": 0, "geralMeses": {}}, "apoios": {"ano": 2026, "contarSubs": true, "modo": "agregado", "adultos": 1, "outrosAdultos": "", "tarifaSocial": false, "refManual": false, "rendOutroAno": "", "limite": 11572, "apoioPct": 0.8, "pctMin": 0.7, "pctMax": 0.9, "tetoPreco": 15000, "tetoModo": "apoio", "precoMax": 37500, "majAbate": 1000, "posto": 1000, "vagas": 5500, "iva": 0.23, "sim": {"preco": 12000, "abate": true, "posto": false, "custoPosto": 1000}, "sims": [], "ledger": {}}}</script>
+<script id="seed" type="application/json">{"press": {"ss": 0.11, "kmExtra": 0, "manut": 0.02, "dias": 22, "mesInicial": "2026-10-01", "inicioLic": "2027-09-01", "horasDia": 8, "diasFerias": 22, "saldoPrincipal": 0, "revolut": 0, "gasoleoManual": 2.3, "consumoManual": 6, "usarPrecoMedido": "Sim", "usarConsumoMedido": "Sim", "horizonte": 36, "horasSemana": 35, "regimeExtras": "Ainda não sei", "acr1": 0.25, "acr2": 0.375, "acr3": 0.5, "estudante": {"ativo": "Não", "de": "", "ate": "", "dias": [1, 1, 1, 1, 1], "limiteSemana": 6, "limiteProvas": 4}, "feriadosAuto": "Sim"}, "periodos": [], "salMin": [{"ano": 2026, "valor": 920, "nota": "DGERT — retribuição mínima mensal garantida 2026"}, {"ano": 2027, "valor": 970, "nota": "Previsto: acordo de Concertação Social e proposta de OE 2027. Falta o decreto-lei"}, {"ano": 2028, "valor": 1020, "nota": "Acordo tripartido de outubro de 2024: subidas de 50 € por ano até 1 020 € em 2028 (falta o decreto-lei)"}, {"ano": 2029, "valor": 1100, "nota": "Meta do programa do Governo (1 100 €); ainda não consta de um acordo. Por confirmar"}], "fixas": [], "extras": [], "gastos": [], "feriados": [], "pontes": [], "plano": {}, "contas": {}, "objetivos": [], "ferias": [], "combustivel": {"nRecente": 4, "iva": 0.23, "abast": []}, "propostas": [], "ver": 13, "importacao": {"regras": []}, "saltadas": [], "horas": {"saldoInicial": 0, "meses": {}, "registo": []}, "categorias": [{"nome": "Carro", "icone": "🚗", "cor": "#0D6A73", "limite": "", "periodo": "Mensal"}, {"nome": "Combustível", "icone": "⛽", "cor": "#B5542E", "limite": "", "periodo": "Mensal"}, {"nome": "Portagens", "icone": "🛣️", "cor": "#7A6A4F", "limite": "", "periodo": "Mensal"}, {"nome": "Comunicações", "icone": "📱", "cor": "#3B6FD4", "limite": "", "periodo": "Mensal"}, {"nome": "Estudos", "icone": "🎓", "cor": "#7A52C7", "limite": "", "periodo": "Mensal"}, {"nome": "Lazer", "icone": "🎮", "cor": "#D1488A", "limite": "", "periodo": "Mensal"}, {"nome": "Saúde", "icone": "💊", "cor": "#C94B3B", "limite": "", "periodo": "Mensal"}, {"nome": "Subscrições", "icone": "🔁", "cor": "#B07A12", "limite": "", "periodo": "Mensal"}, {"nome": "Casa", "icone": "🏠", "cor": "#4F8A3A", "limite": "", "periodo": "Mensal"}, {"nome": "Alimentação", "icone": "🛒", "cor": "#D9822B", "limite": "", "periodo": "Mensal"}, {"nome": "Restauração", "icone": "🍽️", "cor": "#E0A030", "limite": "", "periodo": "Mensal"}, {"nome": "Compras", "icone": "🛍️", "cor": "#8E5BB8", "limite": "", "periodo": "Mensal"}, {"nome": "Prendas", "icone": "🎁", "cor": "#E0607E", "limite": "", "periodo": "Mensal"}, {"nome": "Transportes", "icone": "🚌", "cor": "#2F8F9D", "limite": "", "periodo": "Mensal"}, {"nome": "Transferências", "icone": "🔄", "cor": "#5B7FA6", "limite": "", "periodo": "Mensal"}, {"nome": "Animais", "icone": "🐾", "cor": "#A0683A", "limite": "", "periodo": "Mensal"}, {"nome": "Outros", "icone": "📦", "cor": "#6B7C87", "limite": "", "periodo": "Mensal"}], "orcamento": {"geral": 0, "geralMeses": {}}, "apoios": {"ano": 2026, "contarSubs": true, "modo": "agregado", "adultos": 1, "outrosAdultos": "", "tarifaSocial": false, "refManual": false, "rendOutroAno": "", "limite": 11572, "apoioPct": 0.8, "pctMin": 0.7, "pctMax": 0.9, "tetoPreco": 15000, "tetoModo": "apoio", "precoMax": 37500, "majAbate": 1000, "posto": 1000, "vagas": 5500, "iva": 0.23, "sim": {"preco": 12000, "abate": true, "posto": false, "custoPosto": 1000}, "sims": [], "ledger": {}}}</script>
 <script>
 /* Motor de cálculo — porta das fórmulas do Planner Financeiro (Excel). Sem DOM. */
 (function (root) {
@@ -891,12 +894,15 @@ table.quebra td { white-space: normal; }
      a parte variável é o limite menos os recorrentes (nunca abaixo de 0). */
   const PERIODOS_ORC = { 'Diário': 365 / 12, 'Semanal': 52 / 12, 'Quinzenal': 26 / 12, 'Mensal': 1 };
   const limiteMensal = c => has(c.limite) ? num(c.limite) * (PERIODOS_ORC[c.periodo] || 1) : null;
-  /* Gastos que já estão em Combustível: têm um abastecimento com a mesma data e o mesmo valor (um abastecimento por gasto).
+  /* Gastos que já estão em Combustível: a categoria Combustível, ou um gasto sem categoria (ou em Carro/Transportes) com um abastecimento da mesma data e do mesmo valor (um abastecimento por gasto).
      O plano já estima o combustível, por isso estes gastos não se somam outra vez aos gastos variáveis. */
   function gastosDeCombustivel(S) {
     const ab = {}, out = new Set(), cent = v => Math.round(num(v) * 100);
     ((S.combustivel && Array.isArray(S.combustivel.abast)) ? S.combustivel.abast : []).forEach(a => { if (a && a.data && has(a.valor)) { const k = a.data + '|' + cent(a.valor); ab[k] = (ab[k] || 0) + 1; } });
-    (S.gastos || []).forEach(g => { if (!g || g.fixa || !g.data) return; const k = g.data + '|' + cent(g.valor); if (ab[k] > 0) { ab[k]--; out.add(g); } });
+    const lista = (S.gastos || []).filter(g => g && !g.fixa && g.data), catDe = g => normalizaDesc(g.cat || '');
+    // 1.º os gastos que a pessoa pôs em Combustível (consomem o abastecimento igual, se existir); 2.º só os que não têm categoria, ou estão em Carro ou Transportes, e batem com um abastecimento que sobrou (mesma data e valor)
+    lista.forEach(g => { if (catDe(g) !== 'combustivel') return; const k = g.data + '|' + cent(g.valor); if (ab[k] > 0) ab[k]--; out.add(g); });
+    lista.forEach(g => { if (out.has(g) || ['', 'carro', 'transportes'].indexOf(catDe(g)) < 0) return; const k = g.data + '|' + cent(g.valor); if (ab[k] > 0) { ab[k]--; out.add(g); } });
     return out;
   }
   function orcMes(S, key, fixasCat, hojeStr, semComb) {
@@ -1477,6 +1483,7 @@ table.quebra td { white-space: normal; }
     ['Restauração', 'mr dog|mcdonald|mcdonalds|burger king|kfc|pizza|restaurante|cafe|pastelaria|padaria|uber eats|glovo|bolt food|telepizza|sushi|starbucks|tasca|churrasqueira'],
     ['Portagens', 'via verde|brisa|portagem|portagens|autoestrada|scutvias'],
     ['Animais', 'zu|petz|kiwoko|veterinari|racao|petshop|pet shop|animalis'],
+    ['Combustível', 'galp|repsol|prio|cepsa|bp|combustivel|combustiveis|gasoleo|gasolina|posto|abastecimento'],
     ['Carro', 'galp|repsol|prio|cepsa|bp|estacionamento|ipo|oficina|combustivel|gasoleo|ev charging|mobi e|posto'],
     ['Saúde', 'farmacia|parafarmacia|clinica|hospital|medico|dentista|wells|laboratorio|optica'],
     ['Subscrições', 'netflix|spotify|youtube|disney|hbo|prime video|amazon prime|apple com bill|icloud|google one|dazn|adobe|microsoft|crunchyroll|viki'],
@@ -1639,8 +1646,11 @@ table.quebra td { white-space: normal; }
   const limpaNome = s => { const t = String(s || '').replace(/\b\d{7,}\b/g, ' ').replace(/\s+/g, ' ').trim(); return t || String(s || '').trim(); };   // sem as referências e telefones compridos
   // o que há de comum nas descrições de cada mês (a referência muda, o resto não), sem a palavra "ref" no fim
   const nomeComum = descs => { const L = descs.map(d => String(d || '').trim().split(/\s+/)), ok = L[0].filter(t => L.every(l => l.some(x => x.toLowerCase() === t.toLowerCase()))); while (ok.length > 1 && /^(ref|referencia|ref\.|nr|n\.?º)$/i.test(ok[ok.length - 1])) ok.pop(); return ok.join(' ').slice(0, 60).trim(); };
+  /* identifica um movimento do extrato: sinal, data, valor em cêntimos e descrição (para dois movimentos diferentes no mesmo dia e com o mesmo valor não se confundirem) */
+  const dataExiste = x => { x = String(x || ''); if (!/^\d{4}-\d{2}-\d{2}$/.test(x)) return false; const p = parse(x); return p.m >= 1 && p.m <= 12 && p.d >= 1 && p.d <= dim(p.y, p.m); };   // a data existe no calendário (2026-02-30 não)
+  const idMovimento = m => (m.valor < 0 ? 's|' : 'e|') + m.data + '|' + Math.round(Math.abs(m.valor) * 100) + '|' + normalizaDesc(m.desc);
   const sugestoesExtrato = (movs, S) => {
-    movs = (movs || []).filter(m => m && /^\d{4}-\d{2}-\d{2}$/.test(String(m.data || '')) && isFinite(m.valor));
+    movs = (movs || []).filter(m => m && dataExiste(m.data) && isFinite(m.valor));
     let saldo = null;
     const cs = movs.filter(m => m.saldo != null && isFinite(m.saldo));
     if (cs.length) {
@@ -1658,43 +1668,52 @@ table.quebra td { white-space: normal; }
     });
     const med = a => { const b = a.slice().sort((x, y) => x - y), h = b.length >> 1; return b.length % 2 ? b[h] : (b[h - 1] + b[h]) / 2; };
     // já está registado como recorrente (ou rendimento mensal) da pessoa: o mesmo comerciante, ou o mesmo valor ao cêntimo quase no mesmo dia do mês
-    const registado = (saida, nome, v, dia) => !!S && (saida
-      ? (S.fixas || []).some(f => chaveDesc(f.desc) === chaveDesc(nome) || (f.ativa !== 'Não' && Math.abs(num(f.valor) - v) < 0.005 && (!has(f.dia) || Math.abs(num(f.dia) - dia) <= 6)))
-      : (S.extras || []).some(x => x.freq === 'Mensal' && (chaveDesc(x.desc) === chaveDesc(nome) || (Math.abs(num(x.valor) - v) < 0.005 && (!x.data || Math.abs(+String(x.data).slice(8, 10) - dia) <= 6)))));
+    const registado = (saida, nome, v, dia) => !!S && ((kn => saida
+      ? (S.fixas || []).some(f => (!!kn && chaveDesc(f.desc) === kn) || (f.ativa !== 'Não' && Math.abs(num(f.valor) - v) < 0.005 && (!has(f.dia) || Math.abs(num(f.dia) - dia) <= 6)))
+      : (S.extras || []).some(x => x.freq === 'Mensal' && ((!!kn && chaveDesc(x.desc) === kn) || (Math.abs(num(x.valor) - v) < 0.005 && (!x.data || Math.abs(+String(x.data).slice(8, 10) - dia) <= 6)))))(chaveDesc(nome)));   // o nome só conta se tiver uma palavra identificadora (duas descrições sem nenhuma não são "a mesma")
     const out = { saldo, recorrentes: [], rendimentos: [] };
+    const idMov = idMovimento, cobertos = new Set();   // cobertos: os movimentos que o 1.º passo já tratou (proposta ou já registado)
     const ultimo = movs.reduce((a, m) => m.data > a ? m.data : a, '');
     Object.keys(grupos).forEach(k => {
       const g = grupos[k], saida = k[0] === 's', vals = g.map(m => Math.abs(m.valor)), md = med(vals);
       if (md < (saida ? 1 : 5)) return;
       const bons = g.filter(m => Math.abs(Math.abs(m.valor) - md) <= Math.max(0.5, 0.15 * md)), meses = new Set(bons.map(m => m.data.slice(0, 7)));
       if (meses.size < 2 || bons.length > meses.size) return;
+      bons.forEach(m => cobertos.add(k[0] + '|' + (chaveDesc(m.desc) || normalizaDesc(m.desc).slice(0, 14)) + '|' + Math.round(Math.abs(m.valor) * 100)));
       const nomes = {}; bons.forEach(m => { const n = String(m.desc || '').trim().slice(0, 60); nomes[n] = (nomes[n] || 0) + 1; });
       const nome = Object.keys(nomes).sort((a, b) => nomes[b] - nomes[a])[0] || '';
       const dia = Math.min(28, Math.max(1, Math.round(med(bons.map(m => +m.data.slice(8, 10))))));
       if (registado(saida, nome, md, dia)) return;
-      (saida ? out.recorrentes : out.rendimentos).push({ nome: limpaNome(nome), valor: Math.round(md * 100) / 100, dia, meses: meses.size, chave: k.slice(2), valores: bons.map(m => Math.round(Math.abs(m.valor) * 100)), exato: false });
+      (saida ? out.recorrentes : out.rendimentos).push({ nome: limpaNome(nome), valor: Math.round(md * 100) / 100, dia, meses: meses.size, chave: k.slice(2), valores: bons.map(m => Math.round(Math.abs(m.valor) * 100)), datas: bons.map(idMov), exato: false });
     });
     /* 2.º passo: o mesmo valor, ao cêntimo, em meses seguidos. Se um pagamento se repete todos os meses com o mesmo valor, é recorrente, mesmo que a descrição mude
        (referências, datas, "pagamento de serviços" de entidades diferentes). Um só movimento por mês e quase no mesmo dia. Também serve para o salário e outros rendimentos mensais. */
     const porValor = {};
-    movs.forEach(m => { if (PROPRIA.test(normalizaDesc(m.desc))) return; const c = Math.round(Math.abs(m.valor) * 100); if (!c) return; (porValor[(m.valor < 0 ? 's|' : 'e|') + c] = porValor[(m.valor < 0 ? 's|' : 'e|') + c] || []).push(m); });
+    movs.forEach(m => { if (PROPRIA.test(normalizaDesc(m.desc))) return; const c = Math.round(Math.abs(m.valor) * 100); if (!c || cobertos.has((m.valor < 0 ? 's|' : 'e|') + (chaveDesc(m.desc) || normalizaDesc(m.desc).slice(0, 14)) + '|' + c)) return; (porValor[(m.valor < 0 ? 's|' : 'e|') + c] = porValor[(m.valor < 0 ? 's|' : 'e|') + c] || []).push(m); });
     Object.keys(porValor).forEach(k => {
       const g = porValor[k], saida = k[0] === 's', c = +k.slice(2), v = c / 100;
       if (v < (saida ? 1 : 5)) return;
-      if ((saida ? out.recorrentes : out.rendimentos).some(x => Math.round(x.valor * 100) === c || (x.valores || []).indexOf(c) >= 0)) return;   // já proposto pelo comerciante
       const porMes = {}; g.forEach(m => { const ym = m.data.slice(0, 7); (porMes[ym] = porMes[ym] || []).push(m); });
-      const meses = Object.keys(porMes).sort(), seguinte = ym => addM(ym + '-01', 1).slice(0, 7);
-      const seguidos = meses.filter((ym, i) => (i > 0 && seguinte(meses[i - 1]) === ym) || (i < meses.length - 1 && seguinte(ym) === meses[i + 1]));
-      const usados = seguidos.filter(ym => porMes[ym].length === 1);   // um só por mês
+      // só contam os meses com um único movimento deste valor. Procura-se a maior janela de meses seguidos (pelo menos 2) em que o dia do mês quase não muda (até 6 dias de diferença); se houver empate, a mais recente
+      const meses = Object.keys(porMes).sort().filter(ym => porMes[ym].length === 1), seguinte = ym => addM(ym + '-01', 1).slice(0, 7);
+      let usados = [];
+      for (let i = 0; i < meses.length; i++) {
+        let mn = 99, mx = 0;
+        for (let j = i; j < meses.length; j++) {
+          if (j > i && seguinte(meses[j - 1]) !== meses[j]) break;
+          const dj = +porMes[meses[j]][0].data.slice(8, 10); mn = Math.min(mn, dj); mx = Math.max(mx, dj);
+          if (mx - mn > 6) break;
+          if (j > i && j - i + 1 >= usados.length) usados = meses.slice(i, j + 1);
+        }
+      }
       if (usados.length < 2) return;
       const ms = usados.map(ym => porMes[ym][0]), dias = ms.map(m => +m.data.slice(8, 10)).sort((a, b) => a - b);
-      if (dias[dias.length - 1] - dias[0] > 6) return;   // quase no mesmo dia de cada mês
       const chaves = new Set(ms.map(m => chaveDesc(m.desc) || normalizaDesc(m.desc).slice(0, 14)));
       if (chaves.size > 1 && v < 5 && usados.length < 3) return;   // valores pequenos com descrições diferentes: pode ser coincidência
       const nomes = {}; ms.forEach(m => { const n = String(m.desc || '').trim().slice(0, 60); nomes[n] = (nomes[n] || 0) + 1; });
       const nome = nomeComum(ms.map(m => m.desc)) || Object.keys(nomes).sort((a, b) => nomes[b] - nomes[a])[0] || '', dia = Math.min(28, Math.max(1, Math.round(med(dias))));
       if (registado(saida, nome, v, dia)) return;
-      (saida ? out.recorrentes : out.rendimentos).push({ nome: limpaNome(nome), valor: v, dia, meses: usados.length, chave: chaves.size === 1 ? Array.from(chaves)[0] : '', valores: [c], exato: true });
+      (saida ? out.recorrentes : out.rendimentos).push({ nome: limpaNome(nome), valor: v, dia, meses: usados.length, chave: chaves.size === 1 ? Array.from(chaves)[0] : '', valores: [c], datas: ms.map(idMov), exato: true });
     });
     ['recorrentes', 'rendimentos'].forEach(l => { out[l].sort((a, b) => b.valor - a.valor); out[l] = out[l].slice(0, 30); });
     out.proximoMes = ultimo ? addM(ultimo.slice(0, 7) + '-01', 1) : '';
@@ -1871,7 +1890,7 @@ table.quebra td { white-space: normal; }
       investido: Math.max(0, num(c.investido)), atual: has(c.atual) ? Math.max(0, num(c.atual)) : Math.max(0, num(c.investido)), atualDefinido: has(c.atual),
       aporte: Math.max(0, num(c.aporte)), rend: Math.max(-100, Math.min(1000, num(c.rend))), inicio: dataReal(c.inicio) }));
   }
-  root.PlannerEngine = { investimentos, TIPOS_INVESTIMENTO, contasExtra, contasPoupancaExtra, grupoDesc, gruposMovimentos, linhasDeXlsx, fechoMes, reservaAnuais, liquidezMes, subidasPreco, ritmoObjetivo, calc, previsao, semRendimento, taxaPoupanca, sugestoesExtrato, apoios, simularApoio, horizonte, abaixoDoMinimo, combustivel, addM, mk, num, has, parse, fixaEquiv, ocorrencias, periodoAt, salMinAno, ymd, pad, limiteMensal, orcMes, PERIODOS_ORC, irsRetencao, irsTaxa, irsAplicado, IRS_TABELA_I_2026, pascoa, feriadosNacionais, feriadosSet, expandir, expandirPontes, horaDe, horasDias, bancoHoras, saldoFerias, TIPOS_DIA, estudanteAtivo,
+  root.PlannerEngine = { idMovimento, investimentos, TIPOS_INVESTIMENTO, contasExtra, contasPoupancaExtra, grupoDesc, gruposMovimentos, linhasDeXlsx, fechoMes, reservaAnuais, liquidezMes, subidasPreco, ritmoObjetivo, calc, previsao, semRendimento, taxaPoupanca, sugestoesExtrato, apoios, simularApoio, horizonte, abaixoDoMinimo, combustivel, addM, mk, num, has, parse, fixaEquiv, ocorrencias, periodoAt, salMinAno, ymd, pad, limiteMensal, orcMes, PERIODOS_ORC, irsRetencao, irsTaxa, irsAplicado, IRS_TABELA_I_2026, pascoa, feriadosNacionais, feriadosSet, expandir, expandirPontes, horaDe, horasDias, bancoHoras, saldoFerias, TIPOS_DIA, estudanteAtivo,
     parseNumero, parseData, parseCSV, detectarColunas, movimentosDeCSV, movimentosDeTexto, movimentosDePdf, conferirSaldos, normalizaDesc, chaveDesc, categorizar, aprender, jaRegistado, duplicados };
   if (typeof module !== 'undefined') module.exports = root.PlannerEngine;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -2085,7 +2104,7 @@ table.quebra td { white-space: normal; }
     irsModo: ['Automático', 'Manual'], get tipoContrato() { return juntaLista(LISTAS_BASE.tipoContrato, uiCfg().tiposPeriodo); },
     period: ['Semanal', 'Quinzenal', 'Mensal', 'Trimestral', 'Semestral', 'Anual'], periodoOrc: ['Diário', 'Semanal', 'Quinzenal', 'Mensal'], simnao: ['Sim', 'Não'], freq: ['Única', 'Mensal', 'Anual']
   };
-  const TABS = [['inicio', 'Início'], ['apoios', 'Apoios'], ['sintese', 'Síntese e previsão', 'Poupança daqui a 1, 2, 3, 5 e 10 anos'], ['plano', 'Plano mensal'], ['sintese', 'Síntese e previsão'], ['rendimentos', 'Rendimentos'], ['despesas', 'Despesas'], ['importar', 'Importar'], ['orcamento', 'Orçamento'], ['recorrentes', 'Recorrentes'], ['horas', 'Horas'], ['calendario', 'Calendário'], ['combustivel', 'Combustível'], ['poupanca', 'Poupança e contas'], ['propostas', 'Propostas'], ['definicoes', 'Definições'], ['categorias', 'Categorias e ícones'], ['trabcfg', 'Regras do trabalho']];
+  const TABS = [['inicio', 'Início'], ['apoios', 'Apoios'], ['sintese', 'Síntese e previsão', 'Poupança daqui a 1, 2, 3, 5 e 10 anos'], ['plano', 'Plano mensal'], ['sintese', 'Síntese e previsão'], ['rendimentos', 'Rendimentos'], ['despesas', 'Gastos'], ['importar', 'Importar'], ['orcamento', 'Orçamento'], ['recorrentes', 'Recorrentes'], ['horas', 'Horas'], ['calendario', 'Calendário'], ['combustivel', 'Combustível'], ['poupanca', 'Poupança e contas'], ['propostas', 'Propostas'], ['definicoes', 'Definições'], ['categorias', 'Categorias e ícones'], ['trabcfg', 'Regras do trabalho']];
   /* Os separadores agrupam-se em 5 entradas; ao escolher um grupo aparecem os separadores dele por baixo. Para mudar a divisão, edite só esta lista. */
   const GRUPOS = [
     ['inicio', 'Início', ['inicio']],
@@ -2565,7 +2584,7 @@ table.quebra td { white-space: normal; }
   function detHtml() {
     const d = detSheet; if (!d) return '';
     const lista = d.itens.length ? '<div class="det-lista">' + d.itens.map(x => '<div class="det-l"><span><b>' + esc(x.desc || 'Sem descrição') + '</b><small class="muted">' + esc(x.sub) + '</small></span><b class="det-v">' + eur(x.valor) + '</b></div>').join('') + '</div>' : '<p class="note">' + esc(d.vazio || 'Sem registos neste período.') + '</p>';
-    const alvo = d.ir ? ({ despesas: 'Abrir em Despesas', rendimentos: 'Abrir em Rendimentos', recorrentes: 'Abrir em Recorrentes', plano: 'Abrir o Plano mensal' })[d.ir.tab] : '';
+    const alvo = d.ir ? ({ despesas: 'Abrir em Gastos', rendimentos: 'Abrir em Rendimentos', recorrentes: 'Abrir em Recorrentes', plano: 'Abrir o Plano mensal' })[d.ir.tab] : '';
     return '<div class="modal baixo" data-act="det-fechar"><div class="sheet larga" role="dialog" aria-modal="true" aria-label="Detalhe: ' + esc(d.titulo) + '">' +
       '<div class="row sh-topo"><h2>' + esc(d.titulo) + '</h2><button class="x" data-act="det-fechar" aria-label="Fechar">×</button></div>' +
       '<p class="note">' + esc(d.sub) + ' · total <b>' + eur(d.total) + '</b>' + (d.itens.length > 1 ? ' em ' + d.itens.length + ' registos' : '') + '</p>' + lista +
@@ -2899,7 +2918,7 @@ table.quebra td { white-space: normal; }
   }
   function lembreteCopia() {   // de 14 em 14 dias, ou enquanto nunca houve uma cópia em ficheiro
     const dc = diasDesdeCopia(); if (dc != null && dc < 14) return '';
-    return '<section class="card sec"><h2>🗂️ Cópia em ficheiro</h2><p class="note">' + (dc == null ? 'Ainda não guardou nenhuma cópia em ficheiro.' : 'A última cópia em ficheiro foi há ' + dc + ' dias.') + ' Guarde uma no iCloud Drive ou no OneDrive: fica fora do Claude e protege-o de qualquer imprevisto.</p><div class="row"><button type="button" class="btn" data-act="export">Guardar cópia agora</button><button type="button" class="btn" data-act="ir:definicoes:def-sincronizacao">Sincronização e cópias</button></div></section>';
+    return '<section class="card sec"><h2>🗂️ Cópia em ficheiro</h2><p class="note">' + (dc == null ? 'Ainda não guardou nenhuma cópia em ficheiro.' : 'A última cópia em ficheiro foi há ' + dc + ' dias.') + ' Guarde uma no iCloud Drive ou no OneDrive: fica fora do Claude e protege-o de qualquer imprevisto.</p><div class="row"><button type="button" class="btn" data-act="export">Guardar cópia agora</button><button type="button" class="btn" data-act="ir:definicoes:def-sincronizacao">Abrir sincronização e cópias</button></div></section>';
   }
   function lembretesHtml() {
     const hi = hojeIso(), dl = uiCfg().alertas.lembreteDias, pagamentos = E.ocorrencias(S, addDiasIso(hi, -20), addDiasIso(hi, dl)).filter(o => o.estado === 'pendente');
@@ -2928,7 +2947,7 @@ table.quebra td { white-space: normal; }
         '<div class="chartbox on pizza" data-chart="ini-' + (t === 'd' ? 'despesas' : 'receitas') + '" role="img" aria-label="' + titulo + ', ' + pr[1].toLowerCase() + '"></div>' +
         '<p class="note center">' + esc(d.nota) + ' · total ' + eur(tot, 0) + '</p>' + listaGraf('ini-' + (t === 'd' ? 'despesas' : 'receitas')) + '<div class="dots" aria-hidden="true">' + PER_INI.map((x, i) => '<i' + (i === iniPer[t] ? ' class="on"' : '') + '></i>').join('') + '</div></div>';
     };
-    const kRend = k('Rendimento de ' + S.apoios.ano + ' (com previsão)', eur(a.totalLedger, 0), 'Recebido até hoje: ' + eur(a.recebidoAteHoje, 0), '', 'apoios'), kApoio = k('Apoio carro elétrico (Fundo Ambiental)', chip, a.pendente ? 'Adicione os membros do agregado' : a.rotulo + ': ' + eur(a.valor, 0) + ' · limite ' + eur(num(S.apoios.limite), 0), '', 'apoios'), kSaldo = k('Saldo do mês (' + mesTxt(mesAtual.ym) + ')', eur(mesAtual.saldo), 'Receitas menos despesas previstas', cls(mesAtual.saldo), 'plano'), kConta = k('Dinheiro em contas', eur(dinheiroContas), (contaUlt ? 'Último saldo registado (' + mesTxt(contaUlt.ym) + ')' : 'Saldo inicial: principal + Revolut') + (nExtra ? ' + ' + nExtra + (nExtra === 1 ? ' outra conta' : ' outras contas') : ''), cls(dinheiroContas), 'poupanca'), kMin = k('Mínimo a manter na principal', eur(R.minPrincipal), 'Despesas fixas + deslocações do mês', '', 'poupanca'), kOrc = (mesAtual.orc.totalLimite > 0 ? k('Orçamento de ' + mesTxt(mesAtual.ym), eur(mesAtual.orc.totalGasto, 0) + ' / ' + eur(mesAtual.orc.totalLimite, 0), mesAtual.orc.totalGasto > mesAtual.orc.totalLimite ? 'Acima do limite total' : 'Gasto face ao limite, em categorias com limite', mesAtual.orc.totalGasto > mesAtual.orc.totalLimite ? ' neg-v' : '', 'orcamento') : k('Orçamento do mês', 'Por definir', 'Defina os limites no separador Orçamento', '', 'orcamento'));
+    const kRend = k('Rendimento de ' + S.apoios.ano + ' (com previsão)', eur(a.totalLedger, 0), 'Recebido até hoje: ' + eur(a.recebidoAteHoje, 0), '', 'apoios'), kApoio = k('Apoio carro elétrico (Fundo Ambiental)', chip, a.pendente ? 'Adicione os membros do agregado' : a.rotulo + ': ' + eur(a.valor, 0) + ' · limite ' + eur(num(S.apoios.limite), 0), '', 'apoios'), kSaldo = k('Saldo do mês (' + mesTxt(mesAtual.ym) + ')', eur(mesAtual.saldo), 'Rendimentos menos despesas previstas', cls(mesAtual.saldo), 'plano'), kConta = k('Dinheiro em contas', eur(dinheiroContas), (contaUlt ? 'Último saldo registado (' + mesTxt(contaUlt.ym) + ')' : 'Saldo inicial: principal + Revolut') + (nExtra ? ' + ' + nExtra + (nExtra === 1 ? ' outra conta' : ' outras contas') : ''), cls(dinheiroContas), 'poupanca'), kMin = k('Mínimo a manter na principal', eur(R.minPrincipal), 'Despesas fixas + deslocações do mês', '', 'poupanca'), kOrc = (mesAtual.orc.totalLimite > 0 ? k('Orçamento de ' + mesTxt(mesAtual.ym), eur(mesAtual.orc.totalGasto, 0) + ' / ' + eur(mesAtual.orc.totalLimite, 0), mesAtual.orc.totalGasto > mesAtual.orc.totalLimite ? 'Acima do limite total' : 'Gasto face ao limite, em categorias com limite', mesAtual.orc.totalGasto > mesAtual.orc.totalLimite ? ' neg-v' : '', 'orcamento') : k('Orçamento do mês', 'Por definir', 'Defina os limites no separador Orçamento', '', 'orcamento'));
     return '<section><h2>Visão geral</h2><p class="lead resumo">' + esc(resumoInicio(mesAtual, prox)) + '</p>' +
       '<div class="grid">' + kSaldo + kConta + kOrc + '</div>' +
       '<details class="ajuda"><summary>Mais indicadores</summary><div class="grid" style="margin-top:10px">' + kRend + kApoio + kMin + '</div></details></section>' +
@@ -3110,7 +3129,7 @@ table.quebra td { white-space: normal; }
       kpi('Saldo médio por mês', eur(R.tot.media, 0), 'Média dos ' + R.months.length + ' meses', cls(R.tot.media)) + kpi('Meses no vermelho', String(neg.length), neg.length ? 'O primeiro é ' + mesLongo(neg[0].ym) : 'Nenhum mês com saldo negativo', neg.length ? ' bad' : ' good') + (R.inv && R.inv.n ? kpi('Investimentos no fim', eur(R.inv.fim, 0), 'Põe ' + eur(R.inv.aporte, 0) + ' por mês, a sair da poupança') : '') + '</div>';
     const fase = R.fases.concat([R.tot]).map(f => '<tr' + (f === R.tot ? ' class="tot"' : '') + '><td>' + esc(f.fase) + '</td><td>' + f.meses + '</td><td>' + eur(f.rend, 0) + '</td><td>' + eur(f.subs, 0) + '</td><td>' + eur(f.desp, 0) + '</td><td class="' + cls(f.saldo) + '">' + eur(f.saldo, 0) + '</td><td class="' + cls(f.media) + '">' + eur(f.media, 0) + '</td></tr>').join('');
     return '<section><h2>Plano mensal</h2><p class="lead">O plano todo de uma vez: o que entra, o que sai e quanto sobra em cada mês. Escolha até onde quer ver. Em baixo estão o resumo por período de trabalho e o plano ano a ano, onde se edita.</p>' + kpisP + horizHtml +
-      '<div class="row" style="margin-top:12px"><button type="button" class="btn" data-act="sim">🔮 E se…? Simular mudanças</button><span class="muted">Sem mexer nos seus dados.</span></div></section>' +
+      '<div class="row" style="margin-top:12px"><button type="button" class="btn" data-act="sim">🔮 E se…? Simular mudanças</button><span class="muted">A simulação não altera os seus dados.</span></div></section>' +
       (window.Chart ? '<section><h2>Saldo mês a mês</h2><div class="chartbox on tall" data-chart="plano-saldo" role="img" aria-label="Saldo de cada mês e poupança acumulada"></div><p class="note center">Toque numa barra para abrir as contas desse mês.</p></section>' : '') +
       '<section><h2>Resumo por período de trabalho</h2><div class="tablewrap"><table><thead><tr><th class="l">Período de trabalho</th><th>Meses</th><th>Rendimento líquido</th><th>Subsídio alimentação</th><th>Total despesas</th><th>Saldo total</th><th>Saldo médio por mês</th></tr></thead><tbody>' + fase + '</tbody></table></div>' +
       '<p class="note" style="margin-top:8px">Poupança prevista no fim do plano: <b>' + eur(R.poupancaPrevista, 0) + '</b>. Real na Revolut (registada): <b>' + eur(R.poupancaReal, 0) + '</b>.</p></section>' +
@@ -3241,7 +3260,7 @@ table.quebra td { white-space: normal; }
       grafico +
       '<section><div class="row" style="margin:0 0 12px"><input type="search" id="r-busca" placeholder="Procurar rendimentos…" aria-label="Procurar rendimentos" maxlength="60" style="max-width:260px">' + filtroSelect('r', Object.entries(porTipo), 'Todos os tipos') + '<button type="button" class="btn" data-act="exportar:r" title="Exportar todos os rendimentos para um ficheiro CSV que abre no Excel">⬇ Exportar CSV</button></div>' +
       (rows ? '<div class="paylist duas" id="r-lista">' + rows + '</div><p class="empty" id="r-vazio" hidden>Nenhum rendimento corresponde à pesquisa.</p>' : '<div class="empty">Ainda sem rendimentos extra. <button type="button" class="btn pri" data-act="rapido:r" style="margin-left:8px">Registar um rendimento</button></div>') +
-      '<div class="row" style="margin-top:12px">' + addBtn('extras', 'Rendimento com mais detalhe') + '<span class="muted">Toque num rendimento para o alterar. Total registado a contar: <b>' + eur(tot) + '</b>. Nos subsídios, o valor em branco usa o salário líquido do mês.</span></div></section>';
+      '<div class="row" style="margin-top:12px">' + addBtn('extras', 'Novo rendimento com mais detalhe') + '<span class="muted">Toque num rendimento para o alterar. Total registado a contar: <b>' + eur(tot) + '</b>. Nos subsídios, o valor em branco usa o salário líquido do mês.</span></div></section>';
   }
 
   function tabDespesas() {
@@ -3272,7 +3291,7 @@ table.quebra td { white-space: normal; }
         oculto: '<select id="g-cat" hidden aria-hidden="true"><option value="">Sem categoria</option>' + catNomes().map(c => '<option>' + esc(c) + '</option>').join('') + '</select>' }) +
       graficos +
       '<section><div class="row" style="margin:0 0 12px">' + stepper('gastoMes', meses, gastoMes, m => mesLongo(m + '-01'), hojeYm) + '<input type="search" id="g-busca" placeholder="Procurar gastos…" aria-label="Procurar gastos" maxlength="60" style="max-width:220px">' + filtroSelect('g', Object.entries(porCatG), 'Todas as categorias', Object.entries(gs.reduce((o, g) => { if (g.conta) o[g.conta] = (o[g.conta] || 0) + num(g.valor); return o; }, Object.create(null)))) + '<button type="button" class="btn" data-act="exportar:g" title="Exportar todos os gastos para um ficheiro CSV que abre no Excel">⬇ Exportar CSV</button></div>' +
-      (linhas ? '<div class="paylist duas" id="g-lista">' + linhas + '</div><p class="empty" id="g-vazio" hidden>Nenhum gasto corresponde à pesquisa.</p><p class="note" style="margin-top:10px">Toque num gasto para o alterar. No telemóvel, deslize-o para a esquerda para o apagar (pode desfazer).</p>' : '<div class="empty">Sem gastos neste mês. <button type="button" class="btn pri" data-act="rapido:g" style="margin-left:8px">Registar um gasto</button></div>') + '</section>';
+      (linhas ? '<div class="paylist duas" id="g-lista">' + linhas + '</div><p class="empty" id="g-vazio" hidden>Nenhum gasto corresponde à pesquisa.</p><p class="note" style="margin-top:10px">Toque num gasto para o alterar. No telemóvel, deslize-o para a esquerda para o apagar (pode desfazer).</p>' : '<div class="empty">Sem gastos neste mês. <button type="button" class="btn pri" data-act="rapido:g" style="margin-left:8px">Registar gasto</button></div>') + '</section>';
   }
 
 
@@ -3491,7 +3510,8 @@ table.quebra td { white-space: normal; }
 
   /* ---------- Importar extratos do banco ---------- */
   let imp = null, novaCat = null;
-  const NOVA_CAT = '__nova', COMB_RE = /(^| )(galp|repsol|prio|cepsa|bp|combustivel|combustiveis|gasoleo|gasolina|posto|abastecimento)( |$)/;
+  const NOVA_CAT = '__nova';
+  const ehCatComb = cat => E.normalizaDesc(cat || '') === 'combustivel';   // a categoria Combustível: o que lá cair na importação entra também em Combustível (litros e km)
   const dataPt = iso => iso.slice(8) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4);
   function impRecalcula(manterMapa) {
     const I = imp;
@@ -3532,15 +3552,15 @@ table.quebra td { white-space: normal; }
         const f = S.fixas[o.idx], dd = difDias(o.data, m.data), dif = Math.abs(o.valor - v), kf = E.chaveDesc(f.desc);
         const descBate = !!kf && (nm.indexOf(' ' + kf + ' ') >= 0), exato = dif < 0.005, parecido = dif <= Math.max(1, 0.15 * o.valor);   // exato: o mesmo valor, ao cêntimo (10,00 não é 9,99)   // a palavra inteira: "seguro" não liga a "seguros"
         const score = exato && descBate ? 0 : exato && dd <= 10 ? 1 : descBate && parecido ? 2 : null;
-        if (score !== null) cand.push({ i, o, f, score, dd, dif });
+        if (score !== null) cand.push({ i, o, f, score, dd, dif, soValor: !descBate });
       }
     });
     cand.sort((x, y) => x.score - y.score || x.dd - y.dd || x.dif - y.dif).forEach(c => {
       const k = c.o.id + '|' + c.o.data; if (I.fix[c.i] || usadas.has(k)) return; usadas.add(k);
-      I.fix[c.i] = { id: c.o.id, ocorr: c.o.data, nome: c.f.desc || 'Recorrente', previsto: c.dif >= 0.005 ? c.o.valor : null };
+      I.fix[c.i] = { id: c.o.id, ocorr: c.o.data, nome: c.f.desc || 'Recorrente', previsto: c.dif >= 0.005 ? c.o.valor : null, soValor: c.soValor };
       I.cat[c.i] = c.f.cat || ''; I.cat0[c.i] = I.cat[c.i]; I.org[c.i] = 'recorrente';
     });
-    I.comb = {}; I.movs.forEach((m, i) => { if (m.valor < 0 && !I.fix[i] && COMB_RE.test(E.normalizaDesc(m.desc))) I.comb[i] = { on: true, preco: '', km: '' }; });   // o que parece combustível vem marcado; dá para desmarcar
+    I.comb = {};   // €/litro e km de cada abastecimento (só para os movimentos da categoria Combustível)
     I.grupos = E.gruposMovimentos(I.movs);
   }
   function impIniciar(texto, nome) {
@@ -3616,9 +3636,9 @@ table.quebra td { white-space: normal; }
     else if (k === 'sug') { imp.sug = imp.sug || { saldo: true, rec: {}, rend: {}, feito: false }; if (a === 'saldo') imp.sug.saldo = el.checked; else if ((a === 'rec' || a === 'rend') && /^\d+$/.test(p[2] || '')) imp.sug[a][+p[2]] = el.checked; }
     else if ((k === 'cat' || k === 'gcat') && el.value === NOVA_CAT) { novaCat = { alvo: k + ':' + a }; setTimeout(() => { const e = document.getElementById('nc-nome'); if (e && e.focus) e.focus(); }, 0); }
     else if (k === 'cat') imp.cat[a] = el.value;
-    else if (k === 'comb') { const c = imp.comb[a] = imp.comb[a] || { on: false, preco: '', km: '' }; c.on = !!el.checked; }
-    else if (k === 'cprec' || k === 'ckm') { const c = imp.comb[a] = imp.comb[a] || { on: true, preco: '', km: '' }; c[k === 'cprec' ? 'preco' : 'km'] = String(el.value || '').replace(',', '.').trim(); }
-    else if (k === 'gcomb') { const g = (imp.grupos || [])[+a]; if (g) g.idx.forEach(i => { if (imp.movs[i].valor < 0 && !imp.fix[i]) { const c = imp.comb[i] = imp.comb[i] || { on: false, preco: '', km: '' }; c.on = !!el.checked; } }); }
+
+    else if (k === 'cprec' || k === 'ckm') { const c = imp.comb[a] = imp.comb[a] || { preco: '', km: '' }; c[k === 'cprec' ? 'preco' : 'km'] = String(el.value || '').replace(',', '.').trim(); }
+
     else if (k === 'gcat' || k === 'gsel') { const g = (imp.grupos || [])[+a]; if (g) g.idx.forEach(i => { if (k === 'gsel') { if (!imp.dup[i]) imp.sel[i] = el.checked; } else if (imp.movs[i].valor < 0 && !imp.fix[i]) imp.cat[i] = el.value; }); }
     else if (k === 'vista') imp.vista = el.value === 'lista' ? 'lista' : 'grupos';
     else if (k === 'conta') imp.conta = el.value;
@@ -3650,13 +3670,13 @@ table.quebra td { white-space: normal; }
         S.gastos.push({ data: m.data, desc: I.fix[i].nome, cat: I.cat[i] || '', valor: Math.abs(m.valor), conta: I.conta, notas: 'Importado do extrato', fixa: I.fix[i].id, ocorr: I.fix[i].ocorr }); g++; rc++;
       } else if (m.valor < 0) {
         S.gastos.push({ data: m.data, desc: m.desc, cat: I.cat[i] || '', valor: Math.abs(m.valor), conta: I.conta, notas: 'Importado do extrato' }); g++;
-        if ((I.comb[i] || {}).on) abastDe(m, I.comb[i]);
+        if (ehCatComb(I.cat[i])) abastDe(m, I.comb[i] || {});
         if (I.cat[i] && I.cat[i] !== I.cat0[i] && !mistos.has(E.chaveDesc(m.desc))) { const k = E.chaveDesc(m.desc); if (k && !aprendidas.has(k)) { aprendidas.add(k); E.aprender(S.importacao.regras, m.desc, I.cat[i]); ap++; } }
       } else { S.extras.push({ data: m.data, tipo: 'Outro', desc: m.desc, origem: 'Extrato', valor: m.valor, freq: 'Única', ate: '', conta: I.conta, contar: 'Não', notas: 'Importado do extrato' }); r++; }
       if (m.data > ultimo) ultimo = m.data;
     });
     if (ultimo) gastoMes = ultimo.slice(0, 7);
-    imp = { movs: [], msg: g + ' gastos e ' + r + ' receitas importados' + (rc ? ' (' + rc + ' ligado' + (rc > 1 ? 's' : '') + ' a recorrentes, marcados como pagos)' : '') + (nComb ? '. ' + nComb + (nComb > 1 ? ' abastecimentos registados' : ' abastecimento registado') + ' em Combustível' + (nKmIgn ? ' (km ignorado em ' + nKmIgn + ', por não bater com os outros abastecimentos)' : '') : '') + (ap ? '. Aprendi ' + ap + ' regra' + (ap > 1 ? 's' : '') + ' com as suas correções' : '') + '.' };
+    imp = { movs: [], msg: g + (g === 1 ? ' gasto' : ' gastos') + ' e ' + r + (r === 1 ? ' rendimento' : ' rendimentos') + ' importados' + (rc ? ' (' + rc + ' ligado' + (rc > 1 ? 's' : '') + ' a recorrentes, marcados como pagos)' : '') + (nComb ? '. ' + nComb + (nComb > 1 ? ' abastecimentos registados' : ' abastecimento registado') + ' em Combustível' + (nKmIgn ? ' (km ignorado em ' + nKmIgn + ', por não bater com os outros abastecimentos)' : '') : '') + (ap ? '. Aprendi ' + ap + ' regra' + (ap > 1 ? 's' : '') + ' com as suas correções' : '') + '.' };
     queueSave(); render();
   }
   /* Arranque pelo extrato: propõe preencher o saldo, os recorrentes e os rendimentos mensais com o que o extrato mostra */
@@ -3721,7 +3741,7 @@ table.quebra td { white-space: normal; }
   const refPrecoComb = () => (R && R.cb && R.cb.precoUsado) || 0;
   function combCampos(I, i) {
     const c = I.comb[i] || {}, val = Math.abs(I.movs[i].valor), p = parseFloat(c.preco) > 0 ? parseFloat(c.preco) : refPrecoComb(), ref = refPrecoComb();
-    return '<div class="comb-campos"><label>€/litro <input type="number" step="any" min="0" inputmode="decimal" data-imp="cprec:' + i + '" value="' + esc(c.preco || '') + '" placeholder="' + (ref ? f2.format(ref) : '0,00') + '" aria-label="Preço por litro"></label>' +
+    return '<div class="comb-campos"><span class="comb-tit">⛽ Entra também em Combustível (opcional)</span><label>€/litro <input type="number" step="any" min="0" inputmode="decimal" data-imp="cprec:' + i + '" value="' + esc(c.preco || '') + '" placeholder="' + (ref ? f2.format(ref) : '0,00') + '" aria-label="Preço por litro"></label>' +
       '<label>Km no conta-quilómetros <input type="number" step="1" min="0" inputmode="numeric" data-imp="ckm:' + i + '" value="' + esc(c.km || '') + '" placeholder="opcional" aria-label="Quilómetros do conta-quilómetros"></label>' +
       '<span class="muted">' + (p > 0 ? '≈ ' + f2.format(val / p) + ' L' : 'Sem preço: escreva o €/litro para calcular os litros') + '</span></div>';
   }
@@ -3743,25 +3763,25 @@ table.quebra td { white-space: normal; }
       } else if (I.modo === 'pdf') mapa = '<p class="note">Lido do PDF pelas posições das colunas (data, descrição, montante e saldo). ' + (I.conf && I.conf.total ? '<span class="chip ' + (I.conf.ok === I.conf.total ? 'good' : 'warn') + '">Saldos conferidos: ' + I.conf.ok + ' de ' + I.conf.total + '</span>' : '') + '</p>';
       else mapa = '<p class="note">Lido como texto colado. Quando há dois valores na linha, o último é o saldo. Se o texto marca as saídas com \"-\", o que não tem sinal é entrada, senão conta como saída. Confirme sempre os valores e os sinais.</p>';
       const repSug = (() => { const sg = sugestoesImp(I); return sg.recorrentes.concat(sg.rendimentos); })();   // propostas de "pagamentos que se repetem"
-      const repete = i => { const m = I.movs[i], c = Math.round(Math.abs(m.valor) * 100), k = E.chaveDesc(m.desc) || E.normalizaDesc(m.desc).slice(0, 14); return repSug.some(x => (x.valores || []).indexOf(c) >= 0 && (x.exato || x.chave === k)); };
+      const repete = i => { const id = E.idMovimento(I.movs[i]); return repSug.some(x => (x.datas || []).indexOf(id) >= 0); };   // só os movimentos concretos que sustentam a proposta (sinal, data, valor e descrição)
       const chipRepete = i => !I.fix[i] && repete(i) ? ' <span class="chip acc" title="O mesmo pagamento aparece em meses seguidos. Veja a proposta \'Pagamentos que se repetem\', no topo.">🔁 Repete todos os meses</span>' : '';
       const linhaMov = i => {
         const m = I.movs[i];
         const saida = m.valor < 0, o = I.org[i];
         return '<tr' + (I.dup[i] ? ' class="muted"' : '') + '><td><input type="checkbox" data-imp="sel:' + i + '"' + (I.sel[i] ? ' checked' : '') + ' aria-label="Importar o movimento de ' + dataPt(m.data) + ': ' + esc(m.desc) + '"></td><td>' + dataPt(m.data) + '</td><td class="l">' + esc(m.desc) + '</td><td class="' + (saida ? '' : 'good') + '">' + eur(m.valor) + '</td>' +
-          '<td class="l">' + (saida ? '<select data-imp="cat:' + i + '" aria-label="Categoria de ' + dataPt(m.data) + ': ' + esc(m.desc) + '"><option value=""></option>' + catNomes().map(c => '<option' + (c === I.cat[i] ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '<option value="' + NOVA_CAT + '">＋ Nova categoria…</option></select>' : '<span class="chip">Receita</span>') + '</td>' +
-          '<td class="l">' + (saida && !I.fix[i] ? '<label class="comb-op"><input type="checkbox" data-imp="comb:' + i + '"' + ((I.comb[i] || {}).on ? ' checked' : '') + ' aria-label="Contar como combustível: ' + esc(m.desc) + '"> ⛽ Combustível</label>' + ((I.comb[i] || {}).on ? combCampos(I, i) : '') : '') + (saida ? (o === 'recorrente' ? '<span class="chip acc">Recorrente: ' + esc(I.fix[i].nome) + (I.fix[i].previsto != null ? ' (previsto ' + eur(I.fix[i].previsto) + ')' : '') + '</span> <button type="button" class="btn mini" data-act="imp-desligar:' + i + '" aria-label="Não é o recorrente ' + esc(I.fix[i].nome) + '" title="Não é este pagamento recorrente">✕</button>' : o === 'regra' ? '<span class="chip good">Regra</span>' : o === 'sugestão' ? '<span class="chip warn">Sugestão</span>' : '<span class="chip">Sem categoria</span>') : '') + chipRepete(i) + (I.dup[i] ? ' <span class="chip warn">' + (I.dupMotivo[i] === 'repetido' ? 'Repetido no ficheiro' : I.dupMotivo[i] === 'proximo' ? 'Já registado (data próxima)' : 'Já registado') + '</span>' : '') + '</td></tr>';
+          '<td class="l">' + (saida ? '<select data-imp="cat:' + i + '" aria-label="Categoria de ' + dataPt(m.data) + ': ' + esc(m.desc) + '"><option value=""></option>' + catNomes().map(c => '<option' + (c === I.cat[i] ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '<option value="' + NOVA_CAT + '">＋ Nova categoria…</option></select>' : '<span class="chip">Rendimento</span>') + '</td>' +
+          '<td class="l">' + (saida && !I.fix[i] && ehCatComb(I.cat[i]) ? combCampos(I, i) : '') + (saida ? (o === 'recorrente' ? '<span class="chip acc">Recorrente: ' + esc(I.fix[i].nome) + (I.fix[i].previsto != null ? ' (previsto ' + eur(I.fix[i].previsto) + ')' : '') + '</span>' + (I.fix[i].soValor ? ' <span class="muted nw" title="A descrição do movimento não tem o nome deste recorrente: liguei só pelo valor (igual ao cêntimo) e pela data. Se não for este pagamento, carregue no ✕.">só pelo valor</span>' : '') + ' <button type="button" class="btn mini" data-act="imp-desligar:' + i + '" aria-label="Não é o recorrente ' + esc(I.fix[i].nome) + '" title="Não é este pagamento recorrente">✕</button>' : o === 'regra' ? '<span class="chip good">Regra</span>' : o === 'sugestão' ? '<span class="chip warn">Sugestão</span>' : '<span class="chip">Sem categoria</span>') : '') + chipRepete(i) + (I.dup[i] ? ' <span class="chip warn">' + (I.dupMotivo[i] === 'repetido' ? 'Repetido no ficheiro' : I.dupMotivo[i] === 'proximo' ? 'Já registado (data próxima)' : 'Já registado') + '</span>' : '') + '</td></tr>';
       };
       const vistaGrupos = I.vista !== 'lista';
       const linhas = vistaGrupos ? (I.grupos || []).map((g, gi) => {
         if (g.idx.length === 1) return linhaMov(g.idx[0]);   // um movimento sozinho não precisa de grupo
         const said = g.idx.filter(i => I.movs[i].valor < 0 && !I.fix[i]), cats = Array.from(new Set(said.map(i => I.cat[i] || ''))), comum = cats.length === 1 ? cats[0] : null;
         const nFixG = g.idx.filter(i => I.fix[i]).length, livres = g.idx.filter(i => !I.dup[i]), nSel = livres.filter(i => I.sel[i]).length, nDupG = g.idx.length - livres.length, ab = !!I.aberto[g.chave];
-        const selG = said.length ? '<select data-imp="gcat:' + gi + '" aria-label="Categoria de todos os movimentos de ' + esc(g.nome) + '">' + (comum === null ? '<option value="" selected>Várias categorias</option>' : '<option value=""></option>') + catNomes().map(c => '<option' + (c === comum ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '<option value="' + NOVA_CAT + '">＋ Nova categoria…</option></select>' : (g.idx.some(i => I.movs[i].valor < 0) ? '<span class="chip acc">Recorrentes</span>' : '<span class="chip">Receitas</span>');
+        const selG = said.length ? '<select data-imp="gcat:' + gi + '" aria-label="Categoria de todos os movimentos de ' + esc(g.nome) + '">' + (comum === null ? '<option value="" selected>Várias categorias</option>' : '<option value=""></option>') + catNomes().map(c => '<option' + (c === comum ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '<option value="' + NOVA_CAT + '">＋ Nova categoria…</option></select>' : (g.idx.some(i => I.movs[i].valor < 0) ? '<span class="chip acc">Recorrentes</span>' : '<span class="chip">Rendimentos</span>');
         return '<tr class="grupo"><td><input type="checkbox" data-imp="gsel:' + gi + '"' + (livres.length && nSel === livres.length ? ' checked' : '') + (livres.length ? '' : ' disabled') + ' aria-label="Importar todos os movimentos de ' + esc(g.nome) + '"></td>' +
           '<td><button type="button" class="btn mini" data-act="imp-grp:' + gi + '" aria-expanded="' + ab + '" aria-label="' + (ab ? 'Fechar' : 'Ver') + ' os movimentos de ' + esc(g.nome) + '">' + (ab ? '▾' : '▸') + ' ' + g.idx.length + '</button></td>' +
           '<td class="l"><b>' + esc(g.nome) + '</b>' + (nSel !== livres.length && nSel ? ' <span class="muted">(' + nSel + ' de ' + livres.length + ' marcados)</span>' : '') + (nDupG ? ' <span class="chip warn">' + nDupG + ' já registado' + (nDupG > 1 ? 's' : '') + '</span>' : '') + (nFixG ? ' <span class="chip acc">' + nFixG + (nFixG > 1 ? ' ligados a recorrentes' : ' ligado a um recorrente') + '</span>' : '') + '</td><td class="' + cls(g.total) + '">' + eur(g.total) + '</td><td class="l">' + selG + '</td>' +
-          '<td class="l">' + (said.length ? '<label class="comb-op"><input type="checkbox" data-imp="gcomb:' + gi + '"' + (said.every(i => (I.comb[i] || {}).on) ? ' checked' : '') + ' aria-label="Contar todos como combustível: ' + esc(g.nome) + '"> ⛽ Combustível</label>' : '') + (comum === null ? '<span class="muted">Abra o grupo para ver cada um</span>' : '') + '</td></tr>' + (ab ? g.idx.map(i => linhaMov(i).replace(/^<tr(?: class="([^"]*)")?>/, (x, c) => '<tr class="sub' + (c ? ' ' + c : '') + '">')).join('') : '');
+          '<td class="l">' + (comum === null ? '<span class="muted">Abra o grupo para ver cada um</span>' : ehCatComb(comum) ? '<span class="muted">⛽ Entram também em Combustível. Abra o grupo para pôr o €/litro e os km de cada um (opcional).</span>' : '') + '</td></tr>' + (ab ? g.idx.map(i => linhaMov(i).replace(/^<tr(?: class="([^"]*)")?>/, (x, c) => '<tr class="sub' + (c ? ' ' + c : '') + '">')).join('') : '');
       }).join('') : I.movs.map((m, i) => linhaMov(i)).join('');
       const nSaidas = I.movs.filter(m => m.valor < 0).length, nDup = I.movs.filter((m, i) => I.dup[i]).length;
       const kpisI = '<div class="grid">' + kpi('Movimentos lidos', String(I.movs.length), nSaidas + ' saídas e ' + (I.movs.length - nSaidas) + ' entradas') + kpi('A importar', String(sel.length), 'Marcados na lista') +
@@ -3770,7 +3790,7 @@ table.quebra td { white-space: normal; }
       rev = precosHtml(false) + impSugestoesHtml(I) + '<section><h2>Movimentos' + (I.nome ? ' de ' + esc(I.nome) : '') + '</h2>' + kpisI + porRever + mapa +
         '<div class="row" style="margin:12px 0"><label class="muted" for="imp-vista">Ver</label><select id="imp-vista" data-imp="vista"><option value="grupos"' + (vistaGrupos ? ' selected' : '') + '>Agrupado por tipo de gasto</option><option value="lista"' + (vistaGrupos ? '' : ' selected') + '>Todos os movimentos</option></select><label class="muted" for="imp-conta">Conta</label><select id="imp-conta" data-imp="conta">' + LISTAS.contas.map(c => '<option value="' + esc(c) + '"' + (c === I.conta ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</select><button class="btn" data-act="imp-todos">Marcar ou desmarcar tudo</button></div>' +
         (vistaGrupos ? '<p class="note">Os movimentos parecidos estão juntos (por exemplo todos os de MB WAY ou de VENDING). Escolha a categoria do grupo de uma vez; se um grupo tiver gastos de tipos diferentes, abra-o (▸) e mude só os que precisar.</p>' : '') + '<div class="tablewrap tall"><table class="sticky imp-tab"><thead><tr><th></th><th>' + (vistaGrupos ? 'Movimentos' : 'Data') + '</th><th class="l">Descrição</th><th>Valor</th><th class="l">Categoria</th><th class="l">Origem</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
-        '<div class="row" style="margin-top:12px"><button class="btn pri" data-act="imp-ok"' + (sel.length ? '' : ' disabled') + '>Importar ' + sel.length + ' movimento' + (sel.length === 1 ? '' : 's') + '</button><button class="btn" data-act="imp-cancelar">Cancelar</button><span class="muted">Selecionado: <b>' + eur(total) + '</b>. Os que já parecem registados (mesma data e valor) vêm desmarcados. Receitas entram em Rendimentos, sem contar no plano. Pagamentos iguais a um recorrente por pagar ficam ligados a ele, como pagos.</span></div>' +
+        '<div class="row" style="margin-top:12px"><button class="btn pri" data-act="imp-ok"' + (sel.length ? '' : ' disabled') + '>Importar ' + sel.length + ' movimento' + (sel.length === 1 ? '' : 's') + '</button><button class="btn" data-act="imp-cancelar">Cancelar</button><span class="muted">Selecionado: <b>' + eur(total) + '</b>. Os que já parecem registados (mesma data e valor) vêm desmarcados. Os créditos entram em Rendimentos, sem contar no plano. Pagamentos iguais a um recorrente por pagar ficam ligados a ele, como pagos.</span></div>' +
         '<p class="note" style="margin-top:8px">Quando escolher uma categoria diferente da proposta, a app aprende a regra para esse comerciante e usa-a nos próximos extratos. Se o mesmo comerciante ficar com categorias diferentes (como pagamentos MB WAY), não cria regra.</p></section>';
     }
     const rrows = regras.map((r, i) => '<tr><td class="l">' + inp('importacao.regras.' + i + '.padrao', { t: 'text', aria: 'Palavra do comerciante' }) + '</td><td class="l">' + inp('importacao.regras.' + i + '.cat', { t: 'sel', list: catNomes(), blank: true, aria: 'Categoria' }) + '</td><td>' + num(r.n) + '</td><td>' + delBtn('importacao.regras', i) + '</td></tr>').join('');
@@ -3808,7 +3828,7 @@ table.quebra td { white-space: normal; }
       (cartoesF ? '<div class="paylist duas" id="fx-lista">' + cartoesF + '</div>' : '<div class="empty">Ainda sem pagamentos recorrentes. Acrescente o primeiro, por exemplo a renda ou o telemóvel.</div>') +
       '<div class="row" style="margin-top:12px">' + addBtn('fixas', 'Novo pagamento recorrente') + '<span class="muted">Equivalente mensal de todos: <b>' + eur(R.fixasMensal) + '</b> · Só mensais: <b>' + eur(R.fixasSoMensais) + '</b> · Total anual das anuais: <b>' + eur(R.fixasAnuais) + '</b></span></div>' +
       '<div class="split" style="margin-top:14px"><div><h3>Por categoria (mensal)</h3><div class="tablewrap"><table class="mini"><tbody>' + porCat + '</tbody></table></div></div><div><h3>Por conta (mensal)</h3><div class="tablewrap"><table class="mini"><tbody>' + porConta + '</tbody></table></div></div></div></section>' +
-      '<section><h2>Categorias</h2><p class="lead">Os nomes, os ícones e as cores das categorias mudam-se no menu lateral, em Dia a dia.</p><div class="row"><button class="btn" data-act="ir:categorias">Abrir Categorias e ícones</button></div></section>';
+      '<section><h2>Categorias</h2><p class="lead">Os nomes, os ícones e as cores das categorias mudam-se no menu lateral, em Dia a dia.</p><div class="row"><button class="btn" data-act="ir:categorias">Abrir as categorias e ícones</button></div></section>';
   }
 
   /* ---------- Revolut (conta poupança): taxa, juros no plano e conferência com o banco ---------- */
@@ -3982,7 +4002,7 @@ table.quebra td { white-space: normal; }
   /* Guia dos separadores: fica junto das definições, não no Início */
   function guiaSeparadores() {
     return '<section><h2 id="def-guia">O que há em cada separador</h2><div class="grid two">' +
-      [['Apoios', 'Apoio à compra de elétricos: rendimento de 2026, agregado familiar, simulador de compra e o que se sabe das regras até agora.'], ['Plano mensal', 'De 6 meses a 10 anos, mês a mês. Registe aqui o que transferiu para a Revolut e os extras do mês.'], ['Rendimentos', 'Subsídios, prendas, transferências e reembolsos, únicos ou mensais, com registo rápido e gráfico por tipo.'], ['Despesas', 'Registo diário de gastos, com gráficos do mês, pesquisa e filtro por categoria.'], ['Orçamento', 'Limite por categoria, com barras de progresso, projeção do mês e vista do ano. Alimenta os gastos variáveis do plano.'], ['Horas', 'Registo de horas, banco de horas, horas extra e trabalhador-estudante.'], ['Calendário', 'Férias, feriados, dias oferecidos e pontes, um dia de cada vez.'], ['Importar', 'Carregue o extrato do banco (CSV, PDF ou texto colado), confirme as categorias e importe os gastos. A app aprende com as suas correções e liga os pagamentos aos recorrentes.'], ['Recorrentes', 'Pagamentos que se repetem, com ícones, datas e categorias. Marque como pago quando sair da conta.'], ['Combustível', 'Abastecimentos, consumo medido e preço médio, que alimentam o plano.'], ['Poupança e contas', 'Objetivos, quanto falta, e saldos reais no fim de cada mês.'], ['Propostas', 'Compare as propostas que quiser, arquive as que já não interessam e veja cenários de salário.'], ['Definições', 'Pressupostos, contratos e IRS, salário mínimo, combustível, feriados e férias.'], ['Categorias e ícones', 'Nomes, ícones e cores das categorias dos gastos e dos recorrentes.'], ['Regras do trabalho', 'Como se pagam as horas extra e a dispensa de trabalhador-estudante.']].map(x => '<div class="card"><b>' + x[0] + '</b><div class="muted">' + x[1] + '</div></div>').join('') + '</div>' +
+      [['Apoios', 'Apoio à compra de elétricos: rendimento de 2026, agregado familiar, simulador de compra e o que se sabe das regras até agora.'], ['Plano mensal', 'De 6 meses a 10 anos, mês a mês. Registe aqui o que transferiu para a Revolut e os extras do mês.'], ['Rendimentos', 'Subsídios, prendas, transferências e reembolsos, únicos ou mensais, com registo rápido e gráfico por tipo.'], ['Gastos', 'Registo diário de gastos, com gráficos do mês, pesquisa e filtro por categoria.'], ['Orçamento', 'Limite por categoria, com barras de progresso, projeção do mês e vista do ano. Alimenta os gastos variáveis do plano.'], ['Horas', 'Registo de horas, banco de horas, horas extra e trabalhador-estudante.'], ['Calendário', 'Férias, feriados, dias oferecidos e pontes, um dia de cada vez.'], ['Importar', 'Carregue o extrato do banco (CSV, PDF ou texto colado), confirme as categorias e importe os gastos. A app aprende com as suas correções e liga os pagamentos aos recorrentes.'], ['Recorrentes', 'Pagamentos que se repetem, com ícones, datas e categorias. Marque como pago quando sair da conta.'], ['Combustível', 'Abastecimentos, consumo medido e preço médio, que alimentam o plano.'], ['Poupança e contas', 'Objetivos, quanto falta, e saldos reais no fim de cada mês.'], ['Propostas', 'Compare as propostas que quiser, arquive as que já não interessam e veja cenários de salário.'], ['Definições', 'Pressupostos, contratos e IRS, salário mínimo, combustível, feriados e férias.'], ['Categorias e ícones', 'Nomes, ícones e cores das categorias dos gastos e dos recorrentes.'], ['Regras do trabalho', 'Como se pagam as horas extra e a dispensa de trabalhador-estudante.']].map(x => '<div class="card"><b>' + x[0] + '</b><div class="muted">' + x[1] + '</div></div>').join('') + '</div>' +
       '<p class="note">Campos com texto azul são para preencher. O resto são cálculos. ' + (mode === 'db' ? 'Os dados ficam guardados na sua conta.' : 'Os dados ficam guardados neste aparelho.') + '</p>' +
       '<p class="note">Atalhos: o botão ☰ abre o menu lateral, onde ficam as regras e o que se usa de vez em quando (importar extrato, categorias, regras do trabalho, propostas, apoios, definições, dados e tema), o botão + abre as ações rápidas, e "Ir para" ou a tecla / procuram uma página. As setas ‹ › mudam de mês ou de ano.</p></section>';
   }
@@ -4076,7 +4096,7 @@ table.quebra td { white-space: normal; }
       '<div class="field"><label>Resultado</label><div id="irs-out">' + irsSimHtml(irsSim) + '</div></div></div>' +
       '<p class="note" style="margin-top:10px">Tabela I do Despacho n.º 233-A/2026 (Continente, não casado sem dependentes ou casado dois titulares), em vigor durante 2026. O subsídio de alimentação não entra na base. Em novembro de 2026 a retenção é reduzida a metade (Despacho n.º 12523-A/2026), o que não é aplicado aqui. É um adiantamento: o IRS final apura-se na declaração anual.</p></section>' +
       '<section><h2 id="def-ferias">Férias e feriados</h2><p class="lead">Os dias de trabalho de cada mês são os dias úteis, menos feriados, férias e pontes que desconta.</p><div class="split">' +
-      '<div><h3>Férias marcadas</h3><div class="tablewrap"><table class="mini"><thead><tr><th>De</th><th>Até</th><th></th></tr></thead><tbody>' + (fe || '<tr><td colspan="3" class="empty">Sem férias marcadas.</td></tr>') + '</tbody></table></div><div style="margin-top:10px">' + addBtn('ferias', 'Marcar férias') + '</div></div>' +
+      '<div><h3>Férias marcadas</h3><div class="tablewrap"><table class="mini"><thead><tr><th>De</th><th>Até</th><th></th></tr></thead><tbody>' + (fe || '<tr><td colspan="3" class="empty">Sem férias marcadas.</td></tr>') + '</tbody></table></div><div style="margin-top:10px">' + addBtn('ferias', 'Novas férias') + '</div></div>' +
       '<div><h3>Saldo anual de férias</h3><div class="tablewrap"><table class="mini"><thead><tr><th>Ano</th><th>Direito</th><th>Planeado</th><th>Saldo</th></tr></thead><tbody>' + saldo + '</tbody></table></div><p class="note">Planeado = férias marcadas + pontes que descontam.</p></div></div>' +
       '<div style="margin-top:16px"><h3>Pontes e encerramentos da fábrica</h3><div class="tablewrap"><table class="mini"><thead><tr><th>Início</th><th>Até (vazio = 1 dia)</th><th class="l">Descrição</th><th>Desconta das férias?</th><th>Repete todos os anos?</th><th></th></tr></thead><tbody>' + (pon || '<tr><td colspan="5" class="empty">Sem pontes registadas.</td></tr>') + '</tbody></table></div><div style="margin-top:10px">' + addBtn('pontes', 'Nova ponte') + '</div></div>' +
       '<details style="margin-top:16px"><summary>Feriados da lista manual (' + S.feriados.length + '): municipal, extras e nacionais escritos à mão</summary><div class="tablewrap tall"><table class="mini"><thead><tr><th>Data</th><th class="l">Feriado</th><th>Repete todos os anos?</th><th></th></tr></thead><tbody>' + fer + '</tbody></table></div><div style="margin-top:10px">' + addBtn('feriados', 'Novo feriado') + '</div></details></section>' +
@@ -4133,7 +4153,7 @@ table.quebra td { white-space: normal; }
   /* ---------- menus: botão "+" com ações rápidas e "Ir para…" (os separadores principais ficam como estão) ---------- */
   let menu = null;   // null | 'mais' | 'ir'
   const ACOES = [['Novo gasto', '💸', 'despesas', 'g-valor', 'rapido:g'], ['Novo rendimento', '💰', 'rendimentos', 'r-valor', 'rapido:r'], ['Abastecimento', '⛽', 'combustivel', 'a-valor'], ['Registar um dia de trabalho', '⏰', 'horas', 'h-i1'], ['Marcar férias ou feriado', '📅', 'calendario', ''], ['Importar extrato do banco', '📥', 'importar', 'imp-texto']];
-  const PAGINAS = [['inicio', 'Início', 'Visão geral, gráficos e próximos pagamentos'], ['despesas', 'Despesas', 'Gastos do dia a dia, por mês e categoria'], ['rendimentos', 'Rendimentos', 'Subsídios, prendas, vendas e reembolsos'], ['importar', 'Importar', 'Extrato do banco em CSV, PDF ou texto'], ['orcamento', 'Orçamento', 'Limites por categoria e como vai cada uma'], ['recorrentes', 'Recorrentes', 'Pagamentos que se repetem e categorias'], ['combustivel', 'Combustível', 'Abastecimentos, consumo e preço médio'], ['horas', 'Horas', 'Registo, banco de horas e trabalhador-estudante'], ['calendario', 'Calendário', 'Férias, feriados, pontes e dias oferecidos'], ['plano', 'Plano mensal', 'De 6 meses a 10 anos, mês a mês'], ['poupanca', 'Poupança e contas', 'Objetivos e saldos reais'], ['propostas', 'Propostas', 'Comparar contratos e cenários de salário'], ['apoios', 'Apoios', 'Apoio à compra de um carro elétrico'], ['definicoes', 'Definições', 'Pressupostos, contratos, IRS, combustível e guia'], ['categorias', 'Categorias e ícones', 'Nomes, ícones e cores das categorias'], ['trabcfg', 'Regras do trabalho', 'Horas extra e trabalhador-estudante']];
+  const PAGINAS = [['inicio', 'Início', 'Visão geral, gráficos e próximos pagamentos'], ['despesas', 'Gastos', 'Registo do dia a dia, por mês e categoria'], ['rendimentos', 'Rendimentos', 'Subsídios, prendas, vendas e reembolsos'], ['importar', 'Importar', 'Extrato do banco em CSV, PDF ou texto'], ['orcamento', 'Orçamento', 'Limites por categoria e como vai cada uma'], ['recorrentes', 'Recorrentes', 'Pagamentos que se repetem e categorias'], ['combustivel', 'Combustível', 'Abastecimentos, consumo e preço médio'], ['horas', 'Horas', 'Registo, banco de horas e trabalhador-estudante'], ['calendario', 'Calendário', 'Férias, feriados, pontes e dias oferecidos'], ['plano', 'Plano mensal', 'De 6 meses a 10 anos, mês a mês'], ['poupanca', 'Poupança e contas', 'Objetivos e saldos reais'], ['propostas', 'Propostas', 'Comparar contratos e cenários de salário'], ['apoios', 'Apoios', 'Apoio à compra de um carro elétrico'], ['definicoes', 'Definições', 'Pressupostos, contratos, IRS, combustível e guia'], ['categorias', 'Categorias e ícones', 'Nomes, ícones e cores das categorias'], ['trabcfg', 'Regras do trabalho', 'Horas extra e trabalhador-estudante']];
   function lateralHtml() {
     const item = (ico, txt, act, sub, atual) => '<button type="button" class="dr-item' + (atual ? ' atual' : '') + '" data-act="' + act + '"' + (atual ? ' aria-current="page"' : '') + '>' + ic(ico) + '<span><b>' + txt + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</span></button>';
     const TEMAS_LAT = [['auto', 'Auto'], ['claro', 'Claro'], ['escuro', 'Escuro']];
@@ -4363,8 +4383,11 @@ table.quebra td { white-space: normal; }
     if ((saved.ver || 1) < 12) {   // versão 1.18.0: rendimento anual dos outros adultos (24 271,51 €, confirmado pela utilizadora). Só preenche se estava em branco
       if (!E.has(out.apoios.outrosAdultos) && E.has(base.apoios.outrosAdultos)) out.apoios.outrosAdultos = base.apoios.outrosAdultos;
     }
+    if ((saved.ver || 1) < 13 && Array.isArray(out.categorias) && !out.categorias.some(c => E.normalizaDesc(c.nome) === 'combustivel')) {   // categoria nova (1.36.2): o combustível passa a ser uma categoria, a seguir ao Carro
+      const i = out.categorias.findIndex(c => c.nome === 'Carro'); out.categorias.splice(i >= 0 ? i + 1 : out.categorias.length, 0, { nome: 'Combustível', icone: '⛽', cor: '#B5542E', limite: '', periodo: 'Mensal' });
+    }
     sanearTipos(out);
-    out.ver = 12;
+    out.ver = 13;
     return out;
   }
   /* Carregar uma cópia .json guardada antes (por exemplo, para trazer os dados de outro aparelho). Pode desfazer-se logo a seguir. */
