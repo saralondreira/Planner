@@ -88,6 +88,7 @@ th { background: var(--head); font-weight: 700; font-size: 12px; position: stick
 th:first-child, td:first-child { text-align: left; }
 td.l, th.l { text-align: left; }
 tbody tr:last-child td { border-bottom: 0; }
+label.clica { display: block; cursor: pointer; padding: 10px 0; margin: -10px 0; }   /* a descrição também marca a caixa da linha: alvo de toque maior que a caixa de 20 px */
 table.sticky td:first-child, table.sticky th:first-child { position: sticky; left: 0; z-index: 3; background: var(--surface); box-shadow: 1px 0 0 var(--line); }
 table.sticky th:first-child { background: var(--head); z-index: 4; }
 tr.tot td { font-weight: 700; background: var(--head); }
@@ -3633,7 +3634,8 @@ table.quebra td { white-space: normal; }
     }
     if (!imp || !imp.cat) return;
     if (k === 'sel') imp.sel[a] = el.checked;
-    else if (k === 'sug') { imp.sug = imp.sug || { saldo: true, rec: {}, rend: {}, feito: false }; if (a === 'saldo') imp.sug.saldo = el.checked; else if ((a === 'rec' || a === 'rend') && /^\d+$/.test(p[2] || '')) imp.sug[a][+p[2]] = el.checked; }
+    else if (k === 'seltodos') imp.movs.forEach((m, i) => { imp.sel[i] = !!el.checked && !imp.dup[i]; });   // caixa do cabeçalho: todos os movimentos, menos os já registados
+    else if (k === 'sug') { imp.sug = imp.sug || { saldo: true, rec: {}, rend: {}, feito: false }; if (a === 'saldo') imp.sug.saldo = el.checked; else if ((a === 'rec' || a === 'rend') && p[2] === 'todos') { const sg = sugestoesImp(imp), n = (a === 'rec' ? sg.recorrentes : sg.rendimentos).length; for (let i = 0; i < n; i++) imp.sug[a][i] = !!el.checked; } else if ((a === 'rec' || a === 'rend') && /^\d+$/.test(p[2] || '')) imp.sug[a][+p[2]] = el.checked; }
     else if ((k === 'cat' || k === 'gcat') && el.value === NOVA_CAT) { novaCat = { alvo: k + ':' + a }; setTimeout(() => { const e = document.getElementById('nc-nome'); if (e && e.focus) e.focus(); }, 0); }
     else if (k === 'cat') imp.cat[a] = el.value;
 
@@ -3693,14 +3695,20 @@ table.quebra td { white-space: normal; }
     const poderSaldo = sg.saldo && campo && num(S.press[campo]) === 0, vazioAgora = !S.periodos.length && !S.fixas.length && !S.extras.length && S.gastos.every(g => g.notas === 'Importado do extrato');
     if (!poderSaldo && !sg.recorrentes.length && !sg.rendimentos.length) return '';
     const temSal = S.periodos.some(p => p.salMin === 'Sim' || num(p.bruto) > 0), padrao = tp => tp === 'rend' ? !temSal : true, marcado = (tp, i) => I.sug[tp][i] === undefined ? padrao(tp) : I.sug[tp][i];
-    const lin = (tp, i, x) => '<tr><td><input type="checkbox" data-imp="sug:' + tp + ':' + i + '"' + (marcado(tp, i) ? ' checked' : '') + ' aria-label="Adicionar ' + esc(x.nome) + '"></td><td class="l">' + esc(x.nome) + (x.exato ? ' <span class="muted" title="O mesmo valor, ao cêntimo, todos os meses">· mesmo valor</span>' : '') + '</td><td>' + eur(x.valor) + '</td><td>dia ' + x.dia + '</td><td>' + x.meses + ' meses</td></tr>';
-    const tab = (titulo, tp, l, nota) => l.length ? '<h3 style="margin-top:12px">' + titulo + '</h3><p class="note">' + nota + '</p><div class="tablewrap"><table class="quebra"><thead><tr><th></th><th class="l">Descrição</th><th>Valor</th><th>Dia</th><th>Visto em</th></tr></thead><tbody>' + l.map((x, i) => lin(tp, i, x)).join('') + '</tbody></table></div>' : '';
+    const lin = (tp, i, x) => '<tr><td><input type="checkbox" id="sug-' + tp + '-' + i + '" data-imp="sug:' + tp + ':' + i + '"' + (marcado(tp, i) ? ' checked' : '') + ' aria-label="Adicionar ' + esc(x.nome) + '"></td><td class="l"><label class="clica" for="sug-' + tp + '-' + i + '">' + esc(x.nome) + (x.exato ? ' <span class="muted" title="O mesmo valor, ao cêntimo, todos os meses">· mesmo valor</span>' : '') + '</label></td><td>' + eur(x.valor) + '</td><td>dia ' + x.dia + '</td><td>' + x.meses + ' meses</td></tr>';
+    const nEsc = sg.recorrentes.filter((x, i) => marcado('rec', i)).length + sg.rendimentos.filter((x, i) => marcado('rend', i)).length + (poderSaldo && I.sug.saldo !== false ? 1 : 0);   // quantas propostas vão ser aplicadas: aparece no botão
+    const todosCx = (tp, l, titulo) => {   // caixa do cabeçalho: marca ou desmarca todas as linhas; fica "a meio" quando só algumas estão marcadas
+      if (l.length < 2) return '';
+      const n = l.filter((x, i) => marcado(tp, i)).length;
+      return '<input type="checkbox" data-imp="sug:' + tp + ':todos"' + (n === l.length ? ' checked' : n > 0 ? ' data-indet="1"' : '') + ' aria-label="Marcar ou desmarcar todos: ' + titulo.toLowerCase() + '" title="Marcar ou desmarcar todos">';
+    };
+    const tab = (titulo, tp, l, nota) => l.length ? '<h3 style="margin-top:12px">' + titulo + '</h3><p class="note">' + nota + '</p><div class="tablewrap"><table class="quebra"><thead><tr><th>' + todosCx(tp, l, titulo) + '</th><th class="l">Descrição</th><th>Valor</th><th>Dia</th><th>Visto em</th></tr></thead><tbody>' + l.map((x, i) => lin(tp, i, x)).join('') + '</tbody></table></div>' : '';
     return '<section class="card"><h2>⚡ Preencher a app com este extrato</h2><p class="lead">Além de importar os movimentos, a app pode preencher já o resto. Escolha o que quer aplicar. Nada é aplicado sem carregar no botão, e pode desfazer.</p>' +
       (poderSaldo ? '<label class="row"><input type="checkbox" data-imp="sug:saldo"' + (I.sug.saldo !== false ? ' checked' : '') + '> Usar <b>' + eur(sg.saldo.valor) + '</b> (saldo de ' + dataPt(sg.saldo.data) + ') como saldo inicial da conta ' + esc(conta) + (vazioAgora ? '. O plano passa a começar em ' + (sg.proximoMes ? mesLongo(sg.proximoMes) : 'o mês seguinte') + ', para não contar duas vezes o que o extrato já inclui.' : '. O saldo é de ' + dataPt(sg.saldo.data) + ': se for diferente do saldo no início do plano, ajuste o mês inicial em Definições.') + '</label>' : '') +
       tab('Pagamentos que se repetem', 'rec', sg.recorrentes, 'Passam a ser pagamentos recorrentes mensais, a contar a partir de ' + (sg.proximoMes ? mesLongo(sg.proximoMes) : 'o mês seguinte') + ' (os meses do extrato ficam pelos movimentos).') +
       tab('Rendimentos que se repetem', 'rend', sg.rendimentos, 'Passam a ser rendimentos mensais no plano, a contar a partir de ' + (sg.proximoMes ? mesLongo(sg.proximoMes) : 'o mês seguinte') + '.' + (temSal ? ' Já tem períodos com salário nos Contratos, por isso não os marquei: se os juntar, o rendimento conta duas vezes.' : '')) +
       ((sg.recorrentes.length || sg.rendimentos.length) ? '<p class="note" style="margin-top:8px">As transferências entre as suas contas (por exemplo para a Revolut) ficam de fora.</p>' : '') +
-      '<div class="row" style="margin-top:12px"><button type="button" class="btn pri" data-act="imp-sug"' + (I.sug.feito ? ' disabled' : '') + '>' + (I.sug.feito ? 'Já aplicado' : 'Aplicar o que escolhi') + '</button></div></section>';
+      '<div class="row" style="margin-top:12px"><button type="button" class="btn pri" data-act="imp-sug"' + (nEsc ? '' : ' disabled title="Marque pelo menos uma proposta"') + '>Aplicar o que escolhi' + (nEsc ? ' (' + nEsc + ')' : '') + '</button></div></section>';
   }
   function impSugestoesAplicar() {
     const I = imp; if (!I || !I.movs || !I.sug || I.sug.feito) return;
@@ -3715,6 +3723,7 @@ table.quebra td { white-space: normal; }
     sg.rendimentos.forEach((x, i) => { if ((I.sug.rend[i] === undefined ? temSal : I.sug.rend[i] === false) || S.extras.length >= 5000) return;
       S.extras.push({ data: ym + '-' + String(x.dia).padStart(2, '0'), tipo: 'Outro', desc: limpaTexto(x.nome, 120), origem: 'Extrato', valor: x.valor, freq: 'Mensal', ate: '', conta: I.conta, contar: 'Sim', notas: 'Criado a partir do extrato' }); ne++; });
     if (nr) feito.push(nr + (nr === 1 ? ' pagamento recorrente' : ' pagamentos recorrentes')); if (ne) feito.push(ne + (ne === 1 ? ' rendimento mensal' : ' rendimentos mensais'));
+    if (!feito.length) { aviso('Marque pelo menos uma proposta para aplicar.'); return; }   // sem nada escolhido não se gasta o painel: continua lá para marcar
     I.sug.feito = true; queueSave(); render();
     aviso(feito.length ? 'Preenchido: ' + feito.join(', ') + '.' : 'Nada para aplicar.', feito.length ? () => { const o = JSON.parse(antes); S.fixas = o.fixas; S.extras = o.extras; S.press = o.press; if (imp && imp.sug) imp.sug.feito = false; queueSave(); render(); } : null, 'Desfazer', 12000);
   }
@@ -3754,6 +3763,8 @@ table.quebra td { white-space: normal; }
     let rev = '';
     if (tem) {
       const sel = Object.keys(I.sel).filter(i => I.sel[i]).map(Number), total = sel.reduce((a, i) => a + I.movs[i].valor, 0);
+      const livresT = I.movs.map((m, i) => i).filter(i => !I.dup[i]), nSelT = livresT.filter(i => I.sel[i]).length;
+      const cxTodosMov = livresT.length > 1 ? '<input type="checkbox" data-imp="seltodos"' + (nSelT === livresT.length ? ' checked' : nSelT > 0 ? ' data-indet="1"' : '') + ' aria-label="Marcar ou desmarcar todos os movimentos" title="Marcar ou desmarcar todos">' : '';   // fica "a meio" quando só alguns estão marcados
       let mapa = '';
       if (I.modo === 'csv' || I.modo === 'xlsx') {
         const cab = I.rows[I.map.header] || [], ncol = Math.max.apply(null, I.rows.slice(0, 40).map(r => r.length).concat([1]));
@@ -3778,7 +3789,7 @@ table.quebra td { white-space: normal; }
         const said = g.idx.filter(i => I.movs[i].valor < 0 && !I.fix[i]), cats = Array.from(new Set(said.map(i => I.cat[i] || ''))), comum = cats.length === 1 ? cats[0] : null;
         const nFixG = g.idx.filter(i => I.fix[i]).length, livres = g.idx.filter(i => !I.dup[i]), nSel = livres.filter(i => I.sel[i]).length, nDupG = g.idx.length - livres.length, ab = !!I.aberto[g.chave];
         const selG = said.length ? '<select data-imp="gcat:' + gi + '" aria-label="Categoria de todos os movimentos de ' + esc(g.nome) + '">' + (comum === null ? '<option value="" selected>Várias categorias</option>' : '<option value=""></option>') + catNomes().map(c => '<option' + (c === comum ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '<option value="' + NOVA_CAT + '">＋ Nova categoria…</option></select>' : (g.idx.some(i => I.movs[i].valor < 0) ? '<span class="chip acc">Recorrentes</span>' : '<span class="chip">Rendimentos</span>');
-        return '<tr class="grupo"><td><input type="checkbox" data-imp="gsel:' + gi + '"' + (livres.length && nSel === livres.length ? ' checked' : '') + (livres.length ? '' : ' disabled') + ' aria-label="Importar todos os movimentos de ' + esc(g.nome) + '"></td>' +
+        return '<tr class="grupo"><td><input type="checkbox" data-imp="gsel:' + gi + '"' + (livres.length && nSel === livres.length ? ' checked' : nSel > 0 ? ' data-indet="1"' : '') + (livres.length ? '' : ' disabled') + ' aria-label="Importar todos os movimentos de ' + esc(g.nome) + '"></td>' +
           '<td><button type="button" class="btn mini" data-act="imp-grp:' + gi + '" aria-expanded="' + ab + '" aria-label="' + (ab ? 'Fechar' : 'Ver') + ' os movimentos de ' + esc(g.nome) + '">' + (ab ? '▾' : '▸') + ' ' + g.idx.length + '</button></td>' +
           '<td class="l"><b>' + esc(g.nome) + '</b>' + (nSel !== livres.length && nSel ? ' <span class="muted">(' + nSel + ' de ' + livres.length + ' marcados)</span>' : '') + (nDupG ? ' <span class="chip warn">' + nDupG + ' já registado' + (nDupG > 1 ? 's' : '') + '</span>' : '') + (nFixG ? ' <span class="chip acc">' + nFixG + (nFixG > 1 ? ' ligados a recorrentes' : ' ligado a um recorrente') + '</span>' : '') + '</td><td class="' + cls(g.total) + '">' + eur(g.total) + '</td><td class="l">' + selG + '</td>' +
           '<td class="l">' + (comum === null ? '<span class="muted">Abra o grupo para ver cada um</span>' : ehCatComb(comum) ? '<span class="muted">⛽ Entram também em Combustível. Abra o grupo para pôr o €/litro e os km de cada um (opcional).</span>' : '') + '</td></tr>' + (ab ? g.idx.map(i => linhaMov(i).replace(/^<tr(?: class="([^"]*)")?>/, (x, c) => '<tr class="sub' + (c ? ' ' + c : '') + '">')).join('') : '');
@@ -3789,7 +3800,7 @@ table.quebra td { white-space: normal; }
       const porRever = I.naoLidas > 0 ? '<p class="note"><span class="chip warn">' + I.naoLidas + (I.naoLidas === 1 ? ' linha por rever' : ' linhas por rever') + '</span> ' + (I.naoLidas === 1 ? 'Uma linha do ficheiro não foi lida' : I.naoLidas + ' linhas do ficheiro não foram lidas') + ' como movimento (por exemplo títulos, totais, ou linhas sem data ou sem valor). Confirme no extrato que não falta nenhum movimento.</p>' : '';
       rev = precosHtml(false) + impSugestoesHtml(I) + '<section><h2>Movimentos' + (I.nome ? ' de ' + esc(I.nome) : '') + '</h2>' + kpisI + porRever + mapa +
         '<div class="row" style="margin:12px 0"><label class="muted" for="imp-vista">Ver</label><select id="imp-vista" data-imp="vista"><option value="grupos"' + (vistaGrupos ? ' selected' : '') + '>Agrupado por tipo de gasto</option><option value="lista"' + (vistaGrupos ? '' : ' selected') + '>Todos os movimentos</option></select><label class="muted" for="imp-conta">Conta</label><select id="imp-conta" data-imp="conta">' + LISTAS.contas.map(c => '<option value="' + esc(c) + '"' + (c === I.conta ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</select><button class="btn" data-act="imp-todos">Marcar ou desmarcar tudo</button></div>' +
-        (vistaGrupos ? '<p class="note">Os movimentos parecidos estão juntos (por exemplo todos os de MB WAY ou de VENDING). Escolha a categoria do grupo de uma vez; se um grupo tiver gastos de tipos diferentes, abra-o (▸) e mude só os que precisar.</p>' : '') + '<div class="tablewrap tall"><table class="sticky imp-tab"><thead><tr><th></th><th>' + (vistaGrupos ? 'Movimentos' : 'Data') + '</th><th class="l">Descrição</th><th>Valor</th><th class="l">Categoria</th><th class="l">Origem</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
+        (vistaGrupos ? '<p class="note">Os movimentos parecidos estão juntos (por exemplo todos os de MB WAY ou de VENDING). Escolha a categoria do grupo de uma vez; se um grupo tiver gastos de tipos diferentes, abra-o (▸) e mude só os que precisar.</p>' : '') + '<div class="tablewrap tall"><table class="sticky imp-tab"><thead><tr><th>' + cxTodosMov + '</th><th>' + (vistaGrupos ? 'Movimentos' : 'Data') + '</th><th class="l">Descrição</th><th>Valor</th><th class="l">Categoria</th><th class="l">Origem</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
         '<div class="row" style="margin-top:12px"><button class="btn pri" data-act="imp-ok"' + (sel.length ? '' : ' disabled') + '>Importar ' + sel.length + ' movimento' + (sel.length === 1 ? '' : 's') + '</button><button class="btn" data-act="imp-cancelar">Cancelar</button><span class="muted">Selecionado: <b>' + eur(total) + '</b>. Os que já parecem registados (mesma data e valor) vêm desmarcados. Os créditos entram em Rendimentos, sem contar no plano. Pagamentos iguais a um recorrente por pagar ficam ligados a ele, como pagos.</span></div>' +
         '<p class="note" style="margin-top:8px">Quando escolher uma categoria diferente da proposta, a app aprende a regra para esse comerciante e usa-a nos próximos extratos. Se o mesmo comerciante ficar com categorias diferentes (como pagamentos MB WAY), não cria regra.</p></section>';
     }
@@ -4242,6 +4253,7 @@ table.quebra td { white-space: normal; }
     mainEl.innerHTML = renomeiaContas(corpo + fixaHtml() + rendHtml() + gastoHtml() + objHtml() + contaHtml() + planoHtml() + detHtml() + simHtml() + rapidoHtml() + boasHtml() + nuvemAskHtml() + pickerHtml() + corPickerHtml() + novaCatHtml() + calHtml() + menuHtml());
     if (tinhaOv) { Array.from(document.querySelectorAll('.drawer-bg, .modal, .drawer, .sheet')).forEach(e => { if (e.classList && e.classList.add) e.classList.add('sem-anim'); }); const usados = {}; Array.from(document.querySelectorAll(ovSel)).forEach(e => { const k = ovChave(e); if (usados[k] || !ovAntes[k]) return; usados[k] = true; e.scrollTop = ovAntes[k]; }); }
     if (tab === 'despesas') filtraLista('g'); else if (tab === 'rendimentos') filtraLista('r');
+    Array.from(document.querySelectorAll('input[data-indet]')).forEach(e => { e.indeterminate = true; });   // "algumas marcadas": só se pode pôr por código, não no HTML
     const dlg = dialogoTopo();
     Array.from(document.querySelectorAll('header.top, #main > *')).forEach(e => {   // com uma folha aberta, o resto da página fica inerte (leitores de ecrã e teclado)
       const inerte = !!dlg && !(e.contains && e.contains(dlg));
@@ -4252,11 +4264,12 @@ table.quebra td { white-space: normal; }
     desenharGraficos(anima);
   }
   function renderKeep() {
-    const ae = document.activeElement, key = ae && ae.dataset && (ae.dataset.p || ae.id);
+    const ae = document.activeElement, key = ae && ae.dataset && (ae.dataset.p || ae.id), keyImp = !key && ae && ae.type === 'checkbox' && ae.dataset && ae.dataset.imp;   // as caixas da importação também não perdem o foco ao redesenhar
     const y = window.scrollY, sc = Array.from(document.querySelectorAll('.tablewrap')).map(e => [e.scrollLeft, e.scrollTop]);
     render();
     document.querySelectorAll('.tablewrap').forEach((e, i) => { if (sc[i]) { e.scrollLeft = sc[i][0]; e.scrollTop = sc[i][1]; } });
     window.scrollTo(0, y);
+    if (keyImp && /^[a-z]+(:[A-Za-z0-9_]+)*$/.test(keyImp)) { const el = document.querySelector('[data-imp="' + keyImp + '"]'); if (el && el !== document.activeElement && el.focus) el.focus({ preventScroll: true }); }
     if (key) { const el = document.querySelector('[data-p="' + key + '"]') || document.getElementById(key), dl = dialogoTopo(); if (el && el !== document.activeElement && (!dl || (dl.contains && dl.contains(el)))) { el.focus({ preventScroll: true }); try { if (el.select && el.type !== 'checkbox' && el.type !== 'date') el.select(); } catch (e) { } } }
   }
 
