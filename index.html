@@ -779,6 +779,95 @@ table.quebra td { white-space: normal; }
 @media (max-width: 340px) { .catchips.grelha { grid-template-columns: minmax(0, 1fr); } }
 .nw { white-space: nowrap; }
 
+/* ---------- datas e horas: campos mais modernos e seletor próprio (ver "seletor de data e de hora" em ui.js) ---------- */
+input[type=date], input[type=time] { font-variant-numeric: tabular-nums; transition: border-color .15s ease, box-shadow .15s ease; }
+input[type=date]:hover, input[type=time]:hover { border-color: var(--accent); }
+input[type=date]:focus-within, input[type=time]:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+input[type=date]:focus-visible, input[type=time]:focus-visible { outline: 0; }
+input[type=date]::-webkit-datetime-edit-day-field:focus, input[type=date]::-webkit-datetime-edit-month-field:focus, input[type=date]::-webkit-datetime-edit-year-field:focus,
+input[type=time]::-webkit-datetime-edit-hour-field:focus, input[type=time]::-webkit-datetime-edit-minute-field:focus, input[type=time]::-webkit-datetime-edit-ampm-field:focus { background: var(--accent-soft); color: var(--accent); border-radius: 5px; outline: 0; }
+input[type=date]::-webkit-calendar-picker-indicator, input[type=time]::-webkit-calendar-picker-indicator { width: 20px; height: 20px; margin: 0 0 0 6px; padding: 0; cursor: pointer; opacity: .8; background: var(--accent); transition: opacity .15s ease; }
+input[type=date]::-webkit-calendar-picker-indicator { -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='3'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") center / 18px no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='3'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") center / 18px no-repeat; }
+input[type=time]::-webkit-calendar-picker-indicator { -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E") center / 18px no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E") center / 18px no-repeat; }
+input[type=date]::-webkit-calendar-picker-indicator:hover, input[type=time]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+.dp-bg { position: fixed; inset: 0; z-index: 70; }
+.dp-pop { position: fixed; width: 296px; max-width: calc(100vw - 16px); background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 18px; padding: 12px; box-shadow: 0 18px 44px rgba(0, 0, 0, .3); animation: subir .14s ease both; max-height: calc(100vh - 16px); overflow: auto; }
+.dp-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
+.dp-tit { flex: 1; text-align: center; font: inherit; font-weight: 700; font-size: 15px; color: var(--ink); background: none; border: 0; padding: 7px 8px; border-radius: 10px; }
+button.dp-tit { cursor: pointer; }
+button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
+.dp-nav { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--head); color: var(--ink); font-size: 20px; line-height: 1; cursor: pointer; padding: 0 0 2px; }
+.dp-nav:hover { background: var(--accent-soft); color: var(--accent); }
+.dp-sem, .dp-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.dp-sem span { text-align: center; font-size: 11px; font-weight: 700; color: var(--muted); padding: 4px 0; }
+.dp-grid { gap: 2px; }
+.dp-grid > span { aspect-ratio: 1; }
+.dp-d { aspect-ratio: 1; position: relative; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
+.dp-d:hover:not(:disabled) { background: var(--accent-soft); color: var(--accent); }
+.dp-d.we { color: var(--muted); }
+.dp-d.hoje { box-shadow: inset 0 0 0 2px var(--accent); }
+.dp-d.sel, .dp-d.sel:hover:not(:disabled) { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.dp-d.hol::after, .dp-d.fer::after { content: ''; position: absolute; bottom: 4px; left: 50%; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--bad); }
+.dp-d.fer::after { background: var(--good); }
+.dp-d.sel::after { background: var(--accent-ink); }
+.dp-d:disabled { opacity: .3; cursor: default; }
+.dp-pe { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+.dp-pe > span { display: inline-flex; align-items: center; gap: 4px; }
+.dp-link { font: inherit; font-weight: 600; font-size: 13px; color: var(--accent); background: none; border: 0; border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+.dp-link:hover { background: var(--accent-soft); }
+.dp-meses { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.dp-m, .dp-h { font: inherit; font-size: 13px; color: var(--ink); background: var(--head); border: 0; border-radius: 12px; padding: 11px 0; cursor: pointer; text-transform: capitalize; }
+.dp-m:hover, .dp-h:hover { background: var(--accent-soft); color: var(--accent); }
+.dp-m.hoje { box-shadow: inset 0 0 0 2px var(--accent); }
+.dp-m.sel, .dp-h.sel, .dp-m.sel:hover, .dp-h.sel:hover { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.dp-horas { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+.dp-h { padding: 8px 0; border-radius: 10px; }
+.dp-rot { margin: 10px 0 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.dp-nota { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+.dp-ok { min-height: 34px; padding: 4px 16px; }
+@media (max-width: 600px) {
+  .dp-bg { background: rgba(10, 18, 24, .45); }
+  .dp-pop { left: 0 !important; right: 0; top: auto !important; bottom: 0; width: auto; max-width: none; border-radius: 18px 18px 0 0; padding: 14px 14px calc(14px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (prefers-reduced-motion: reduce) { .dp-pop { animation: none; } }
+
+/* Campos da mesma fila alinhados: o rótulo, o campo e a ajuda de cada fila ficam à mesma altura em todos os campos
+   (um rótulo de duas linhas já não empurra só o seu campo para baixo). Subgrelha: sem ela, ou sem :has, fica como era. */
+@supports (grid-template-rows: subgrid) and selector(:has(*)) {
+  :is(.fields, .nf-grid):not(:has(> :not(.field))) > .field { grid-row: span 3; grid-template-rows: subgrid; row-gap: 4px; }
+  :is(.fields, .nf-grid):not(:has(> :not(.field))) > .field > * { align-self: start; }
+}
+
+/* Interruptor (ligado/desligado) e ligação em texto */
+.estatuto { display: grid; gap: 6px; margin: 2px 0 14px; padding: 10px 14px; background: var(--head); border-radius: var(--r-sm); }
+.estatuto .note { margin: 0; }
+.sw { appearance: none; display: inline-flex; align-items: center; gap: 10px; justify-self: start; font: inherit; font-weight: 600; color: var(--ink); background: none; border: 0; padding: 4px 2px; border-radius: 999px; cursor: pointer; text-align: left; }
+.sw-p { position: relative; flex: none; width: 44px; height: 26px; border-radius: 999px; background: var(--in-line); transition: background-color .15s ease; }
+.sw-p::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); transition: transform .15s ease; }
+.sw.on .sw-p { background: var(--accent); }
+.sw.on .sw-p::after { transform: translateX(18px); }
+.lnk { font: inherit; font-weight: 600; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .sw-p, .sw-p::after { transition: none; } }
+
+/* Alvos de toque maiores em ecrãs de toque (telemóvel, tablet): apagar, botões das tabelas e dos avisos */
+@media (pointer: coarse) {
+  button.x { width: 44px; height: 44px; }
+  td button.btn, .pay .pa .btn, .toast .btn { min-height: 44px; }
+  input[type=checkbox] { width: 24px; height: 24px; }
+  .lnk { padding: 10px 2px; }
+}
+
+/* Os quatro horários do dia (entrada, almoço, saída) ficam sempre 2 a 2, também no telemóvel */
+.fields.fx-campos.q-horas { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+.q-horas input[type=time] { width: 100%; }
+
+/* Subsídios e dias de trabalho de cada período (Definições) */
+.pdet { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-top: 12px; background: var(--surface); }
+.pdet h4 { margin: 0 0 8px; font-size: 14px; }
+.pdet .seg.dias button { flex: 1 1 0; min-width: 44px; padding: 7px 8px; }
+@media (max-width: 480px) { .pdet .seg.dias { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); } .pdet .seg.dias button { min-height: 44px; min-width: 0; } }
+.pdet .note { margin: 10px 0 0; }
+
 </style>
 </head>
 <body>
@@ -789,9 +878,10 @@ table.quebra td { white-space: normal; }
 <nav class="tabs sub" id="subtabs" aria-label="Separadores"></nav>
 </header>
 <main id="main"></main>
+<div id="dp-raiz"></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </div>
-<script id="seed" type="application/json">{"press": {"ss": 0.11, "kmExtra": 0, "manut": 0.02, "dias": 22, "mesInicial": "2026-10-01", "inicioLic": "2027-09-01", "horasDia": 8, "diasFerias": 22, "saldoPrincipal": 0, "revolut": 0, "gasoleoManual": 2.3, "consumoManual": 6, "usarPrecoMedido": "Sim", "usarConsumoMedido": "Sim", "horizonte": 36, "horasSemana": 35, "regimeExtras": "Ainda não sei", "acr1": 0.25, "acr2": 0.375, "acr3": 0.5, "estudante": {"ativo": "Não", "de": "", "ate": "", "dias": [1, 1, 1, 1, 1], "limiteSemana": 6, "limiteProvas": 4}, "feriadosAuto": "Sim"}, "periodos": [], "salMin": [{"ano": 2026, "valor": 920, "nota": "DGERT — retribuição mínima mensal garantida 2026"}, {"ano": 2027, "valor": 970, "nota": "Previsto: acordo de Concertação Social e proposta de OE 2027. Falta o decreto-lei"}, {"ano": 2028, "valor": 1020, "nota": "Acordo tripartido de outubro de 2024: subidas de 50 € por ano até 1 020 € em 2028 (falta o decreto-lei)"}, {"ano": 2029, "valor": 1100, "nota": "Meta do programa do Governo (1 100 €); ainda não consta de um acordo. Por confirmar"}], "fixas": [], "extras": [], "gastos": [], "feriados": [], "pontes": [], "plano": {}, "contas": {}, "objetivos": [], "ferias": [], "combustivel": {"nRecente": 4, "iva": 0.23, "abast": []}, "propostas": [], "ver": 13, "importacao": {"regras": []}, "saltadas": [], "horas": {"saldoInicial": 0, "meses": {}, "registo": []}, "categorias": [{"nome": "Carro", "icone": "🚗", "cor": "#0D6A73", "limite": "", "periodo": "Mensal"}, {"nome": "Combustível", "icone": "⛽", "cor": "#B5542E", "limite": "", "periodo": "Mensal"}, {"nome": "Portagens", "icone": "🛣️", "cor": "#7A6A4F", "limite": "", "periodo": "Mensal"}, {"nome": "Comunicações", "icone": "📱", "cor": "#3B6FD4", "limite": "", "periodo": "Mensal"}, {"nome": "Estudos", "icone": "🎓", "cor": "#7A52C7", "limite": "", "periodo": "Mensal"}, {"nome": "Lazer", "icone": "🎮", "cor": "#D1488A", "limite": "", "periodo": "Mensal"}, {"nome": "Saúde", "icone": "💊", "cor": "#C94B3B", "limite": "", "periodo": "Mensal"}, {"nome": "Subscrições", "icone": "🔁", "cor": "#B07A12", "limite": "", "periodo": "Mensal"}, {"nome": "Casa", "icone": "🏠", "cor": "#4F8A3A", "limite": "", "periodo": "Mensal"}, {"nome": "Alimentação", "icone": "🛒", "cor": "#D9822B", "limite": "", "periodo": "Mensal"}, {"nome": "Restauração", "icone": "🍽️", "cor": "#E0A030", "limite": "", "periodo": "Mensal"}, {"nome": "Compras", "icone": "🛍️", "cor": "#8E5BB8", "limite": "", "periodo": "Mensal"}, {"nome": "Prendas", "icone": "🎁", "cor": "#E0607E", "limite": "", "periodo": "Mensal"}, {"nome": "Transportes", "icone": "🚌", "cor": "#2F8F9D", "limite": "", "periodo": "Mensal"}, {"nome": "Transferências", "icone": "🔄", "cor": "#5B7FA6", "limite": "", "periodo": "Mensal"}, {"nome": "Animais", "icone": "🐾", "cor": "#A0683A", "limite": "", "periodo": "Mensal"}, {"nome": "Outros", "icone": "📦", "cor": "#6B7C87", "limite": "", "periodo": "Mensal"}], "orcamento": {"geral": 0, "geralMeses": {}}, "apoios": {"ano": 2026, "contarSubs": true, "modo": "agregado", "adultos": 1, "outrosAdultos": "", "tarifaSocial": false, "refManual": false, "rendOutroAno": "", "limite": 11572, "apoioPct": 0.8, "pctMin": 0.7, "pctMax": 0.9, "tetoPreco": 15000, "tetoModo": "apoio", "precoMax": 37500, "majAbate": 1000, "posto": 1000, "vagas": 5500, "iva": 0.23, "sim": {"preco": 12000, "abate": true, "posto": false, "custoPosto": 1000}, "sims": [], "ledger": {}}}</script>
+<script id="seed" type="application/json">{"press": {"ss": 0.11, "kmExtra": 0, "manut": 0.02, "dias": 22, "mesInicial": "2026-10-01", "inicioLic": "2027-09-01", "horasDia": 8, "diasFerias": 22, "saldoPrincipal": 0, "revolut": 0, "gasoleoManual": 2.3, "consumoManual": 6, "usarPrecoMedido": "Sim", "usarConsumoMedido": "Sim", "horizonte": 36, "horasSemana": 35, "regimeExtras": "Ainda não sei", "acr1": 0.25, "acr2": 0.375, "acr3": 0.5, "estudante": {"ativo": "Não", "de": "", "ate": "", "dias": [1, 1, 1, 1, 1], "limiteSemana": "", "limiteProvas": 4}, "feriadosAuto": "Sim"}, "periodos": [], "salMin": [{"ano": 2026, "valor": 920, "nota": "DGERT — retribuição mínima mensal garantida 2026"}, {"ano": 2027, "valor": 970, "nota": "Previsto: acordo de Concertação Social e proposta de OE 2027. Falta o decreto-lei"}, {"ano": 2028, "valor": 1020, "nota": "Acordo tripartido de outubro de 2024: subidas de 50 € por ano até 1 020 € em 2028 (falta o decreto-lei)"}, {"ano": 2029, "valor": 1100, "nota": "Meta do programa do Governo (1 100 €); ainda não consta de um acordo. Por confirmar"}], "fixas": [], "extras": [], "gastos": [], "feriados": [], "pontes": [], "plano": {}, "contas": {}, "objetivos": [], "ferias": [], "combustivel": {"nRecente": 4, "iva": 0.23, "abast": []}, "propostas": [], "ver": 14, "irsLinhas": [], "subsLimites": [], "importacao": {"regras": []}, "saltadas": [], "horas": {"saldoInicial": 0, "meses": {}, "registo": []}, "categorias": [{"nome": "Carro", "icone": "🚗", "cor": "#0D6A73", "limite": "", "periodo": "Mensal"}, {"nome": "Combustível", "icone": "⛽", "cor": "#B5542E", "limite": "", "periodo": "Mensal"}, {"nome": "Portagens", "icone": "🛣️", "cor": "#7A6A4F", "limite": "", "periodo": "Mensal"}, {"nome": "Comunicações", "icone": "📱", "cor": "#3B6FD4", "limite": "", "periodo": "Mensal"}, {"nome": "Estudos", "icone": "🎓", "cor": "#7A52C7", "limite": "", "periodo": "Mensal"}, {"nome": "Lazer", "icone": "🎮", "cor": "#D1488A", "limite": "", "periodo": "Mensal"}, {"nome": "Saúde", "icone": "💊", "cor": "#C94B3B", "limite": "", "periodo": "Mensal"}, {"nome": "Subscrições", "icone": "🔁", "cor": "#B07A12", "limite": "", "periodo": "Mensal"}, {"nome": "Casa", "icone": "🏠", "cor": "#4F8A3A", "limite": "", "periodo": "Mensal"}, {"nome": "Alimentação", "icone": "🛒", "cor": "#D9822B", "limite": "", "periodo": "Mensal"}, {"nome": "Restauração", "icone": "🍽️", "cor": "#E0A030", "limite": "", "periodo": "Mensal"}, {"nome": "Compras", "icone": "🛍️", "cor": "#8E5BB8", "limite": "", "periodo": "Mensal"}, {"nome": "Prendas", "icone": "🎁", "cor": "#E0607E", "limite": "", "periodo": "Mensal"}, {"nome": "Transportes", "icone": "🚌", "cor": "#2F8F9D", "limite": "", "periodo": "Mensal"}, {"nome": "Transferências", "icone": "🔄", "cor": "#5B7FA6", "limite": "", "periodo": "Mensal"}, {"nome": "Animais", "icone": "🐾", "cor": "#A0683A", "limite": "", "periodo": "Mensal"}, {"nome": "Outros", "icone": "📦", "cor": "#6B7C87", "limite": "", "periodo": "Mensal"}], "orcamento": {"geral": 0, "geralMeses": {}}, "apoios": {"ano": 2026, "contarSubs": true, "modo": "agregado", "adultos": 1, "outrosAdultos": "", "tarifaSocial": false, "refManual": false, "rendOutroAno": "", "limite": 11572, "apoioPct": 0.8, "pctMin": 0.7, "pctMax": 0.9, "tetoPreco": 15000, "tetoModo": "apoio", "precoMax": 37500, "majAbate": 1000, "posto": 1000, "vagas": 5500, "iva": 0.23, "sim": {"preco": 12000, "abate": true, "posto": false, "custoPosto": 1000}, "sims": [], "ledger": {}}}</script>
 <script>
 /* Motor de cálculo — porta das fórmulas do Planner Financeiro (Excel). Sem DOM. */
 (function (root) {
@@ -830,16 +920,42 @@ table.quebra td { white-space: normal; }
     { ate: 20221, taxa: 0.4495, parcela: 823.40 },
     { ate: Infinity, taxa: 0.4717, parcela: 1272.31 }
   ];
-  function irsRetencao(bruto) {
+  /* Tabelas de retenção da pessoa (S.irsLinhas): uma lista de linhas {ano, ate, taxa, parcela, k, r0}, várias por ano. Num mês vale a tabela do maior ano que não passe o do mês;
+     sem linhas válidas (ou antes do primeiro ano) vale a de 2026 que vem com a app. 'ate' em branco = sem limite; k e r0 (os dois) dão a parcela a abater com fórmula, como nos dois primeiros escalões. */
+  function irsTabela(S, ano) {
+    const linhas = (S && Array.isArray(S.irsLinhas) ? S.irsLinhas : []).filter(r => r && typeof r === 'object' && /^\d{4}$/.test(String(r.ano).trim()) && has(r.taxa) && num(r.taxa) >= 0 && num(r.taxa) <= 1 && (!has(r.ate) || num(r.ate) > 0));
+    const anos = Array.from(new Set(linhas.map(r => +String(r.ano).trim()))).filter(a => a <= +ano).sort((a, b) => b - a);
+    if (!anos.length) return null;
+    return linhas.filter(r => +String(r.ano).trim() === anos[0]).map(r => ({ ate: has(r.ate) ? num(r.ate) : Infinity, taxa: num(r.taxa), parcela: num(r.parcela), k: has(r.k) && has(r.r0) ? num(r.k) : null, r0: has(r.k) && has(r.r0) ? num(r.r0) : null }))
+      .sort((a, b) => a.ate - b.ate);
+  }
+  function irsRetencao(bruto, tab) {
     const R = num(bruto);
     if (R <= 0) return 0;
-    const b = IRS_TABELA_I_2026.find(x => R <= x.ate);
-    const parcela = b.parcela != null ? b.parcela : b.taxa * b.k * (b.r0 - R);
+    const T = tab && tab.length ? tab : IRS_TABELA_I_2026;
+    const b = T.find(x => R <= x.ate) || T[T.length - 1];
+    const parcela = b.k != null && b.r0 != null ? b.taxa * b.k * (b.r0 - R) : b.parcela != null ? b.parcela : 0;
     return Math.max(0, R * b.taxa - parcela);
   }
-  const irsTaxa = bruto => num(bruto) > 0 ? irsRetencao(bruto) / num(bruto) : 0;
+  const irsTaxa = (bruto, tab) => num(bruto) > 0 ? irsRetencao(bruto, tab) / num(bruto) : 0;
   // 'Automático' usa a tabela; qualquer outro valor (incluindo vazio, como nos dados antigos) usa a taxa escrita à mão
-  const irsAplicado = (modo, manual, bruto) => modo === 'Automático' ? irsTaxa(bruto) : num(manual);
+  const irsAplicado = (modo, manual, bruto, tab) => modo === 'Automático' ? irsTaxa(bruto, tab) : num(manual);
+
+  /* Subsídio de alimentação: o que passa do limite isento por dia (em cartão ou em dinheiro) conta como rendimento e paga Segurança Social e IRS.
+     Limites de 2026 (Portaria n.º 51-B/2026/1): 10,46 € em cartão, 6,15 € em dinheiro. A pessoa acrescenta anos em S.subsLimites ({ano, cartao, dinheiro}); vale o maior ano que não passe o do mês. */
+  const SUBS_ISENTO_2026 = Object.freeze({ cartao: 10.46, dinheiro: 6.15 });
+  function subsIsento(S, ano, cartao) {
+    const campo = cartao ? 'cartao' : 'dinheiro';
+    const rows = (S && Array.isArray(S.subsLimites) ? S.subsLimites : []).filter(r => r && typeof r === 'object' && /^\d{4}$/.test(String(r.ano).trim()) && +String(r.ano).trim() <= +ano && has(r[campo]) && num(r[campo]) >= 0)
+      .sort((a, b) => +String(b.ano).trim() - +String(a.ano).trim());
+    return rows.length ? num(rows[0][campo]) : SUBS_ISENTO_2026[campo];
+  }
+
+  /* Dia de trabalho da semana: cada período diz em que dias da semana se trabalha (diasTrab, números do JavaScript: 0 domingo a 6 sábado). Sem escolha válida: segunda a sexta. */
+  const DIAS_TRAB_PADRAO = '12345';
+  const diasTrabSet = per => { const s = String((per && per.diasTrab) || ''); return new Set((/^[0-6]{1,7}$/.test(s) ? s : DIAS_TRAB_PADRAO).split('').map(Number)); };
+  /* Dispensa semanal do trabalhador-estudante por horas de trabalho por semana (Código do Trabalho, art. 90.º): 3 h (20 a 29), 4 h (30 a 33), 5 h (34 a 37), 6 h (38 ou mais). Abaixo de 20 h: sem referência. */
+  const limiteDispensa = h => { const n = num(h); return n >= 38 ? 6 : n >= 34 ? 5 : n >= 30 ? 4 : n >= 20 ? 3 : 0; };
 
   /* Feriados nacionais calculados (fixos + Páscoa, Sexta-feira Santa e Corpo de Deus) */
   function pascoa(y) {
@@ -874,6 +990,8 @@ table.quebra td { white-space: normal; }
     if (best && /^\d{4}-\d{2}-\d{2}$/.test(String(best.fim || '')) && best.fim < dateStr) return PERIODO_VAZIO;   // o período terminou e não há outro a seguir
     return best || ps[0];
   }
+  /* Trabalha-se neste dia da semana? (só o período; feriados, férias e pontes ficam à parte) */
+  function trabalhaEm(S, iso) { const p = parse(iso); return diasTrabSet(periodoAt(S, iso)).has(dow(p.y, p.m, p.d)); }
   function salMinAno(S, ano) {
     let best = null;
     S.salMin.forEach(r => { if (+r.ano <= ano && (!best || +r.ano > +best.ano)) best = r; });
@@ -981,9 +1099,10 @@ table.quebra td { white-space: normal; }
   }
 
   /* Combustível: estatísticas dos abastecimentos (porta do separador Combustível) */
-  function networkdays(a, b, holidays) {
+  function networkdays(a, b, holidays, dias) {
     if (a > b) return 0; let n = 0;
-    eachDay(a, b, d => { const p = parse(d), w = dow(p.y, p.m, p.d); if (w !== 0 && w !== 6 && !holidays.has(d)) n++; });
+    const tw = dias || diasTrabSet(null);
+    eachDay(a, b, d => { const p = parse(d), w = dow(p.y, p.m, p.d); if (tw.has(w) && !holidays.has(d)) n++; });
     return n;
   }
   const addDays = (s, n) => { const p = parse(s), t = new Date(Date.UTC(p.y, p.m - 1, p.d) + n * 86400000); return ymd(t.getUTCFullYear(), t.getUTCMonth() + 1, t.getUTCDate()); };
@@ -1000,7 +1119,7 @@ table.quebra td { white-space: normal; }
         if (has(a.kmConta) && has(p.kmConta)) { km = num(a.kmConta) - num(p.kmConta); origem = 'Conta-km'; }
         else {
           const per = periodoAt(S, a.data);
-          km = Math.max(0, networkdays(addDays(p.data, 1), a.data, holidays)) * num(per.km) + diffDays(p.data, a.data) / 7 * num(pr.kmExtra);
+          km = Math.max(0, networkdays(addDays(p.data, 1), a.data, holidays, diasTrabSet(per))) * num(per.km) + diffDays(p.data, a.data) / 7 * num(pr.kmExtra);
           origem = 'Estimado';
         }
         cons = has(a.litros) && km !== 0 ? num(a.litros) / km * 100 : null;
@@ -1037,6 +1156,7 @@ table.quebra td { white-space: normal; }
     const agora = new Date(), hojeFull = opt.hoje || ymd(agora.getFullYear(), agora.getMonth() + 1, agora.getDate());
     const cb = combustivel(S);
     const holidays = feriadosSet(S);
+    const tabsIrs = {}, tabIrs = y => (y in tabsIrs) ? tabsIrs[y] : (tabsIrs[y] = irsTabela(S, y));   // a tabela de retenção de cada ano, lida uma só vez
     const feriasSet = new Set();
     S.ferias.forEach(r => { if (r.de) eachDay(r.de, r.ate || r.de, d => feriasSet.add(d)); });
     const ponteMap = new Map();
@@ -1054,26 +1174,38 @@ table.quebra td { white-space: normal; }
     for (let i = 0; i < N; i++) {
       const ym = addM(pr.mesInicial, i), { y, m } = parse(ym), key = mk(ym), nd = dim(y, m);
       const man = S.plano[key] || {};
+      const per = periodoAt(S, ym), tw = diasTrabSet(per);
       let uteis = 0, hol = 0, fer = 0, pont = 0, pontDesc = 0;
       for (let d = 1; d <= nd; d++) {
-        const w = dow(y, m, d); if (w === 0 || w === 6) continue;
+        const w = dow(y, m, d); if (!tw.has(w)) continue;
         const ds = ymd(y, m, d);
         if (holidays.has(ds)) { hol++; continue; }
         uteis++;
         if (feriasSet.has(ds)) fer++;
         else if (ponteMap.has(ds)) { pont++; if (ponteMap.get(ds)) pontDesc++; }
       }
-      const per = periodoAt(S, ym);
       const dias = has(man.dias) ? num(man.dias) : Math.max(0, uteis - fer - pont);
       const bruto = per.salMin === 'Sim' ? salMinAno(S, y) : num(per.bruto);
       const bolsaLedger = opt.ignoraLedger ? 0 : num((ledger[key] || {}).bolsa);
       let X = has(man.rendManual) ? num(man.rendManual) : (bolsaLedger > 0 ? bolsaLedger : null);
       const contaX = has(man.rendManual) ? man.contaManual : (bolsaLedger > 0 ? 'Principal' : man.contaManual);
-      const irsT = irsAplicado(per.irsModo, per.irs, bruto);
+      const tabY = tabIrs(y);
+      const irsT = irsAplicado(per.irsModo, per.irs, bruto, tabY);
       const liq = X !== null ? X : bruto * (1 - ss - irsT);
+      // subsídios de férias e de Natal calculados pelo contrato (per.subsidios): cada um vale um salário bruto e tem retenção própria, pela taxa do valor do subsídio (CIRS, art. 99.º-C).
+      // Em duodécimos: 1/12 de cada em todos os meses. Em junho e novembro: um em cada mês, proporcional aos meses do ano (até esse mês) em que há um período com a mesma escolha.
+      let subsAuto = 0, subsAutoLiq = 0;
+      if (X === null && bruto > 0 && (per.subsidios === 'Duodécimos' || per.subsidios === 'Junho e novembro')) {
+        if (per.subsidios === 'Duodécimos') subsAuto = bruto / 6;
+        else if (m === 6 || m === 11) { let ativos = 0; for (let k = 1; k <= m; k++) { const pk = periodoAt(S, ymd(y, k, 1)); if (pk.subsidios === per.subsidios && String(pk.inicio).slice(0, 7) <= ymd(y, k, 1).slice(0, 7)) ativos++; } subsAuto = bruto * ativos / m; }   // (antes do 1.º período, periodoAt devolve esse: só conta a partir do mês em que ele começa)
+        const tx = per.irsModo === 'Automático' ? irsTaxa(per.subsidios === 'Duodécimos' ? bruto : subsAuto, tabY) : num(per.irs);
+        subsAutoLiq = subsAuto * (1 - ss - tx);
+      }
       const mesCb = cb.mes[key];
       const preco = has(man.preco) ? num(man.preco) : (mesCb && mesCb.precoMes !== null ? mesCb.precoMes : cb.precoUsado);
-      const sub = X !== null ? 0 : dias * num(per.subs);
+      // subsídio de alimentação: só o que passa do limite isento por dia paga Segurança Social e IRS
+      const subsExcesso = X !== null ? 0 : Math.max(0, num(per.subs) - subsIsento(S, y, per.cartao !== 'Não')) * dias;
+      const sub = X !== null ? 0 : dias * num(per.subs) - subsExcesso * (ss + irsT);
       const comb = dias * num(per.km) * cb.consumoUsado / 100 * preco;
       const port = dias * num(per.portagens);
       const manut = dias * num(per.km) * num(pr.manut);
@@ -1095,8 +1227,8 @@ table.quebra td { white-space: normal; }
       const combReg = gComb.size ? S.gastos.reduce((a, g) => a + (gComb.has(g) && g.data >= ym && g.data < next ? num(g.valor) : 0), 0) : 0, combExtra = Math.max(0, combReg - comb);
       const varPlano = orcM.varPlano + combExtra;
       months.push({ i, ym, key, fase: faseDe(periodoAt(S, ym)), dias, uteis, hol, fer, pont, pontDesc, km: num(per.km), per,
-        bruto, liq, irs: irsT, X, contaX, subs: sub, comb, port, manut, fixas, fixasCat, extra, gastosMes, combReg, combExtra, varPlano, orc: orcM, preco, cartao: per.cartao,
-        G: 0, H: 0, totalDesp: comb + port + manut + fixas + extra + varPlano, man });
+        bruto, liq, irs: irsT, X, contaX, subs: sub, subsExcesso, subsAuto, subsAutoLiq, comb, port, manut, fixas, fixasCat, extra, gastosMes, combReg, combExtra, varPlano, orc: orcM, preco, cartao: per.cartao,
+        G: subsAutoLiq, H: 0, totalDesp: comb + port + manut + fixas + extra + varPlano, man });
     }
     // extras de rendimento (valor automático = salário líquido do mês da data)
     const liqPorMes = {}; months.forEach(mo => { liqPorMes[mo.key] = mo.liq; });
@@ -1150,7 +1282,7 @@ table.quebra td { white-space: normal; }
     const preco = cb.precoUsado, cons = cb.consumoUsado, dp = num(pr.dias), manutKm = num(pr.manut);
     const deslocMes = (km, port) => dp * (km * cons / 100 * preco + port + km * manutKm);
     const cenarios = [920, 1000, 1100, 1200, 1300].map(b => {
-      const irsC = irsAplicado(pI.irsModo, pI.irs, b), liqC = b * (1 - ss - irsC);
+      const irsC = irsAplicado(pI.irsModo, pI.irs, b, tabIrs(parse(hojeFull).y)), liqC = b * (1 - ss - irsC);
       return { bruto: b, liq: liqC, irs: irsC,
         mesI: liqC - deslocMes(num(pI.km), num(pI.portagens)) - fixasMensal,
         mesL: liqC - deslocMes(num(pL.km), num(pL.portagens)) - fixasMensal,
@@ -1158,7 +1290,7 @@ table.quebra td { white-space: normal; }
         anoL: liqC * 14 - 11 * deslocMes(num(pL.km), num(pL.portagens)) - 12 * fixasMensal };
     });
     const propostas = (S.propostas || []).map(o => {
-      const irsP = irsAplicado(o.irsModo, o.irs, o.bruto), liqP = num(o.bruto) * (1 - ss - irsP);
+      const irsP = irsAplicado(o.irsModo, o.irs, o.bruto, tabIrs(parse(hojeFull).y)), liqP = num(o.bruto) * (1 - ss - irsP);
       const cartao = num(o.subs) * num(o.dias);
       const combP = num(o.dias) * num(o.km) * cons / 100 * preco;
       const portP = num(o.dias) * num(o.port);
@@ -1238,7 +1370,7 @@ table.quebra td { white-space: normal; }
       .map(r => {
         const p = parse(r.data), w = dow(p.y, p.m, p.d), tipo = r.tipo || '';
         const per = periodoAt(S, r.data) || {}, hDia = has(per.horasDia) ? num(per.horasDia) : num(pr.horasDia);
-        const semPrev = w === 0 || w === 6 || hol.has(r.data) || pontes.has(r.data) || (tipo !== '' && tipo !== 'Trabalho' && tipo !== 'Falta injustificada');
+        const semPrev = !diasTrabSet(per).has(w) || hol.has(r.data) || pontes.has(r.data) || (tipo !== '' && tipo !== 'Trabalho' && tipo !== 'Falta injustificada');
         const previstas = semPrev ? 0 : hDia;
         const a = horaDe(r.i1), b = horaDe(r.f1), c = horaDe(r.i2), d = horaDe(r.f2);
         const total = (a !== null && b !== null) ? (b - a) + ((c !== null && d !== null) ? d - c : 0) : null;
@@ -1891,7 +2023,7 @@ table.quebra td { white-space: normal; }
       investido: Math.max(0, num(c.investido)), atual: has(c.atual) ? Math.max(0, num(c.atual)) : Math.max(0, num(c.investido)), atualDefinido: has(c.atual),
       aporte: Math.max(0, num(c.aporte)), rend: Math.max(-100, Math.min(1000, num(c.rend))), inicio: dataReal(c.inicio) }));
   }
-  root.PlannerEngine = { idMovimento, investimentos, TIPOS_INVESTIMENTO, contasExtra, contasPoupancaExtra, grupoDesc, gruposMovimentos, linhasDeXlsx, fechoMes, reservaAnuais, liquidezMes, subidasPreco, ritmoObjetivo, calc, previsao, semRendimento, taxaPoupanca, sugestoesExtrato, apoios, simularApoio, horizonte, abaixoDoMinimo, combustivel, addM, mk, num, has, parse, fixaEquiv, ocorrencias, periodoAt, salMinAno, ymd, pad, limiteMensal, orcMes, PERIODOS_ORC, irsRetencao, irsTaxa, irsAplicado, IRS_TABELA_I_2026, pascoa, feriadosNacionais, feriadosSet, expandir, expandirPontes, horaDe, horasDias, bancoHoras, saldoFerias, TIPOS_DIA, estudanteAtivo,
+  root.PlannerEngine = { idMovimento, investimentos, TIPOS_INVESTIMENTO, contasExtra, contasPoupancaExtra, grupoDesc, gruposMovimentos, linhasDeXlsx, fechoMes, reservaAnuais, liquidezMes, subidasPreco, ritmoObjetivo, calc, previsao, semRendimento, taxaPoupanca, sugestoesExtrato, apoios, simularApoio, horizonte, abaixoDoMinimo, combustivel, addM, mk, num, has, parse, fixaEquiv, ocorrencias, periodoAt, salMinAno, ymd, pad, limiteMensal, orcMes, PERIODOS_ORC, irsRetencao, irsTaxa, irsAplicado, irsTabela, IRS_TABELA_I_2026, subsIsento, SUBS_ISENTO_2026, diasTrabSet, trabalhaEm, DIAS_TRAB_PADRAO, limiteDispensa, pascoa, feriadosNacionais, feriadosSet, expandir, expandirPontes, horaDe, horasDias, bancoHoras, saldoFerias, TIPOS_DIA, estudanteAtivo,
     parseNumero, parseData, parseCSV, detectarColunas, movimentosDeCSV, movimentosDeTexto, movimentosDePdf, conferirSaldos, normalizaDesc, chaveDesc, categorizar, aprender, jaRegistado, duplicados };
   if (typeof module !== 'undefined') module.exports = root.PlannerEngine;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -2102,7 +2234,7 @@ table.quebra td { white-space: normal; }
   const LISTAS = {
     get contas() { const b = LISTAS_BASE.contas.slice(); E.contasExtra(S).forEach(c => b.splice(b.length - 1, 0, c.nome)); return b; },
     get tipos() { return juntaLista(LISTAS_BASE.tipos, uiCfg().tiposRend); },
-    irsModo: ['Automático', 'Manual'], get tipoContrato() { return juntaLista(LISTAS_BASE.tipoContrato, uiCfg().tiposPeriodo); },
+    irsModo: ['Automático', 'Manual'], subsidios: ['Não calcular', 'Duodécimos', 'Junho e novembro'], get tipoContrato() { return juntaLista(LISTAS_BASE.tipoContrato, uiCfg().tiposPeriodo); },
     period: ['Semanal', 'Quinzenal', 'Mensal', 'Trimestral', 'Semestral', 'Anual'], periodoOrc: ['Diário', 'Semanal', 'Quinzenal', 'Mensal'], simnao: ['Sim', 'Não'], freq: ['Única', 'Mensal', 'Anual']
   };
   const TABS = [['inicio', 'Início'], ['apoios', 'Apoios'], ['sintese', 'Síntese e previsão', 'Poupança daqui a 1, 2, 3, 5 e 10 anos'], ['plano', 'Plano mensal'], ['sintese', 'Síntese e previsão'], ['rendimentos', 'Rendimentos'], ['despesas', 'Gastos'], ['importar', 'Importar'], ['orcamento', 'Orçamento'], ['recorrentes', 'Recorrentes'], ['horas', 'Horas'], ['calendario', 'Calendário'], ['combustivel', 'Combustível'], ['poupanca', 'Poupança e contas'], ['propostas', 'Propostas'], ['definicoes', 'Definições'], ['categorias', 'Categorias e ícones'], ['trabcfg', 'Regras do trabalho']];
@@ -2117,7 +2249,7 @@ table.quebra td { white-space: normal; }
   const LATERAL = { importar: 'Dia a dia', categorias: 'Dia a dia', trabcfg: 'Trabalho', propostas: 'Planeamento', apoios: 'Planeamento', definicoes: 'Menu' };
   const ultimaAba = {};
   /* Personalização: o que a pessoa escolhe mostrar, a ordem do Início, tipos próprios, alertas e aspeto. Guardado em S.ui (só existe depois de mudar alguma coisa). */
-  const BLOCOS_INICIO = [['lembretes', 'Lembretes', /<h2>Lembretes</], ['pode', 'Quanto posso gastar?', /Quanto posso gastar\?/], ['pagamentos', 'Próximos pagamentos', /<h2>Próximos pagamentos</], ['graficos', 'Gráficos', /<h2>Em gráficos</], ['poupanca', 'Poupança acumulada', /Poupança acumulada</], ['investimentos', 'Investimentos', /Investimentos<\/h2>/]];
+  const BLOCOS_INICIO = [['lembretes', 'Lembretes', /<h2>Lembretes</], ['trabalho', 'Horário de trabalho', /<h2>⏰ Horário de trabalho</], ['pode', 'Quanto posso gastar?', /Quanto posso gastar\?/], ['pagamentos', 'Próximos pagamentos', /<h2>Próximos pagamentos</], ['graficos', 'Gráficos', /<h2>Em gráficos</], ['poupanca', 'Poupança acumulada', /Poupança acumulada</], ['investimentos', 'Investimentos', /Investimentos<\/h2>/]];
   const listaTxt = (x, n) => (Array.isArray(x) ? x : []).map(v => String(v == null ? '' : v).replace(/[\u0000-\u001F\u007F]/g, ' ').trim().slice(0, 40)).filter(Boolean).slice(0, n || 30);
   function uiCfg() {
     const u = (S && S.ui && typeof S.ui === 'object') ? S.ui : {}, al = u.alertas || {}, as = u.aspeto || {};
@@ -2385,9 +2517,10 @@ table.quebra td { white-space: normal; }
   const f1 = new Intl.NumberFormat('pt-PT', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   const pctTxt = x => (x == null || !isFinite(x)) ? '' : f1.format(x * 100) + ' %';
   let irsSim = 1000;
+  const subsAutoAtivo = () => (S.periodos || []).some(p => p && (p.subsidios === 'Duodécimos' || p.subsidios === 'Junho e novembro'));   // os subsídios de férias e de Natal vêm de algum contrato
   function irsSimHtml(b) {
-    const ret = E.irsRetencao(b), ss = b * num(S.press.ss);
-    return '<div class="tablewrap"><table class="mini"><tbody><tr><td>Retenção de IRS</td><td><b>' + eur(ret) + '</b> (' + pctTxt(E.irsTaxa(b)) + ')</td></tr><tr><td>Segurança Social (' + pctTxt(num(S.press.ss)) + ')</td><td>' + eur(ss) + '</td></tr><tr class="tot"><td>Salário líquido</td><td>' + eur(b - ret - ss) + '</td></tr></tbody></table></div>';
+    const tab = E.irsTabela(S, hoje.getFullYear()), ret = E.irsRetencao(b, tab), ss = b * num(S.press.ss);
+    return '<div class="tablewrap"><table class="mini"><tbody><tr><td>Retenção de IRS</td><td><b>' + eur(ret) + '</b> (' + pctTxt(E.irsTaxa(b, tab)) + ')</td></tr><tr><td>Segurança Social (' + pctTxt(num(S.press.ss)) + ')</td><td>' + eur(ss) + '</td></tr><tr class="tot"><td>Salário líquido</td><td>' + eur(b - ret - ss) + '</td></tr></tbody></table></div>';
   }
 
   /* ---------- acesso por caminho ---------- */
@@ -2593,8 +2726,46 @@ table.quebra td { white-space: normal; }
   }
 
   /* ---------- registo rápido: o "+" abre uma folha no próprio sítio, sem mudar de página ---------- */
-  let rapido = null;   // { tipo: 'g' | 'r', valor, desc, data, cat, conta, novo, catEscolhida }
+  let rapido = null;   // { tipo: 'g' | 'r' | 'a' (abastecimento) | 'h' (dia de trabalho) | 'c' (férias ou feriado), valor, desc, data, cat, conta, novo, catEscolhida, f: campos dos tipos a, h e c }
   const rapidoDefaults = { g: { conta: 'Principal' }, r: { conta: 'Principal' } };
+  const RAP_EXTRA = { a: ['litros', 'preco', 'km', 'posto'], h: ['i1', 'b1', 'b2', 'f2', 'tar', 'obs', 'disc', 'disp'], c: ['ate', 'nome'] };   // ids q-… dos campos de texto de cada folha
+  const MARCAS = [['ferias', 'Férias'], ['feriado', 'Feriado'], ['oferecido', 'Dia oferecido'], ['ponte', 'Ponte']];
+  const ultimoTrabalho = () => S.horas.registo.filter(r => r.tipo === 'Trabalho' && r.i1).sort((a, b) => a.data < b.data ? 1 : -1)[0] || {};
+  function rapidoBase(t) {
+    const q = { tipo: t, valor: '', desc: '', data: hojeIso(), cat: t === 'g' || t === 'r' ? ultimaCat(t) : '', conta: (rapidoDefaults[t] || {}).conta, novo: true, catEscolhida: false, f: {} };
+    if (t === 'a') q.f = { litros: '', preco: '', km: '', posto: '' };
+    if (t === 'h') { const u = ultimoTrabalho(), sem = !u.i2; q.f = { tipo: 'Trabalho', i1: u.i1 || '', b1: sem ? '' : u.f1 || '', b2: sem ? '' : u.i2 || '', f2: sem ? u.f1 || '' : u.f2 || '', tar: '', obs: '', disc: '', disp: '' }; }   // os horários vêm do último dia de trabalho; sem almoço, a saída é o fim da manhã desse dia
+    if (t === 'c') q.f = { tipo: 'ferias', ate: '', nome: '', repete: true };
+    return q;
+  }
+  /* Rascunhos: uma folha fechada sem registar (um toque fora, sem querer) guarda o que se escreveu, e volta quando se abre outra vez a mesma folha. Só nesta sessão. */
+  let rapidoRasc = {};
+  const rapidoCampos = q => JSON.stringify([q.valor, q.desc, q.data, q.cat, q.conta, q.f]);
+  function rapidoNovo(t, data) {
+    const q = rapidoBase(t), r = rapidoRasc[t];
+    if (data && dataOk(data)) { q.data = data; return q; }   // aberta a partir de um dia (Calendário): começa nesse dia, sem o rascunho
+    if (r) { Object.assign(q, r, { f: Object.assign({}, r.f), novo: true, recuperado: true }); }
+    return q;
+  }
+  function fechaRapido() {
+    if (!rapido) return;
+    lerRapido();
+    if (rapidoCampos(rapido) !== rapidoCampos(rapidoBase(rapido.tipo))) { rapidoRasc[rapido.tipo] = Object.assign({}, rapido, { f: Object.assign({}, rapido.f) }); aviso('Guardei o que escreveu. Abra esta folha outra vez para continuar.'); }
+    else rapidoRasc[rapido.tipo] = null;
+    rapido = null;
+  }
+  const rapidoNota = () => rapido.recuperado ? '<p class="note" role="status">Recuperei o que tinha escrito. <button type="button" class="lnk" data-act="rapido-limpar">Começar de novo</button></p>' : '';
+  /* "Recentes": as últimas descrições diferentes, com a categoria e o valor da última vez. Um toque preenche tudo; só falta confirmar o valor. */
+  function recentesRapido(t) {
+    const vistos = new Set(), out = [];
+    (t === 'g' ? S.gastos : S.extras).slice().reverse().forEach(x => { const d = String(x.desc || '').trim(), k = d.toLowerCase(), v = num(x.valor); if (d && !x.fixa && !vistos.has(k) && out.length < 6 && v !== 0) { vistos.add(k); out.push({ desc: d, cat: t === 'g' ? x.cat : x.tipo, valor: v }); } });
+    return out;
+  }
+  function rapidoRecentesHtml() {
+    if (rapido.desc) return '';
+    const l = recentesRapido(rapido.tipo); if (!l.length) return '';
+    return '<div class="field"><label>Recentes</label><div class="catchips" role="group" aria-label="Recentes: um toque preenche a descrição, a categoria e o valor">' + l.map((r, i) => '<button type="button" class="catchip" id="q-rec-' + i + '" data-act="q-rec:' + i + '">' + esc(r.desc) + ' <small class="muted">' + eur(r.valor) + '</small></button>').join('') + '</div></div>';
+  }
   const chaveUltCat = t => 'planner-ultcat-' + t;
   const ultimaCat = t => { try { const c = localStorage.getItem(chaveUltCat(t)) || ''; return (t === 'g' ? catNomes() : LISTAS.tipos).indexOf(c) >= 0 ? c : ''; } catch (e) { return ''; } };
   const sugestoesDesc = t => { const vistos = new Set(), out = []; (t === 'g' ? S.gastos : S.extras).slice().reverse().forEach(x => { const d = String(x.desc || '').trim(), k = d.toLowerCase(); if (d && !x.fixa && !vistos.has(k) && out.length < 40) { vistos.add(k); out.push(d); } }); return out; };
@@ -2602,23 +2773,152 @@ table.quebra td { white-space: normal; }
     if (!rapido) return;
     const v = document.getElementById('q-valor'), d = document.getElementById('q-desc'), t = document.getElementById('q-data');
     if (v) rapido.valor = String(v.value == null ? '' : v.value); if (d) rapido.desc = String(d.value == null ? '' : d.value); if (t) rapido.data = String(t.value || '');
-    const c = document.getElementById('q-conta'); if (c && LISTAS.contas.indexOf(c.value) >= 0) rapidoDefaults[rapido.tipo].conta = rapido.conta = c.value;
+    const c = document.getElementById('q-conta'); if (c && rapidoDefaults[rapido.tipo] && LISTAS.contas.indexOf(c.value) >= 0) rapidoDefaults[rapido.tipo].conta = rapido.conta = c.value;
+    (RAP_EXTRA[rapido.tipo] || []).forEach(k => { const e = document.getElementById('q-' + k); if (e) rapido.f[k] = String(e.value == null ? '' : e.value); });
+  }
+  /* ---- as folhas do abastecimento, do dia de trabalho e das férias/feriados: o mesmo gesto do gasto, sem sair da página ---- */
+  const qData = (rot, amanha) => field(rot, '<div class="comb"><input type="date" id="q-data" min="1990-01-01" max="2100-12-31" value="' + esc(rapido.data) + '"><button type="button" class="btn" data-act="q-data:0">Hoje</button><button type="button" class="btn" data-act="q-data:' + (amanha ? '-1">Amanhã' : '1">Ontem') + '</button></div>');
+  const qTxt = (id, v, o) => '<input type="' + ((o && o.t) || 'text') + '" id="q-' + id + '" value="' + esc(v) + '"' + ((o && o.extra) || '') + '>';
+  const qChip = (id, act, txt, on) => '<button type="button" class="catchip" id="' + id + '" data-act="' + act + '" aria-pressed="' + (!!on) + '">' + txt + '</button>';
+  function rapidoFolha(titulo, ico, corpo, botao, irTab, irTxt) {
+    return '<div class="modal baixo" data-act="rapido-fechar"><div class="sheet larga" role="dialog" aria-modal="true" aria-label="' + esc(titulo) + '">' +
+      '<div class="row sh-topo"><h2>' + ico + ' ' + esc(titulo) + '</h2><button class="x" data-act="rapido-fechar" aria-label="Fechar">×</button></div>' + rapidoNota() + corpo +
+      '<div class="row sh-fim"><span id="q-msg" class="muted" role="status"></span><button type="button" class="btn" data-act="rapido-ir:' + irTab + '">' + esc(irTxt) + '</button><button type="button" class="btn pri" data-act="rapido-ok">' + esc(botao) + '</button></div></div></div>';
+  }
+  /* entrada, início e fim do almoço, saída → a manhã e a tarde do registo; sem almoço, a manhã vai da entrada à saída */
+  function horarioMapa(f) {
+    const a = f.i1 || '', b = f.b1 || '', c = f.b2 || '', d = f.f2 || '', h = E.horaDe;
+    if (![a, b, c, d].every(x => !x || horaOk(x))) return { erro: 'Horas inválidas (use HH:MM).' };
+    if (!a) return { erro: 'Falta a hora de entrada.' };
+    if (b || c) {
+      if (!(b && c)) return { erro: 'Preencha o início e o fim do almoço, ou deixe os dois vazios.' };
+      if (!d) return { erro: 'Falta a hora de saída.' };
+      if (!(h(a) < h(b) && h(b) < h(c) && h(c) < h(d))) return { erro: 'As horas têm de ir por ordem: entrada, início do almoço, fim do almoço e saída.' };
+      return { i1: a, f1: b, i2: c, f2: d, horas: h(b) - h(a) + h(d) - h(c) };
+    }
+    if (!d) return { erro: 'Falta a hora de saída.' };
+    if (h(d) <= h(a)) return { erro: 'A saída tem de ser depois da entrada.' };
+    return { i1: a, f1: d, i2: '', f2: '', horas: h(d) - h(a) };
+  }
+  const DICA_ALMOCO = 'Sem almoço? Deixe o almoço em branco: conta da entrada à saída.';
+  const resumoHoras = f => { const m = horarioMapa(f); return m.erro ? '' : 'Total do dia: ' + hh(Math.round(m.horas * 100) / 100); };
+  function rapidoHoras() {
+    const f = rapido.f, trab = f.tipo === 'Trabalho', est = S.press.estudante || {};
+    const chips = E.TIPOS_DIA.map((t, i) => qChip('q-tipo-' + i, 'q-tipo:' + i, esc(t), f.tipo === t)).join('');
+    const tm = (id, rot) => field(rot, qTxt(id, f[id], { t: 'time' }));
+    return rapidoFolha('Registar um dia de trabalho', '⏰',
+      qData('Dia') +
+      '<div class="field" style="margin-top:10px"><label>Tipo de dia</label><div class="catchips" role="group" aria-label="Tipo de dia">' + chips + '</div></div>' +
+      (trab ? '<div class="fields fx-campos q-campos q-horas">' + tm('i1', 'Entrada') + tm('b1', 'Início do almoço') + tm('b2', 'Fim do almoço') + tm('f2', 'Saída') + '</div><p class="note" id="q-resumo" aria-live="polite">' + esc(resumoHoras(f) || DICA_ALMOCO) + '</p>' : '') +
+      '<div class="fields fx-campos q-campos">' + field('Tarefas realizadas', qTxt('tar', f.tar, { extra: ' maxlength="200" autocomplete="off" placeholder="ex.: reunião, relatório"' })) + field('Observações', qTxt('obs', f.obs, { extra: ' maxlength="200" autocomplete="off"' })) +
+      (f.tipo === 'Exame' ? field('Disciplina', qTxt('disc', f.disc, { extra: ' maxlength="60"' })) : '') +
+      (est.ativo === 'Sim' ? field('Dispensa de estudante (h)', qTxt('disp', f.disp, { t: 'number', extra: ' inputmode="decimal" step="any" placeholder="auto"' }), 'Vazio: a dispensa do dia da semana.') : '') + '</div>',
+      'Registar dia', 'horas', 'Abrir as Horas');
+  }
+  function rapidoAbast() {
+    const f = rapido.f, ult = S.combustivel.abast.filter(a => isFinite(parseFloat(a.kmConta))).sort((x, y) => x.data < y.data ? 1 : -1)[0];
+    const n = (id, v, rot, dica) => field(rot, qTxt(id, v, { t: 'number', extra: ' inputmode="decimal" step="any"' }), dica);
+    return rapidoFolha('Novo abastecimento', '⛽',
+      '<div class="valorbox"><span aria-hidden="true">€</span><input type="number" inputmode="decimal" step="any" id="q-valor" placeholder="0,00" aria-label="Valor pago em euros" value="' + esc(rapido.valor) + '"></div>' +
+      '<p class="note">Preencha 2 dos 3: valor, litros e preço por litro. O terceiro calcula-se.</p>' +
+      qData('Data') + '<div class="fields fx-campos q-campos" style="margin-top:10px">' + n('litros', f.litros, 'Litros') + n('preco', f.preco, 'Preço no talão (€/L)') + n('km', f.km, 'Km no conta-quilómetros', ult ? 'Último registado: ' + f0.format(num(ult.kmConta)) : '') +
+      field('Posto / notas', qTxt('posto', f.posto, { extra: ' maxlength="200" autocomplete="off"' })) + '</div>',
+      'Registar abastecimento', 'combustivel', 'Abrir o Combustível');
+  }
+  const ateDe = q => q.f.tipo === 'feriado' ? '' : String(q.f.ate || '');   // um feriado é um só dia: o "até" não conta
+  const marcaDe = q => ({ tipo: q.f.tipo, data: q.data, ate: ateDe(q), nome: limpaTexto(q.f.nome, 60), repete: q.f.repete, anos: [], carnaval: false });
+  const diasMarca = q => { const d = q.data, a = ateDe(q), ate = a && a >= d ? a : d, hol = E.feriadosSet(S); let n = 0; eachIso(d, ate, x => { if (E.trabalhaEm(S, x) && !hol.has(x)) n++; }); return n; };
+  function previsaoRapida() {
+    const q = rapido, d = q.data, a = ateDe(q);
+    if (!dataOk(d) || (a && (!dataOk(a) || a < d))) return '';
+    if (q.f.tipo !== 'ferias') return previsaoMarca(marcaDe(q));
+    const St = clone(S), ate = a || d, y = +d.slice(0, 4); St.ferias.push({ de: d, ate }); St.ferias = normFerias(St.ferias);
+    const antes = R.horas.ferias.find(x => x.ano === y), depois = E.calc(St).horas.ferias.find(x => x.ano === y), n = diasMarca(q);
+    return n + (n === 1 ? ' dia útil' : ' dias úteis') + ' de férias' + (antes && depois ? '. Saldo de férias de ' + y + ': de ' + antes.saldo + ' para ' + depois.saldo + ' dias.' : '.');
+  }
+  function rapidoCal() {
+    const f = rapido.f, t = f.tipo, fer = t === 'ferias', unico = t === 'feriado';
+    return rapidoFolha('Marcar férias ou feriado', '📅',
+      '<div class="field"><label>O que quer marcar?</label><div class="catchips" role="group" aria-label="O que quer marcar">' + MARCAS.map(m => qChip('q-tipo-' + m[0], 'q-tipo:' + m[0], m[1], t === m[0])).join('') + '</div></div>' +
+      qData(unico ? 'Dia' : 'De', true) + '<div class="fields fx-campos q-campos" style="margin-top:10px">' + (unico ? '' : field('Até', '<div class="comb"><input type="date" id="q-ate" min="1990-01-01" max="2100-12-31" value="' + esc(f.ate) + '"></div>', 'Vazio: só esse dia.')) +
+      (fer ? '' : field('Nome', qTxt('nome', f.nome, { extra: ' maxlength="60" autocomplete="off" placeholder="' + (unico ? 'ex.: Feriado municipal' : t === 'ponte' ? 'ex.: Ponte' : 'ex.: Carnaval') + '"' }))) + '</div>' +
+      (fer ? '' : '<div class="row" style="margin:6px 0">' + qChip('q-repete', 'q-repete', 'Repetir todos os anos', f.repete) + '</div>') +
+      '<p class="note" id="q-previsao" aria-live="polite">' + esc(previsaoRapida()) + '</p>',
+      'Marcar', 'calendario', 'Abrir o Calendário');
   }
   function rapidoHtml() {
     if (!rapido) return '';
     if (!rapido.novo) lerRapido(); rapido.novo = false;
+    if (rapido.tipo === 'h') return rapidoHoras();
+    if (rapido.tipo === 'a') return rapidoAbast();
+    if (rapido.tipo === 'c') return rapidoCal();
     const g = rapido.tipo === 'g', itens = g ? catNomes() : LISTAS.tipos;
     const chips = itens.map((c, i) => '<button type="button" class="catchip" data-act="q-cat:' + i + '" aria-pressed="' + (rapido.cat === c) + '"><span class="cem" aria-hidden="true">' + esc(g ? catIcon(c) : (TIPO_ICO[c] || '✨')) + '</span>' + esc(c) + '</button>').join('');
     return '<div class="modal baixo" data-act="rapido-fechar"><div class="sheet larga" role="dialog" aria-modal="true" aria-label="' + (g ? 'Novo gasto' : 'Novo rendimento') + '">' +
-      '<div class="row sh-topo"><h2>' + (g ? '💸 Novo gasto' : '💰 Novo rendimento') + '</h2><button class="x" data-act="rapido-fechar" aria-label="Fechar">×</button></div>' +
-      '<div class="valorbox"><span aria-hidden="true">€</span><input type="number" inputmode="decimal" step="any" min="-10000000" max="10000000" id="q-valor" placeholder="0,00" aria-label="Valor em euros" value="' + esc(rapido.valor) + '"></div>' +
+      '<div class="row sh-topo"><h2>' + (g ? '💸 Novo gasto' : '💰 Novo rendimento') + '</h2><button class="x" data-act="rapido-fechar" aria-label="Fechar">×</button></div>' + rapidoNota() +
+      '<div class="valorbox"><span aria-hidden="true">€</span><input type="number" inputmode="decimal" step="any" min="-10000000" max="10000000" id="q-valor" placeholder="0,00" aria-label="Valor em euros" value="' + esc(rapido.valor) + '"></div>' + rapidoRecentesHtml() +
       '<div class="fields fx-campos q-campos">' + field('Descrição', '<input type="text" id="q-desc" maxlength="120" list="q-sug" autocomplete="off" placeholder="' + (g ? 'ex.: supermercado' : 'ex.: prenda de anos') + '" value="' + esc(rapido.desc) + '"><datalist id="q-sug">' + sugestoesDesc(rapido.tipo).map(d => '<option value="' + esc(d) + '">').join('') + '</datalist>') +
       field('Data', '<div class="comb"><input type="date" id="q-data" min="1990-01-01" max="2100-12-31" value="' + esc(rapido.data) + '"><button type="button" class="btn" data-act="q-data:0">Hoje</button><button type="button" class="btn" data-act="q-data:1">Ontem</button></div>') +
       field('Conta', '<select id="q-conta">' + LISTAS.contas.map(c => '<option value="' + esc(c) + '"' + (rapido.conta === c ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</select>') + '</div>' +
       '<div class="field"><label>' + (g ? 'Categoria' : 'Tipo') + '</label><div class="catchips grelha" role="group" aria-label="' + (g ? 'Categoria' : 'Tipo') + '">' + chips + '</div></div>' +
       '<div class="row sh-fim"><span id="q-msg" class="muted" role="status"></span><button type="button" class="btn pri" data-act="rapido-ok">' + (g ? 'Registar gasto' : 'Registar rendimento') + '</button></div></div></div>';
   }
+  /* A mesma regra para a folha rápida e para o formulário da página: devolvem o erro, ou '' quando registaram */
+  function registoHoras(v) {
+    const data = v.data || hojeIso(), tipo = v.tipo || 'Trabalho', trab = tipo === 'Trabalho';
+    if (S.horas.registo.some(r => r.data === data)) return 'Esse dia já está registado.';
+    if (!dataOk(data)) return 'Data inválida.';
+    if (trab && (!v.i1 || !v.f1)) return 'Falta o início e o fim da manhã.';
+    if (trab) { const er = errosHorario(v.i1, v.f1, v.i2, v.f2); if (er) return er; }
+    const dsp = parseFloat(v.disp);
+    S.horas.registo.push({ data, tipo, i1: trab ? v.i1 : '', f1: trab ? v.f1 : '', i2: trab ? v.i2 : '', f2: trab ? v.f2 : '', tarefas: limpaTexto(String(v.tar || '').trim(), 200), obs: limpaTexto(String(v.obs || '').trim(), 200), disciplina: limpaTexto(String(v.disc || '').trim(), 60), dispensa: isFinite(dsp) ? dsp : '' });
+    horaMes = data.slice(0, 7);
+    return '';
+  }
+  function registoAbast(v) {
+    let valor = parseFloat(v.valor), litros = parseFloat(v.litros), preco = parseFloat(v.preco);
+    const n = [valor, litros, preco].filter(isFinite).length;
+    if (n < 2) return 'Preencha 2 dos 3: valor, litros, preço.';
+    if ([valor, litros, preco].some(x => isFinite(x) && x <= 0) || valor > 5000 || litros > 500 || preco > 20) return 'Valores fora do normal: valor até 5000 €, litros até 500 e preço até 20 €/L.';
+    if (!isFinite(valor)) valor = Math.round(litros * preco * 100) / 100;
+    if (!isFinite(litros)) litros = Math.round(valor / preco * 100) / 100;
+    if (valor > 5000 || litros > 500) return 'O valor calculado passa o máximo (5000 € ou 500 litros). Verifique os números.';
+    if (n === 3 && Math.abs(valor - litros * preco) > 0.05) return 'Atenção: valor ≠ litros × preço. Verifique o talão.';
+    const km = parseFloat(v.km), dataA = v.data;
+    if (dataA && !dataOk(dataA)) return 'Data inválida.';
+    if (isFinite(km) && (km < 0 || km > 5e6)) return 'Km fora do intervalo.';
+    const antes = S.combustivel.abast.filter(a => a.data && a.data <= dataA && isFinite(parseFloat(a.kmConta))).sort((x, y) => x.data < y.data ? -1 : 1).pop();
+    const depoisA = S.combustivel.abast.filter(a => a.data && a.data > dataA && isFinite(parseFloat(a.kmConta))).sort((x, y) => x.data < y.data ? -1 : 1)[0];
+    if (isFinite(km) && depoisA && km >= parseFloat(depoisA.kmConta)) return 'O km tem de ser inferior ao do abastecimento seguinte (' + f0.format(parseFloat(depoisA.kmConta)) + ').';
+    if (isFinite(km) && antes && km <= parseFloat(antes.kmConta)) return 'O km tem de ser superior ao do abastecimento anterior (' + f0.format(parseFloat(antes.kmConta)) + ').';
+    S.combustivel.abast.push({ data: v.data, valor, litros, kmConta: isFinite(km) ? km : '', posto: String(v.posto || '').trim() });
+    return '';
+  }
+  function rapidoGuardarOutros() {
+    lerRapido(); const q = rapido, f = q.f, msg = document.getElementById('q-msg'), antes = JSON.stringify(S), dd = dataPt(dataOk(q.data) ? q.data : hojeIso()).slice(0, 5);
+    let erro = '', texto = '';
+    if (q.tipo === 'h') {
+      const m = f.tipo === 'Trabalho' ? horarioMapa(f) : {};
+      erro = m.erro || registoHoras({ data: q.data, tipo: f.tipo, i1: m.i1, f1: m.f1, i2: m.i2, f2: m.f2, tar: f.tar, obs: f.obs, disc: f.disc, disp: f.disp });
+      if (erro === 'Esse dia já está registado.') erro += ' Use «Abrir as Horas» para o alterar.';
+      texto = 'Dia ' + dd + ' registado' + (m.horas != null ? ' (' + hh(Math.round(m.horas * 100) / 100) + ')' : '') + '.';
+    } else if (q.tipo === 'a') {
+      erro = !q.data ? 'Falta a data.' : registoAbast({ valor: q.valor, litros: f.litros, preco: f.preco, km: f.km, data: q.data, posto: f.posto });
+      texto = 'Abastecimento de ' + dd + ' registado.';
+    } else {
+      const d = q.data, ate = ateDe(q); let nd = 0; if (dataOk(d) && (!ate || dataOk(ate))) eachIso(d, ate || d, () => { nd++; });
+      erro = !d ? 'Falta a data.' : !dataOk(d) ? 'Data inválida.' : (ate && !dataOk(ate)) ? 'A data final é inválida.' : (ate && ate < d) ? 'A data final tem de ser igual ou depois da inicial.' : nd > 366 ? 'No máximo 366 dias de cada vez.' : '';
+      if (!erro) {
+        if (f.tipo === 'ferias') { texto = 'Férias marcadas: ' + diasMarca(q) + ' dia(s) útil(eis).'; S.ferias.push({ de: d, ate: ate || d }); S.ferias = normFerias(S.ferias); }
+        else { texto = 'Marcado: ' + MARCAS.find(m => m[0] === f.tipo)[1].toLowerCase() + ' em ' + dd + '.'; aplicarMarca(S, marcaDe(q)); }
+      }
+    }
+    if (erro) { if (msg) msg.textContent = erro; return; }
+    rapidoRasc[q.tipo] = null; rapido = null; queueSave(); render();
+    aviso(texto, () => { S = merge(DEFAULTS, JSON.parse(antes)); queueSave(); render(); });
+  }
   function rapidoGuardar() {
+    if (rapido && rapido.tipo !== 'g' && rapido.tipo !== 'r') { rapidoGuardarOutros(); return; }
     lerRapido(); const q = rapido, v = parseFloat(q.valor), desc = String(q.desc || '').trim(), d = q.data, msg = document.getElementById('q-msg');
     const erro = (!desc || !isFinite(v)) ? 'Falta a descrição ou o valor.' : desc.length > 120 ? 'A descrição tem de ter no máximo 120 caracteres.' : (v === 0 || Math.abs(v) > 1e7) ? 'O valor tem de ser diferente de 0 e até 10 000 000 €.' : !d ? 'Falta a data.' : !dataOk(d) ? 'Data inválida.' : '';
     if (erro) { if (msg) msg.textContent = erro; return; }
@@ -2626,7 +2926,7 @@ table.quebra td { white-space: normal; }
     if (g) { S.gastos.push({ data: d, desc: limpaTexto(desc, 120), cat: catNomes().indexOf(q.cat) >= 0 ? q.cat : '', valor: v, conta: q.conta, notas: '' }); gastoMes = (d || '').slice(0, 7) || hojeYm; }
     else S.extras.push({ data: d, tipo: LISTAS.tipos.indexOf(q.cat) >= 0 ? q.cat : 'Outro', desc: limpaTexto(desc, 120), origem: '', valor: v, freq: 'Única', ate: '', conta: q.conta, contar: 'Sim', notas: '' });
     try { localStorage.setItem(chaveUltCat(q.tipo), (q.tipo === 'g' ? catNomes() : LISTAS.tipos).indexOf(q.cat) >= 0 ? q.cat : ''); } catch (e) { }   // da próxima vez a categoria já vem escolhida
-    rapido = null; queueSave(); render();
+    rapidoRasc[q.tipo] = null; rapido = null; queueSave(); render();
     aviso((g ? 'Gasto' : 'Rendimento') + ' de ' + eur(v) + ' registado.', () => { S = merge(DEFAULTS, JSON.parse(antes)); queueSave(); render(); });
   }
 
@@ -2929,6 +3229,17 @@ table.quebra td { white-space: normal; }
     return '<section class="card"><h2>Lembretes</h2>' + (atras.length ? '<p class="neg-v">' + (atras.length === 1 ? 'Tem 1 pagamento em atraso' : 'Tem ' + atras.length + ' pagamentos em atraso') + ' (' + eur(atras.reduce((x, o) => x + o.valor, 0)) + '): ' + esc(atras.slice(0, 3).map(o => (S.fixas[o.idx] || {}).desc || 'Sem nome').join(', ')) + (atras.length > 3 ? '…' : '') + '.</p>' : '') + (prox.length ? '<p>' + (prox.length === 1 ? '1 pagamento vence' : prox.length + ' pagamentos vencem') + ' nos próximos ' + dl + (dl === 1 ? ' dia' : ' dias') + ' (' + eur(prox.reduce((x, o) => x + o.valor, 0)) + ').</p>' : '') + (pagamentos.length ? '<button type="button" class="btn" data-act="ir:recorrentes">Ver os pagamentos</button>' : '') +
       (falta ? '<p>Você ainda não registou a transferência para a poupança de ' + esc(mesLongo(mo.ym)) + '. O saldo previsto disponível é ' + eur(mo.saldo) + '.</p><button type="button" class="btn" data-act="plano-mes:' + esc(mo.key) + '">Registar transferência</button>' : '') + '</section>';
   }
+  /* O horário de trabalho à mão: o dia de hoje (registado ou por registar), o saldo do mês e o caminho direto para as Horas */
+  function trabalhoHtml() {
+    const hi = hojeIso(), reg = S.horas.registo.find(r => r.data === hi), bm = R.horas.banco.find(b => b.key === hojeYm), linha = R.horas.rows.find(r => r.data === hi);
+    const marcas = marcasDoDia(hi).map(m => m.txt), fds = !E.trabalhaEm(S, hi), folga = !reg && (marcas.length > 0 || fds);
+    const quando = '<b>Hoje, ' + diaTxt(hi) + ':</b> ';
+    const estado = reg ? '<p>' + quando + (reg.tipo === 'Trabalho' ? esc([reg.i1 && reg.f1 ? reg.i1 + '–' + reg.f1 : '', reg.i2 && reg.f2 ? reg.i2 + '–' + reg.f2 : ''].filter(Boolean).join(' · ')) + (linha ? ' · ' + hh(linha.trabalhadas) + ' trabalhadas' : '') : esc(reg.tipo)) + '</p>'
+      : folga ? '<p>' + quando + esc(marcas.length ? marcas.join(' · ') : 'fim de semana') + '. Não é dia de trabalho.</p>' : '<p>' + quando + 'ainda sem registo.</p>';
+    return '<section class="card"><h2>⏰ Horário de trabalho</h2>' + estado +
+      (bm ? '<div class="grid" style="margin:10px 0">' + kpi('Saldo de ' + mesTxt(hojeYm + '-01'), hhs(bm.saldo), 'Trabalhadas ' + hh(bm.trabalhadas) + ' de ' + hh(bm.previstas), cls(bm.saldo)) + kpi('Banco de horas', hh(bm.acumulado), 'Acumulado até ao fim do mês', cls(bm.acumulado)) + '</div>' : '') +
+      '<div class="row" style="margin-top:12px"><button type="button" class="btn' + (reg || folga ? '' : ' pri') + '" data-act="rapido:h">' + (reg ? 'Registar outro dia' : 'Registar o dia de hoje') + '</button><button type="button" class="btn" data-act="ir:horas">Abrir as Horas</button><button type="button" class="btn" data-act="rapido:c">Marcar férias ou feriado</button></div></section>';
+  }
   function tabInicio() {
     const html = tabInicioBase(), cfg = uiCfg(), partes = html.split(/(?=<section)/), topo = [], blocos = [], fim = [];
     partes.forEach((p, i) => { const b = i === 0 ? null : BLOCOS_INICIO.find(x => x[2].test(p)); if (i === 0 || (!b && !blocos.length)) topo.push(p); else if (b) blocos.push([b[0], p]); else fim.push(p); });
@@ -2952,7 +3263,7 @@ table.quebra td { white-space: normal; }
     return '<section><h2>Visão geral</h2><p class="lead resumo">' + esc(resumoInicio(mesAtual, prox)) + '</p>' +
       '<div class="grid">' + kSaldo + kConta + kOrc + '</div>' +
       '<details class="ajuda"><summary>Mais indicadores</summary><div class="grid" style="margin-top:10px">' + kRend + kApoio + kMin + '</div></details></section>' +
-      primeiraVezHtml() + lembretesHtml() + podeHtml(mesAtual) +
+      primeiraVezHtml() + lembretesHtml() + trabalhoHtml() + podeHtml(mesAtual) +
       '<section><h2>Próximos pagamentos</h2><p class="lead">Os mais próximos por pagar. Toque em "Pago" quando sair da conta e fica registado nos gastos. No telemóvel, também pode deslizar um pagamento para a direita (pago) ou para a esquerda (saltar).</p>' + payRows(prox.slice(0, 4)) +
       '<div class="row" style="margin-top:12px"><button class="btn" data-act="ir:recorrentes">Ver todos os recorrentes' + (prox.length > 4 ? ' (mais ' + (prox.length - 4) + ' por pagar)' : '') + '</button></div></section>' +
       (window.Chart ? '<section><h2>Em gráficos</h2><p class="lead">As setas (ou deslizar o gráfico para o lado) mudam o período: hoje, esta semana, este mês, 3, 6 ou 12 meses. Hoje e esta semana mostram o que registou; os outros, a previsão do plano. Toque numa fatia para ver o detalhe.</p><div class="grid two">' +
@@ -3120,7 +3431,7 @@ table.quebra td { white-space: normal; }
     const neg = R.months.filter(m => m.saldo < 0);
     const HORIZ = [[6, '6 meses'], [12, '1 ano'], [24, '2 anos'], [36, '3 anos'], [48, '4 anos'], [60, '5 anos'], [120, '10 anos']];
     const fimPlano = R.months[R.months.length - 1], subs = S.extras.filter(e => /^Subsídio/.test(e.tipo || '') && e.contar === 'Sim' && e.data);
-    const ultSub = subs.filter(e => e.freq !== 'Anual').map(e => e.data.slice(0, 4)).sort().pop(), temAnual = subs.some(e => e.freq === 'Anual');
+    const ultSub = subs.filter(e => e.freq !== 'Anual').map(e => e.data.slice(0, 4)).sort().pop(), temAnual = subs.some(e => e.freq === 'Anual') || subsAutoAtivo();
     // a duração do plano é da pessoa: atalhos (6 meses a 10 anos) ou o número de meses que quiser, de 6 a 240
     const horizLinha = id => '<div class="row horiz" style="margin-top:14px"><span class="muted">Duração do plano</span><div class="seg" role="group" aria-label="Duração do plano">' + HORIZ.map(h => '<button type="button" data-act="horiz:' + h[0] + '" aria-pressed="' + (R.horizonte === h[0]) + '">' + h[1] + '</button>').join('') + '</div>' +
       '<label class="row horiz-n" for="' + id + '"><span class="muted">ou</span><input type="number" id="' + id + '" data-horiz="1" min="6" max="240" step="1" inputmode="numeric" value="' + R.horizonte + '" aria-label="Duração do plano, em meses (de 6 a 240)"><span class="muted">meses</span></label><span class="muted">Acaba em ' + mesLongo(fimPlano.ym) + '</span></div>';
@@ -3154,7 +3465,7 @@ table.quebra td { white-space: normal; }
     const semCard = '<section class="card"><h2>E se perdesse o rendimento?</h2>' + kpi('Duração da poupança atual', sem.meses !== null && sem.poupanca > 0 && Number.isFinite(sem.meses) ? esc(f2.format(sem.meses) + ' meses') : '—', '') + '<p class="note">' + esc(sem.despesaMensal <= 0 ? 'Você ainda não tem despesas mensais positivas no plano para estimar a duração da poupança.' : sem.poupanca <= 0 ? 'Você não tem poupança líquida positiva nos saldos de abertura registados.' : 'Se você deixasse de receber rendimentos, esta estimativa indica quanto tempo a poupança de abertura cobriria a média mensal das despesas do plano.') + '</p></section>';
     const prem = P.premissas, tem = prem.definidas;
     const subsOk = S.extras.filter(e => /^Subsídio/.test(e.tipo || '') && e.contar === 'Sim' && e.data);
-    const ultSub = subsOk.filter(e => e.freq !== 'Anual').map(e => e.data.slice(0, 4)).sort().pop(), temAnual = subsOk.some(e => e.freq === 'Anual');
+    const ultSub = subsOk.filter(e => e.freq !== 'Anual').map(e => e.data.slice(0, 4)).sort().pop(), temAnual = subsOk.some(e => e.freq === 'Anual') || subsAutoAtivo();
     const fim = P.meses[n - 1];
     const rot = m => m < 12 ? m + ' meses' : (m / 12) + (m === 12 ? ' ano' : ' anos');
     const marcos = P.marcos.map(m => '<tr><td class="l">' + rot(m.meses) + '</td><td>' + esc(mesLongo(m.ym)) + '</td><td>' + eur(m.entraAcum, 0) + '</td><td>' + eur(m.saiAcum, 0) + '</td><td class="' + cls(m.acum) + '"><b>' + eur(m.acum, 0) + '</b></td><td class="' + cls((m.acum - P.base) / m.meses) + '">' + eur((m.acum - P.base) / m.meses, 0) + '</td><td>' + m.vermelhos + '</td></tr>').join('');
@@ -3400,11 +3711,11 @@ table.quebra td { white-space: normal; }
   function aplicarMarca(St, sh) {
     const anos = sh.repete ? [] : sh.anos.slice();
     if (sh.tipo === 'feriado') St.feriados.push({ data: sh.data, nome: sh.nome || 'Feriado municipal', repete: sh.repete ? 'Sim' : 'Não', anos });
-    else St.pontes.push({ inicio: sh.data, ate: '', desc: sh.nome || (sh.tipo === 'ponte' ? 'Ponte' : 'Dia oferecido'), desconta: sh.tipo === 'ponte' ? 'Sim' : 'Não', repete: sh.repete ? 'Sim' : 'Não', anos, movel: sh.carnaval ? 'Carnaval' : '' });
+    else St.pontes.push({ inicio: sh.data, ate: sh.ate && sh.ate > sh.data ? sh.ate : '', desc: sh.nome || (sh.tipo === 'ponte' ? 'Ponte' : 'Dia oferecido'), desconta: sh.tipo === 'ponte' ? 'Sim' : 'Não', repete: sh.repete ? 'Sim' : 'Não', anos, movel: sh.carnaval ? 'Carnaval' : '' });
   }
-  function previsaoMarca() {
-    const St = clone(S); aplicarMarca(St, calSheet);
-    const k = calSheet.data.slice(0, 7), a = R.months.find(m => m.key === k), b = E.calc(St).months.find(m => m.key === k);
+  function previsaoMarca(sh) {
+    sh = sh || calSheet; const St = clone(S); aplicarMarca(St, sh);
+    const k = sh.data.slice(0, 7), a = R.months.find(m => m.key === k), b = E.calc(St).months.find(m => m.key === k);
     if (!a || !b) return 'Este mês está fora do plano, por isso não muda as contas.';
     if (a.dias === b.dias && a.fer === b.fer && a.pont === b.pont) return 'Sem efeito em ' + mesLongo(k + '-01') + ': o dia já não conta como dia de trabalho (fim de semana, outro feriado ou férias).';
     const dif = b.totalDesp - a.totalDesp - (b.varPlano - a.varPlano), dsub = b.subs - a.subs;
@@ -3418,6 +3729,7 @@ table.quebra td { white-space: normal; }
     const rem = ms.filter(x => x.lista).length > 0;
     return '<div class="modal" data-act="cal-fechar"><div class="sheet" role="dialog" aria-modal="true" aria-label="Marcar dia"><div class="row" style="justify-content:space-between"><h2>' + diaTxt(d) + '/' + p.y + '</h2><button class="x" data-act="cal-fechar" aria-label="Fechar">×</button></div>' +
       (ms.length ? '<div class="row" style="margin:6px 0">' + ms.map(x => '<span class="chip">' + esc(x.txt) + '</span>').join('') + '</div>' : '<p class="muted">Dia normal.</p>') +
+      (S.horas.registo.some(r => r.data === d) ? '<p class="note" style="margin-top:8px">Já tem horas registadas neste dia.</p>' : '<div class="row" style="margin-top:8px"><button type="button" class="btn" data-act="rapido:h:' + d + '">⏰ Registar horas neste dia</button></div>') +
       '<div class="row" style="margin-top:8px">' + bt('cal-ferias', fer ? 'Desmarcar férias' : 'Marcar férias') + bt('cal-tipo:feriado', 'Feriado', sh.tipo === 'feriado') + bt('cal-tipo:oferecido', 'Dia oferecido', sh.tipo === 'oferecido') + bt('cal-tipo:ponte', 'Ponte', sh.tipo === 'ponte') + '</div>' +
       (sh.tipo ? '<div class="card" style="margin-top:12px"><div class="fields">' + field('Nome', '<input type="text" id="cal-nome" value="' + esc(sh.nome) + '" placeholder="' + (sh.tipo === 'feriado' ? 'ex.: Feriado municipal' : sh.tipo === 'ponte' ? 'ex.: Ponte' : 'ex.: Carnaval') + '">') + '</div>' +
         '<div class="row" style="margin-top:10px">' + bt('cal-repete', 'Repetir todos os anos', sh.repete) + (sh.tipo === 'oferecido' ? bt('cal-carnaval', 'É o Carnaval (acompanha a Páscoa)', sh.carnaval) : '') + '</div>' +
@@ -3427,12 +3739,18 @@ table.quebra td { white-space: normal; }
       (rem ? '<div class="row" style="margin-top:12px"><button class="btn danger" data-act="cal-rem">Remover estes feriados e pontes (os registos inteiros)</button></div>' : '') + '</div></div>';
   }
 
+  /* O estatuto de trabalhador-estudante à vista, no topo das Horas (a escolha é a mesma das Regras do trabalho: press.estudante.ativo) */
+  function estatutoHtml() {
+    const on = (S.press.estudante || {}).ativo === 'Sim';
+    return '<div class="estatuto"><button type="button" class="sw' + (on ? ' on' : '') + '" role="switch" aria-checked="' + on + '" id="est-sw" data-act="est-alterna"><span class="sw-p" aria-hidden="true"></span><span>Tenho o estatuto de trabalhador-estudante</span></button>' +
+      '<p class="note">' + (on ? 'Ativo: a dispensa (por exemplo, sair 1 h mais cedo) conta como horas feitas, até ao que faltar, e aparece o campo da dispensa em cada dia.' : 'Marque se tem o estatuto: a dispensa (por exemplo, sair 1 h mais cedo) passa a contar como horas feitas e aparece o campo da dispensa em cada dia.') + ' <button type="button" class="lnk" data-act="ir:trabcfg">Dias, datas e limites</button></p></div>';
+  }
   function tabHoras() {
     const H = R.horas, bl = H.banco, keys = bl.map(b => b.key), est = S.press.estudante || {};
     if (!horaMes || keys.indexOf(horaMes) < 0) horaMes = keys.indexOf(hojeYm) >= 0 ? hojeYm : keys[0];
     const bm = bl.find(b => b.key === horaMes), ano = horaMes.slice(0, 4), fa = H.ferias.find(x => x.ano === +ano);
     const rowsM = H.rows.filter(r => r.mes === horaMes);
-    const ult = S.horas.registo.filter(r => r.tipo === 'Trabalho' && r.i1).sort((a, b) => a.data < b.data ? 1 : -1)[0] || {};
+    const ult = ultimoTrabalho();
     const tm = (id, v, lbl) => '<input type="time" id="' + id + '" value="' + esc(v || '') + '" aria-label="' + lbl + '">';
     const k = (l, v, s, extra) => '<div class="kpi"><div class="l">' + l + '</div><div class="v' + (extra || '') + '">' + v + '</div>' + (s ? '<div class="s">' + s + '</div>' : '') + '</div>';
     const extraH = bm.extra1 + bm.extraN + bm.extraDesc, regime = S.press.regimeExtras || 'Ainda não sei';
@@ -3454,7 +3772,7 @@ table.quebra td { white-space: normal; }
         '<td>' + inp(base + 'recibo', { aria: 'Recebido no recibo ' + b.key }) + '</td><td class="' + (b.diferenca != null && b.diferenca < 0 ? 'neg-v' : '') + '">' + (b.diferenca == null ? '' : eur(b.diferenca)) + '</td><td class="l">' + inp(base + 'nota', { t: 'text', aria: 'Nota ' + b.key }) + '</td></tr>';
     }).join('');
     const regimeTxt = regime === 'Pagas em dinheiro' ? 'Regime: horas extra pagas em dinheiro. Segue os valores em € e compara com o recibo. O saldo em horas não se aplica.' : regime === 'Banco de horas' ? 'Regime: banco de horas. Segue o saldo em horas. Em "Compensadas" escreva as horas já gozadas como folga. Os valores em € não se aplicam.' : 'Regime por definir. Escolha como as horas extra são compensadas no menu lateral, em Trabalho, e a tabela mostra só o que se aplica.';
-    return '<section><h2>Horas</h2><p class="lead">Registo dia a dia, como no Excel: as horas previstas vêm do contrato e do calendário (fins de semana, feriados, pontes e dias oferecidos não contam), e o saldo entra no banco de horas.</p>' +
+    return '<section><h2>Horas</h2><p class="lead">Registo dia a dia, como no Excel: as horas previstas vêm do contrato e do calendário (fins de semana, feriados, pontes e dias oferecidos não contam), e o saldo entra no banco de horas.</p>' + estatutoHtml() +
       '<div class="row">' + stepper('horaMes', keys, horaMes, kk => mesLongo(kk + '-01'), hojeYm) + '</div><div style="margin-top:12px">' + kpis + '</div></section>' +
       '<section class="card novo"><h3>Registar um dia</h3><div class="fields">' + field('Data', '<input type="date" id="h-data" value="' + hojeIso() + '">') +
       field('Tipo de dia', '<select id="h-tipo">' + E.TIPOS_DIA.map(t => '<option>' + t + '</option>').join('') + '</select>') +
@@ -3635,7 +3953,7 @@ table.quebra td { white-space: normal; }
     }
     if (!imp || !imp.cat) return;
     if (k === 'sel') imp.sel[a] = el.checked;
-    else if (k === 'seltodos') imp.movs.forEach((m, i) => { imp.sel[i] = !!el.checked && !imp.dup[i]; });   // caixa do cabeçalho: todos os movimentos, menos os já registados
+    else if (k === 'seltodos') { const ac = impAcertos(imp); imp.movs.forEach((m, i) => { if (!ac || ac.has(i)) imp.sel[i] = !!el.checked && !imp.dup[i]; }); }   // caixa do cabeçalho: todos os movimentos, menos os já registados
     else if (k === 'sug') { imp.sug = imp.sug || { saldo: true, rec: {}, rend: {}, feito: false }; if (a === 'saldo') imp.sug.saldo = el.checked; else if ((a === 'rec' || a === 'rend') && p[2] === 'todos') { const sg = sugestoesImp(imp), n = (a === 'rec' ? sg.recorrentes : sg.rendimentos).length; for (let i = 0; i < n; i++) imp.sug[a][i] = !!el.checked; } else if ((a === 'rec' || a === 'rend') && /^\d+$/.test(p[2] || '')) imp.sug[a][+p[2]] = el.checked; }
     else if ((k === 'cat' || k === 'gcat') && el.value === NOVA_CAT) { novaCat = { alvo: k + ':' + a }; setTimeout(() => { const e = document.getElementById('nc-nome'); if (e && e.focus) e.focus(); }, 0); }
     else if (k === 'cat') imp.cat[a] = el.value;
@@ -3759,6 +4077,23 @@ table.quebra td { white-space: normal; }
       '<label>Km no conta-quilómetros <input type="number" step="1" min="0" inputmode="numeric" data-imp="ckm:' + i + '" value="' + esc(c.km || '') + '" placeholder="opcional" aria-label="Quilómetros do conta-quilómetros"></label>' +
       '<span class="muted">' + (p > 0 ? '≈ ' + f2.format(val / p) + ' L' : 'Sem preço: escreva o €/litro para calcular os litros') + '</span></div>';
   }
+  /* Pesquisa nos movimentos lidos: procura na descrição, na data, no valor e na categoria (sem acentos nem maiúsculas) */
+  const impNorm = s => E.normalizaDesc(s);
+  const impTextos = I => I.movs.map((m, i) => impNorm([dataPt(m.data), m.desc, f2.format(Math.abs(m.valor)), (I.cat || [])[i] || ''].join(' ')));
+  function impAcertos(I, tx) {   // os índices que a pesquisa encontra; null quando não há pesquisa
+    const q = impNorm(I.busca || ''); if (!q) return null;
+    const out = new Set(); (tx || impTextos(I)).forEach((t, i) => { if (t.indexOf(q) >= 0) out.add(i); }); return out;
+  }
+  const impBuscaInfo = (I, ac) => !ac ? '' : !ac.size ? 'Nenhum movimento corresponde à pesquisa.' : ac.size + ' de ' + I.movs.length + (ac.size === 1 ? ' movimento encontrado' : ' movimentos encontrados') + '. «Marcar todos» e «Desmarcar todos» só mexem nestes.' + (I.vista !== 'lista' ? ' Para ver cada um, escolha «Todos os movimentos» em Ver.' : '');
+  function impFiltra() {   // ao escrever, esconde as linhas sem redesenhar a página (o cursor não salta)
+    if (!imp || !imp.movs) return;
+    const el = document.getElementById('imp-busca'); imp.busca = String((el && el.value) || '');
+    const q = impNorm(imp.busca);
+    document.querySelectorAll('.imp-tab tbody tr[data-txt]').forEach(tr => { tr.hidden = !!q && String(tr.dataset.txt).indexOf(q) < 0; });
+    const ac = impAcertos(imp), info = document.getElementById('imp-busca-info'); if (info) info.textContent = impBuscaInfo(imp, ac);
+    const cab = document.querySelector('[data-imp="seltodos"]');   // a caixa do cabeçalho acompanha os movimentos encontrados
+    if (cab) { const ids = imp.movs.map((m, i) => i).filter(i => !imp.dup[i] && (!ac || ac.has(i))), n = ids.filter(i => imp.sel[i]).length; cab.checked = ids.length > 0 && n === ids.length; cab.indeterminate = n > 0 && n < ids.length; cab.setAttribute('aria-label', 'Marcar ou desmarcar todos os movimentos' + (ac ? ' encontrados' : '')); }
+  }
   function tabImportar() {
     const I = imp, regras = S.importacao.regras, tem = I && I.movs && I.movs.length;
     const caixa = '<section class="card"><h2>Importar extrato do banco</h2><p class="lead">Carregue o extrato em CSV, Excel (.xlsx) ou PDF, ou cole o texto. A app propõe a categoria de cada movimento, avisa dos que já estão registados, e só importa o que confirmar. O extrato é lido no seu navegador e não é enviado para lado nenhum. Para ler um PDF, o navegador descarrega o leitor de PDF (pdf.js) do cdnjs, uma só vez, e o ficheiro fica no seu computador.</p><div class="fields">' +
@@ -3767,9 +4102,10 @@ table.quebra td { white-space: normal; }
       '<div class="row" style="margin-top:12px"><button class="btn" data-act="imp-texto">Ler o texto colado</button>' + (I && I.msg ? '<span class="chip ' + (/importados/.test(I.msg) ? 'good' : 'warn') + '" role="status">' + esc(I.msg) + '</span>' : '') + '</div></section>';
     let rev = '';
     if (tem) {
+      const tx = impTextos(I), ac = impAcertos(I, tx);
       const sel = Object.keys(I.sel).filter(i => I.sel[i]).map(Number), total = sel.reduce((a, i) => a + I.movs[i].valor, 0);
-      const livresT = I.movs.map((m, i) => i).filter(i => !I.dup[i]), nSelT = livresT.filter(i => I.sel[i]).length;
-      const cxTodosMov = livresT.length > 1 ? '<input type="checkbox" data-imp="seltodos"' + (nSelT === livresT.length ? ' checked' : nSelT > 0 ? ' data-indet="1"' : '') + ' aria-label="Marcar ou desmarcar todos os movimentos" title="Marcar ou desmarcar todos">' : '';   // fica "a meio" quando só alguns estão marcados
+      const livresT = I.movs.map((m, i) => i).filter(i => !I.dup[i] && (!ac || ac.has(i))), nSelT = livresT.filter(i => I.sel[i]).length;
+      const cxTodosMov = livresT.length > 1 ? '<input type="checkbox" data-imp="seltodos"' + (nSelT === livresT.length ? ' checked' : nSelT > 0 ? ' data-indet="1"' : '') + ' aria-label="Marcar ou desmarcar todos os movimentos' + (ac ? ' encontrados' : '') + '" title="Marcar ou desmarcar todos">' : '';   // fica "a meio" quando só alguns estão marcados
       let mapa = '';
       if (I.modo === 'csv' || I.modo === 'xlsx') {
         const cab = I.rows[I.map.header] || [], ncol = Math.max.apply(null, I.rows.slice(0, 40).map(r => r.length).concat([1]));
@@ -3781,10 +4117,10 @@ table.quebra td { white-space: normal; }
       const repSug = (() => { const sg = sugestoesImp(I); return sg.recorrentes.concat(sg.rendimentos); })();   // propostas de "pagamentos que se repetem"
       const repete = i => { const id = E.idMovimento(I.movs[i]); return repSug.some(x => (x.datas || []).indexOf(id) >= 0); };   // só os movimentos concretos que sustentam a proposta (sinal, data, valor e descrição)
       const chipRepete = i => !I.fix[i] && repete(i) ? ' <span class="chip acc" title="O mesmo pagamento aparece em meses seguidos. Veja a proposta \'Pagamentos que se repetem\', no topo.">🔁 Repete todos os meses</span>' : '';
-      const linhaMov = i => {
+      const linhaMov = (i, sub) => {
         const m = I.movs[i];
         const saida = m.valor < 0, o = I.org[i];
-        return '<tr' + (I.dup[i] ? ' class="muted"' : '') + '><td><input type="checkbox" data-imp="sel:' + i + '"' + (I.sel[i] ? ' checked' : '') + ' aria-label="Importar o movimento de ' + dataPt(m.data) + ': ' + esc(m.desc) + '"></td><td>' + dataPt(m.data) + '</td><td class="l">' + esc(m.desc) + '</td><td class="' + (saida ? '' : 'good') + '">' + eur(m.valor) + '</td>' +
+        return '<tr' + ((sub || I.dup[i]) ? ' class="' + [sub ? 'sub' : '', I.dup[i] ? 'muted' : ''].filter(Boolean).join(' ') + '"' : '') + ' data-txt="' + esc(tx[i]) + '"' + (ac && !ac.has(i) ? ' hidden' : '') + '><td><input type="checkbox" data-imp="sel:' + i + '"' + (I.sel[i] ? ' checked' : '') + ' aria-label="Importar o movimento de ' + dataPt(m.data) + ': ' + esc(m.desc) + '"></td><td>' + dataPt(m.data) + '</td><td class="l">' + esc(m.desc) + '</td><td class="' + (saida ? '' : 'good') + '">' + eur(m.valor) + '</td>' +
           '<td class="l">' + (saida ? '<select data-imp="cat:' + i + '" aria-label="Categoria de ' + dataPt(m.data) + ': ' + esc(m.desc) + '"><option value=""></option>' + catNomes().map(c => '<option' + (c === I.cat[i] ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '<option value="' + NOVA_CAT + '">＋ Nova categoria…</option></select>' : '<span class="chip">Rendimento</span>') + '</td>' +
           '<td class="l">' + (saida && !I.fix[i] && ehCatComb(I.cat[i]) ? combCampos(I, i) : '') + (saida ? (o === 'recorrente' ? '<span class="chip acc">Recorrente: ' + esc(I.fix[i].nome) + (I.fix[i].previsto != null ? ' (previsto ' + eur(I.fix[i].previsto) + ')' : '') + '</span>' + (I.fix[i].soValor ? ' <span class="muted nw" title="A descrição do movimento não tem o nome deste recorrente: liguei só pelo valor (igual ao cêntimo) e pela data. Se não for este pagamento, carregue no ✕.">só pelo valor</span>' : '') + ' <button type="button" class="btn mini" data-act="imp-desligar:' + i + '" aria-label="Não é o recorrente ' + esc(I.fix[i].nome) + '" title="Não é este pagamento recorrente">✕</button>' : o === 'regra' ? '<span class="chip good">Regra</span>' : o === 'sugestão' ? '<span class="chip warn">Sugestão</span>' : '<span class="chip">Sem categoria</span>') : '') + chipRepete(i) + (I.dup[i] ? ' <span class="chip warn">' + (I.dupMotivo[i] === 'repetido' ? 'Repetido no ficheiro' : I.dupMotivo[i] === 'proximo' ? 'Já registado (data próxima)' : 'Já registado') + '</span>' : '') + '</td></tr>';
       };
@@ -3794,16 +4130,17 @@ table.quebra td { white-space: normal; }
         const said = g.idx.filter(i => I.movs[i].valor < 0 && !I.fix[i]), cats = Array.from(new Set(said.map(i => I.cat[i] || ''))), comum = cats.length === 1 ? cats[0] : null;
         const nFixG = g.idx.filter(i => I.fix[i]).length, livres = g.idx.filter(i => !I.dup[i]), nSel = livres.filter(i => I.sel[i]).length, nDupG = g.idx.length - livres.length, ab = !!I.aberto[g.chave];
         const selG = said.length ? '<select data-imp="gcat:' + gi + '" aria-label="Categoria de todos os movimentos de ' + esc(g.nome) + '">' + (comum === null ? '<option value="" selected>Várias categorias</option>' : '<option value=""></option>') + catNomes().map(c => '<option' + (c === comum ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '<option value="' + NOVA_CAT + '">＋ Nova categoria…</option></select>' : (g.idx.some(i => I.movs[i].valor < 0) ? '<span class="chip acc">Recorrentes</span>' : '<span class="chip">Rendimentos</span>');
-        return '<tr class="grupo"><td><input type="checkbox" data-imp="gsel:' + gi + '"' + (livres.length && nSel === livres.length ? ' checked' : nSel > 0 ? ' data-indet="1"' : '') + (livres.length ? '' : ' disabled') + ' aria-label="Importar todos os movimentos de ' + esc(g.nome) + '"></td>' +
+        return '<tr class="grupo" data-txt="' + esc(impNorm(g.nome) + ' ' + g.idx.map(i => tx[i]).join(' ')) + '"' + (ac && !g.idx.some(i => ac.has(i)) ? ' hidden' : '') + '><td><input type="checkbox" data-imp="gsel:' + gi + '"' + (livres.length && nSel === livres.length ? ' checked' : nSel > 0 ? ' data-indet="1"' : '') + (livres.length ? '' : ' disabled') + ' aria-label="Importar todos os movimentos de ' + esc(g.nome) + '"></td>' +
           '<td><button type="button" class="btn mini" data-act="imp-grp:' + gi + '" aria-expanded="' + ab + '" aria-label="' + (ab ? 'Fechar' : 'Ver') + ' os movimentos de ' + esc(g.nome) + '">' + (ab ? '▾' : '▸') + ' ' + g.idx.length + '</button></td>' +
           '<td class="l"><b>' + esc(g.nome) + '</b>' + (nSel !== livres.length && nSel ? ' <span class="muted">(' + nSel + ' de ' + livres.length + ' marcados)</span>' : '') + (nDupG ? ' <span class="chip warn">' + nDupG + ' já registado' + (nDupG > 1 ? 's' : '') + '</span>' : '') + (nFixG ? ' <span class="chip acc">' + nFixG + (nFixG > 1 ? ' ligados a recorrentes' : ' ligado a um recorrente') + '</span>' : '') + '</td><td class="' + cls(g.total) + '">' + eur(g.total) + '</td><td class="l">' + selG + '</td>' +
-          '<td class="l">' + (comum === null ? '<span class="muted">Abra o grupo para ver cada um</span>' : ehCatComb(comum) ? '<span class="muted">⛽ Entram também em Combustível. Abra o grupo para pôr o €/litro e os km de cada um (opcional).</span>' : '') + '</td></tr>' + (ab ? g.idx.map(i => linhaMov(i).replace(/^<tr(?: class="([^"]*)")?>/, (x, c) => '<tr class="sub' + (c ? ' ' + c : '') + '">')).join('') : '');
+          '<td class="l">' + (comum === null ? '<span class="muted">Abra o grupo para ver cada um</span>' : ehCatComb(comum) ? '<span class="muted">⛽ Entram também em Combustível. Abra o grupo para pôr o €/litro e os km de cada um (opcional).</span>' : '') + '</td></tr>' + (ab ? g.idx.map(i => linhaMov(i, true)).join('') : '');
       }).join('') : I.movs.map((m, i) => linhaMov(i)).join('');
       const nSaidas = I.movs.filter(m => m.valor < 0).length, nDup = I.movs.filter((m, i) => I.dup[i]).length;
       const kpisI = '<div class="grid">' + kpi('Movimentos lidos', String(I.movs.length), nSaidas + ' saídas e ' + (I.movs.length - nSaidas) + ' entradas') + kpi('A importar', String(sel.length), 'Marcados na lista') +
         kpi('Valor selecionado', eur(total), '', cls(total)) + kpi('Duplicados', String(nDup), nDup ? 'Ficam de fora (mesma data e valor, ou data próxima e mesma descrição)' : 'Nenhum') + '</div>';
       const porRever = I.naoLidas > 0 ? '<p class="note"><span class="chip warn">' + I.naoLidas + (I.naoLidas === 1 ? ' linha por rever' : ' linhas por rever') + '</span> ' + (I.naoLidas === 1 ? 'Uma linha do ficheiro não foi lida' : I.naoLidas + ' linhas do ficheiro não foram lidas') + ' como movimento (por exemplo títulos, totais, ou linhas sem data ou sem valor). Confirme no extrato que não falta nenhum movimento.</p>' : '';
       rev = precosHtml(false) + impSugestoesHtml(I) + '<section><h2>Movimentos' + (I.nome ? ' de ' + esc(I.nome) : '') + '</h2>' + kpisI + porRever + mapa +
+        '<div class="row" style="margin:12px 0 4px"><label class="muted" for="imp-busca">Procurar</label><input type="search" id="imp-busca" placeholder="Descrição, data, valor ou categoria" aria-describedby="imp-busca-info" autocomplete="off" maxlength="60" value="' + esc(I.busca || '') + '"></div><p class="note" id="imp-busca-info" role="status" aria-live="polite" style="margin:0 0 4px">' + esc(impBuscaInfo(I, ac)) + '</p>' +
         '<div class="row" style="margin:12px 0"><label class="muted" for="imp-vista">Ver</label><select id="imp-vista" data-imp="vista"><option value="grupos"' + (vistaGrupos ? ' selected' : '') + '>Agrupado por tipo de gasto</option><option value="lista"' + (vistaGrupos ? '' : ' selected') + '>Todos os movimentos</option></select><label class="muted" for="imp-conta">Conta</label><select id="imp-conta" data-imp="conta">' + LISTAS.contas.map(c => '<option value="' + esc(c) + '"' + (c === I.conta ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</select><button type="button" class="btn" id="imp-marcar" data-act="imp-todos:1">Marcar todos</button><button type="button" class="btn" id="imp-desmarcar" data-act="imp-todos:0">Desmarcar todos</button></div>' +
         (vistaGrupos ? '<p class="note">Os movimentos parecidos estão juntos (por exemplo todos os de MB WAY ou de VENDING). Escolha a categoria do grupo de uma vez; se um grupo tiver gastos de tipos diferentes, abra-o (▸) e mude só os que precisar.</p>' : '') + '<div class="tablewrap tall"><table class="sticky imp-tab"><thead><tr><th>' + cxTodosMov + '</th><th>' + (vistaGrupos ? 'Movimentos' : 'Data') + '</th><th class="l">Descrição</th><th>Valor</th><th class="l">Categoria</th><th class="l">Origem</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
         '<div class="row" style="margin-top:12px"><button class="btn pri" data-act="imp-ok"' + (sel.length ? '' : ' disabled') + '>Importar ' + sel.length + ' movimento' + (sel.length === 1 ? '' : 's') + '</button><button class="btn" data-act="imp-cancelar">Cancelar</button><span class="muted">Selecionado: <b>' + eur(total) + '</b>. Os que já parecem registados (mesma data e valor) vêm desmarcados. Os créditos entram em Rendimentos, sem contar no plano. Pagamentos iguais a um recorrente por pagar ficam ligados a ele, como pagos.</span></div>' +
@@ -3951,7 +4288,8 @@ table.quebra td { white-space: normal; }
 
   function tabTrabCfg() {
     const est = S.press.estudante || {};
-    const somaDisp = [0, 1, 2, 3, 4].reduce((a, i) => a + num((est.dias || [])[i]), 0), limSem = num(est.limiteSemana);
+    const perHoje = E.periodoAt(S, hojeIso()), horasSem = E.has(perHoje.horasSemana) ? num(perHoje.horasSemana) : num(S.press.horasSemana), limAuto = E.limiteDispensa(horasSem);
+    const limManual = E.has(est.limiteSemana), somaDisp = [0, 1, 2, 3, 4].reduce((a, i) => a + num((est.dias || [])[i]), 0), limSem = limManual ? num(est.limiteSemana) : limAuto;   // vazio: segue as horas por semana do contrato
     const dias5 = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'].map((n, i) => field('Dispensa à ' + n.toLowerCase() + ' (h)', inp('press.estudante.dias.' + i, { aria: 'Dispensa à ' + n }))).join('');
     return '<section class="card"><h2>Regras das horas extra</h2><div class="fields">' +
       field('Horas extra: como são compensadas?', inp('press.regimeExtras', { t: 'sel', list: ['Pagas em dinheiro', 'Banco de horas', 'Ainda não sei'] })) +
@@ -3959,8 +4297,8 @@ table.quebra td { white-space: normal; }
       field('Acréscimo, 1.ª hora extra em dia útil', inp('press.acr1'), '0,25 = 25%. Código do Trabalho, art. 268.º. Confirme no contrato.') + field('Acréscimo, horas extra seguintes', inp('press.acr2'), '0,375 = 37,5%') + field('Acréscimo, dia de descanso ou feriado', inp('press.acr3'), '0,5 = 50%, por cada hora trabalhada') + '</div></section>' +
       '<section class="card"><h2>Trabalhador-estudante</h2><p class="lead">A dispensa paga (por exemplo, sair 1 h mais cedo) conta como horas feitas, até ao que faltar para as horas previstas. Assim não aparecem horas em falta nem horas extra por engano.</p><div class="fields">' +
       field('Tem o estatuto?', inp('press.estudante.ativo', { t: 'sel', list: LISTAS.simnao })) + field('Vale desde', inp('press.estudante.de', { t: 'date' }), 'Vazio: sem data de início.') + field('Vale até', inp('press.estudante.ate', { t: 'date' }), 'Vazio: sem data de fim.') + dias5 +
-      field('Limite semanal de dispensa (h)', inp('press.estudante.limiteSemana'), 'Referência: até 6 h por semana com 34 h ou mais de horário. Confirme no contrato.') + field('Dias de provas por disciplina e ano letivo', inp('press.estudante.limiteProvas'), 'Referência: o dia da prova e o anterior, até 4 dias.') + '</div>' +
-      (limSem > 0 && somaDisp > limSem ? '<p class="note bad" style="margin-top:10px">A dispensa semanal (' + hh(somaDisp) + ') passa o limite de ' + hh(limSem) + '.</p>' : '<p class="note" style="margin-top:10px">Dispensa semanal: ' + hh(somaDisp) + (limSem > 0 ? ' de ' + hh(limSem) + ' de limite' : '') + '. Valores de referência do Código do Trabalho, arts. 89.º a 96.º. Confirme com o contrato e com o empregador.</p>') + '</section>';
+      field('Limite semanal de dispensa (h)', inp('press.estudante.limiteSemana', { ph: limAuto ? String(limAuto) : '' }), 'Vazio: segue as horas por semana do contrato' + (horasSem > 0 ? ' (' + hh(horasSem) + ' → ' + (limAuto ? hh(limAuto) : 'sem referência') + ')' : '') + '. Código do Trabalho, art. 90.º: 3 h (20 a 29 h por semana), 4 h (30 a 33 h), 5 h (34 a 37 h), 6 h (38 h ou mais). Confirme com o empregador.') + field('Dias de provas por disciplina e ano letivo', inp('press.estudante.limiteProvas'), 'Referência: o dia da prova e o anterior, até 4 dias.') + '</div>' +
+      (limSem > 0 && somaDisp > limSem ? '<p class="note bad" style="margin-top:10px">A dispensa semanal (' + hh(somaDisp) + ') passa o limite de ' + hh(limSem) + '.</p>' : '<p class="note" style="margin-top:10px">Dispensa semanal: ' + hh(somaDisp) + (limSem > 0 ? ' de ' + hh(limSem) + ' de limite' + (limManual ? '' : ' (pelas ' + hh(horasSem) + ' por semana do contrato)') : '') + '. Valores de referência do Código do Trabalho, arts. 89.º a 96.º. Confirme com o contrato e com o empregador.</p>') + '</section>';
   }
 
   /* Sincronização entre aparelhos, cópias de segurança e instalação no ecrã inicial */
@@ -4092,6 +4430,22 @@ table.quebra td { white-space: normal; }
     const pon = S.pontes.map((x, i) => '<tr><td>' + inp('pontes.' + i + '.inicio', { t: 'date', aria: 'Início' }) + '</td><td>' + inp('pontes.' + i + '.ate', { t: 'date', aria: 'Até' }) + '</td><td class="l">' + inp('pontes.' + i + '.desc', { t: 'text', aria: 'Descrição' }) + '</td><td>' + inp('pontes.' + i + '.desconta', { t: 'sel', list: LISTAS.simnao, aria: 'Desconta das férias' }) + '</td><td>' + inp('pontes.' + i + '.repete', { t: 'sel', list: LISTAS.simnao, blank: true, aria: 'Repete todos os anos' }) + '</td><td>' + delBtn('pontes', i) + '</td></tr>').join('');
     const fe = S.ferias.map((x, i) => '<tr><td>' + inp('ferias.' + i + '.de', { t: 'date', aria: 'De' }) + '</td><td>' + inp('ferias.' + i + '.ate', { t: 'date', aria: 'Até' }) + '</td><td>' + delBtn('ferias', i) + '</td></tr>').join('');
     const saldo = R.horas.ferias.map(x => '<tr><td>' + x.ano + '</td><td>' + x.direito + '</td><td>' + x.planeado + (x.registado > x.planeado ? ' (registado ' + x.registado + ')' : '') + '</td><td class="' + (x.saldo < 0 ? 'neg-v' : '') + '">' + x.saldo + '</td></tr>').join('');
+    // subsídios de férias e de Natal e dias da semana em que se trabalha, por período
+    const DIAS_ROT = [['Seg', 1], ['Ter', 2], ['Qua', 3], ['Qui', 4], ['Sex', 5], ['Sáb', 6], ['Dom', 0]], extrasSub = S.extras.some(e => /^Subsídio/.test(e.tipo || '') && e.contar === 'Sim');
+    const det = S.periodos.map((x, i) => {
+      const b = 'periodos.' + i + '.', trab = E.diasTrabSet(x), ms = R.months.filter(m => m.per === x), totSub = ms.reduce((a, m) => a + num(m.subsAutoLiq), 0), modo = x.subsidios === 'Duodécimos' || x.subsidios === 'Junho e novembro';
+      const nome = esc(x.desc || x.tipo || 'Sem nome') + (x.inicio ? ' · desde ' + esc(String(x.inicio).split('-').reverse().join('/')) : '');
+      return '<div class="pdet"><h4>' + nome + '</h4><div class="fields">' +
+        field('Subsídios de férias e de Natal', inp(b + 'subsidios', { t: 'sel', list: LISTAS.subsidios, aria: 'Subsídios de férias e de Natal do período ' + (i + 1) }), 'Cada subsídio vale um salário bruto, com Segurança Social e retenção próprias. Duodécimos: 1/12 de cada um em todos os meses. Junho e novembro: um em cada mês (proporcional no ano em que o período começa). Não calcular: escreve-os em Rendimentos. É uma estimativa: confirme no recibo.') +
+        '<div class="field"><label id="dt-' + i + '">Dias da semana em que trabalha</label><div class="seg dias" role="group" aria-labelledby="dt-' + i + '">' + DIAS_ROT.map(([n, w]) => '<button type="button" id="dt-' + i + '-' + w + '" data-act="dia-trab:' + i + ':' + w + '" aria-pressed="' + trab.has(w) + '">' + n + '</button>').join('') + '</div><span class="hint">Decide os dias úteis do mês, as horas previstas e os km estimados. Feriados, férias e pontes contam à parte.</span></div></div>' +
+        (modo && ms.length ? '<p class="note">Neste período o plano conta ' + eur(totSub) + ' líquidos de subsídios, nos ' + ms.length + ' meses do plano.</p>' : '') +
+        (modo && extrasSub ? '<p class="note bad">Já tem subsídios escritos em Rendimentos. Com esta escolha ficam contados duas vezes: apague-os de lá (ou ponha «Não calcular»).</p>' : '') + '</div>';
+    }).join('');
+    const irsRows = (S.irsLinhas || []).map((x, i) => ({ x, i })).sort((a, b) => (num(a.x.ano) - num(b.x.ano)) || ((E.has(a.x.ate) ? num(a.x.ate) : Infinity) - (E.has(b.x.ate) ? num(b.x.ate) : Infinity)) || a.i - b.i)
+      .map(o => '<tr><td>' + inp('irsLinhas.' + o.i + '.ano', { aria: 'Ano da tabela' }) + '</td><td>' + inp('irsLinhas.' + o.i + '.ate', { ph: 'sem limite', aria: 'Remuneração até (€); em branco: sem limite' }) + '</td><td>' + inp('irsLinhas.' + o.i + '.taxa', { aria: 'Taxa (0,125 = 12,5%)' }) + '</td><td>' + inp('irsLinhas.' + o.i + '.parcela', { aria: 'Parcela a abater (€)' }) + '</td><td>' + inp('irsLinhas.' + o.i + '.k', { aria: 'Fator da fórmula (opcional)' }) + '</td><td>' + inp('irsLinhas.' + o.i + '.r0', { aria: 'R0 da fórmula (opcional)' }) + '</td><td>' + delBtn('irsLinhas', o.i) + '</td></tr>').join('');
+    const anoIrs = hoje.getFullYear(), tabIrsUso = E.irsTabela(S, anoIrs), anosIrs = Array.from(new Set((S.irsLinhas || []).map(x => String(x.ano).trim()).filter(a => /^\d{4}$/.test(a)))).sort();
+    const subsRows = (S.subsLimites || []).map((x, i) => ({ x, i })).sort((a, b) => (num(a.x.ano) - num(b.x.ano)) || a.i - b.i)
+      .map(o => '<tr><td>' + inp('subsLimites.' + o.i + '.ano', { aria: 'Ano' }) + '</td><td>' + inp('subsLimites.' + o.i + '.cartao', { aria: 'Limite isento em cartão (€ por dia)' }) + '</td><td>' + inp('subsLimites.' + o.i + '.dinheiro', { aria: 'Limite isento em dinheiro (€ por dia)' }) + '</td><td>' + delBtn('subsLimites', o.i) + '</td></tr>').join('');
     return '<section class="card"><h2 id="def-pressupostos">Pressupostos</h2><p class="lead">Valores gerais, para todos os meses. Salário, IRS, subsídio de alimentação, km e portagens ficam nos períodos, mais abaixo.</p><div class="fields">' +
       field('Taxa Segurança Social', inp(pr + 'ss'), 'Taxa legal do trabalhador (0,11 = 11%).') +
       field('Manutenção do carro (€/km)', inp(pr + 'manut'), 'Pneus, óleo, travões.') +
@@ -4105,13 +4459,21 @@ table.quebra td { white-space: normal; }
       field('Saldo atual, conta principal (€)', inp(pr + 'saldoPrincipal')) +
       field('Poupança atual na Revolut (€)', inp(pr + 'revolut'), 'Ponto de partida da poupança.') + '</div>' +
       '<p class="note" style="margin-top:10px">O preço e o consumo do combustível ficam no separador Combustível.</p></section>' +
-      personalizarHtml() + '<section><h2 id="def-contratos">Contratos e períodos de trabalho</h2><p class="lead">Cada linha vale a partir da data de início e até começar a seguinte. Mudou de emprego, subiu o salário ou mudou o trajeto? Acrescente uma linha. Com "Salário = mínimo nacional" em Sim, o salário segue a tabela do salário mínimo. Com a retenção de IRS em Automático, a taxa vem da tabela de 2026 (não casado, sem dependentes) e acompanha o salário. Em Manual, escreve a taxa (0,02 = 2%).</p>' +
+      personalizarHtml() + '<section><h2 id="def-contratos">Contratos e períodos de trabalho</h2><p class="lead">Cada linha vale a partir da data de início e até começar a seguinte. Mudou de emprego, subiu o salário ou mudou o trajeto? Acrescente uma linha. Com "Salário = mínimo nacional" em Sim, o salário segue a tabela do salário mínimo. Com a retenção de IRS em Automático, a taxa vem da tabela de 2026 (não casado, sem dependentes), ou da sua tabela mais abaixo, e acompanha o salário. Em Manual, escreve a taxa (0,02 = 2%).</p>' +
       '<div class="tablewrap"><table><thead><tr><th>Início</th><th>Fim (opcional)</th><th>Tipo</th><th class="l">Descrição</th><th>Salário = mínimo?</th><th>Salário bruto (€)</th><th>Retenção de IRS</th><th>Subsídio alimentação/dia</th><th>Pago em cartão?</th><th>Km/dia</th><th>Portagens/dia</th><th>Horas/dia</th><th>Horas/semana</th><th class="l">Notas</th><th></th></tr></thead><tbody>' + per + '</tbody></table></div><div class="row" style="margin-top:12px">' + addBtn('periodos', 'Novo período') + '</div>' + avisoMin +
+      '<h3 id="def-subsidios" style="margin-top:16px">Subsídios e dias de trabalho de cada período</h3>' + (det || '<p class="note">Sem períodos.</p>') +
       '<div class="split" style="margin-top:16px"><div><h3>Salário mínimo por ano</h3><div class="tablewrap"><table class="mini"><thead><tr><th>Ano</th><th>Mensal (€)</th><th class="l">Nota</th><th></th></tr></thead><tbody>' + sm + '</tbody></table></div><div style="margin-top:10px">' + addBtn('salMin', 'Novo ano') + '</div><p class="note">Anos sem linha usam o último valor conhecido. Os valores de 2027 em diante são previsões: confirme quando saírem em Diário da República.</p></div></div></section>' +
       '<section class="card"><h2 id="def-irs">Simulador de retenção de IRS (2026)</h2><p class="lead">Escreva um salário bruto mensal e veja a retenção, o desconto para a Segurança Social e o líquido.</p><div class="fields">' +
       field('Salário bruto mensal (€)', '<input type="number" inputmode="decimal" step="any" id="irs-bruto" value="' + irsSim + '">') +
       '<div class="field"><label>Resultado</label><div id="irs-out">' + irsSimHtml(irsSim) + '</div></div></div>' +
       '<p class="note" style="margin-top:10px">Tabela I do Despacho n.º 233-A/2026 (Continente, não casado sem dependentes ou casado dois titulares), em vigor durante 2026. O subsídio de alimentação não entra na base. Em novembro de 2026 a retenção é reduzida a metade (Despacho n.º 12523-A/2026), o que não é aplicado aqui. É um adiantamento: o IRS final apura-se na declaração anual.</p></section>' +
+      '<section class="card"><h2 id="def-irs-tabela">Tabela de retenção de IRS (a sua)</h2><p class="lead">Com a retenção em «Automático», a app usa a tabela de 2026 que já traz. Quando sair a tabela de outro ano, escreva-a aqui: vale a partir desse ano, até haver outra. Sem linhas, vale a de 2026.</p>' +
+      '<div class="tablewrap"><table class="mini"><thead><tr><th>Ano</th><th>Até (€)</th><th>Taxa</th><th>Parcela a abater (€)</th><th>Fator</th><th>R0 (€)</th><th></th></tr></thead><tbody>' + (irsRows || '<tr><td colspan="7" class="empty">Sem tabela própria: vale a de 2026 da app.</td></tr>') + '</tbody></table></div>' +
+      '<div class="row" style="margin-top:12px">' + addBtn('irsLinhas', 'Nova linha') + '<input type="number" id="irs-ano-novo" min="2027" max="2100" step="1" inputmode="numeric" placeholder="ex.: 2027" aria-label="Ano da nova tabela" style="width:110px"><button type="button" class="btn" data-act="irs-copiar">Começar a partir da tabela de 2026</button></div>' +
+      '<p class="note" style="margin-top:10px">' + (tabIrsUso ? 'Este ano usa a sua tabela.' : 'Este ano usa a tabela de 2026 da app.') + (anosIrs.length ? ' Anos escritos: ' + anosIrs.join(', ') + '.' : '') + ' Taxa: 0,125 = 12,5%. «Até» em branco = sem limite (último escalão). Fator e R0 só se usam nos escalões em que a parcela tem fórmula: parcela = taxa × fator × (R0 − remuneração). Copie os valores do despacho das tabelas de retenção.</p></section>' +
+      '<section class="card"><h2 id="def-subs">Subsídio de alimentação: limite isento por dia</h2><p class="lead">O que cada dia paga acima do limite conta como rendimento e paga Segurança Social e IRS; o resto fica isento. Vale o último ano escrito que não passe o do mês; sem linha para o ano, valem os de 2026.</p>' +
+      '<div class="tablewrap"><table class="mini"><thead><tr><th>Ano</th><th>Em cartão (€/dia)</th><th>Em dinheiro (€/dia)</th><th></th></tr></thead><tbody><tr><td>2026 (da app)</td><td>' + f2.format(E.SUBS_ISENTO_2026.cartao) + '</td><td>' + f2.format(E.SUBS_ISENTO_2026.dinheiro) + '</td><td></td></tr>' + subsRows + '</tbody></table></div>' +
+      '<div style="margin-top:10px">' + addBtn('subsLimites', 'Novo ano') + '</div><p class="note">Portaria n.º 51-B/2026/1. Para 2027 há previsão de 10,71 € em cartão e 6,30 € em dinheiro, ainda sem portaria: só escreva quando sair. Um campo em branco usa o valor mais recente que houver.</p></section>' +
       '<section><h2 id="def-ferias">Férias e feriados</h2><p class="lead">Os dias de trabalho de cada mês são os dias úteis, menos feriados, férias e pontes que desconta.</p><div class="split">' +
       '<div><h3>Férias marcadas</h3><div class="tablewrap"><table class="mini"><thead><tr><th>De</th><th>Até</th><th></th></tr></thead><tbody>' + (fe || '<tr><td colspan="3" class="empty">Sem férias marcadas.</td></tr>') + '</tbody></table></div><div style="margin-top:10px">' + addBtn('ferias', 'Novas férias') + '</div></div>' +
       '<div><h3>Saldo anual de férias</h3><div class="tablewrap"><table class="mini"><thead><tr><th>Ano</th><th>Direito</th><th>Planeado</th><th>Saldo</th></tr></thead><tbody>' + saldo + '</tbody></table></div><p class="note">Planeado = férias marcadas + pontes que descontam.</p></div></div>' +
@@ -4167,9 +4529,102 @@ table.quebra td { white-space: normal; }
       field('Custo da viagem', '<div id="v-out" style="font-size:20px;font-weight:700">' + eur(105 * cb.consumoUsado / 100 * cb.precoUsado) + '</div>', 'Com o consumo e o preço usados no plano.') + '</div></section>';
   }
 
+  /* ---------- seletor de data e de hora próprio (no computador) ----------
+     O calendário e a lista de horas do Chrome não se estilizam, por isso o ícone do campo abre este, no estilo da app.
+     O campo continua a ser um <input type="date|time">: escreve-se à mão como sempre, e o valor, os eventos e os testes não mudam.
+     No telemóvel (toque) fica o seletor do sistema, que já é bom. */
+  let dp = null;   // { tipo: 'data' | 'hora', loc, valor, ym, foco, vista: 'dias' | 'meses', h, m, min, max, x, y, hol, fer }
+  const dpFino = () => { try { return !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches); } catch (e) { return false; } };
+  const dpLoc = t => t.id && /^[A-Za-z0-9_-]+$/.test(t.id) ? '#' + t.id : t.dataset && t.dataset.p && /^[A-Za-z0-9_.-]+$/.test(t.dataset.p) ? '[data-p="' + t.dataset.p + '"]' : '';   // como voltar a achar o campo depois de a página se redesenhar
+  const dpBusca = loc => !loc ? null : loc.charAt(0) === '#' ? document.getElementById(loc.slice(1)) : document.querySelector(loc);
+  const diasNoMes = ym => new Date(Date.UTC(+ym.slice(0, 4), +ym.slice(5, 7), 0)).getUTCDate();
+  const dpRefoca = loc => setTimeout(() => { const e = dpBusca(loc); if (e && e.focus) e.focus({ preventScroll: true }); }, 0);
+  function dpEntrada(ev) {   // o clique no ícone do campo (ou Alt+↓ / F4) abre o nosso seletor em vez do do navegador
+    const t = ev.target;
+    if (!t || t.tagName !== 'INPUT' || (t.type !== 'date' && t.type !== 'time') || t.disabled || t.readOnly || !dpFino() || !dpLoc(t)) return null;
+    if (ev.type !== 'keydown') { const r = t.getBoundingClientRect ? t.getBoundingClientRect() : null; if (!r || !(ev.clientX >= r.right - 40)) return null; }   // com o rato só conta o clique no ícone, à direita; o resto do campo escreve-se
+    return t;
+  }
+  function dpAbrir(t) {
+    const data = t.type === 'date', v = String(t.value || ''), r = t.getBoundingClientRect(), W = window.innerWidth || 1024;
+    const ini = data ? (dataOk(v) ? v : hojeIso()) : '', esq = Math.max(8, Math.min(r.left, W - 296 - 8));
+    dp = { tipo: data ? 'data' : 'hora', loc: dpLoc(t), valor: v, ym: ini.slice(0, 7), foco: ini, vista: 'dias', h: horaOk(v) ? v.slice(0, 2) : '', m: horaOk(v) ? v.slice(3, 5) : '', min: String(t.min || '1990-01-01'), max: String(t.max || '2100-12-31'), x: Math.round(esq), y: Math.round(r.bottom + 6), rt: r.top, rb: r.bottom, t: Date.now(), hol: data ? E.feriadosSet(S) : null, fer: data ? feriasSetUi() : null };
+    dpDesenha(); dpPosiciona(); setTimeout(dpFoca, 0);
+  }
+  function dpPosiciona() {   // abre por baixo do campo; se não couber, por cima (com a altura que o seletor tem mesmo), sem nunca tapar o campo
+    const p = document.querySelector('.dp-pop'); if (!dp || !p || !p.offsetHeight) return;
+    const H = window.innerHeight || 768; let y = dp.rb + 6; if (y + p.offsetHeight > H - 8) y = Math.max(8, dp.rt - p.offsetHeight - 6);
+    dp.y = Math.round(y); p.style.top = dp.y + 'px';
+  }
+  function dpDesenha() { const r = document.getElementById('dp-raiz'); if (r) r.innerHTML = dpHtml(); }   // o seletor vive fora da página (#dp-raiz): abrir e fechar não a redesenha, e o que se escreveu noutros campos fica como está
+  function dpFoca() { if (!dp) return; const e = document.getElementById(dp.tipo === 'data' ? (dp.vista === 'dias' ? 'dpd-' + dp.foco : 'dpm-' + dp.ym) : 'dph-' + (dp.h || '09')); if (e && e.focus) e.focus({ preventScroll: true }); }
+  function dpFecha() { const loc = dp && dp.loc; dp = null; dpDesenha(); dpRefoca(loc); }
+  function dpAplica(v) {
+    const loc = dp.loc, t = dpBusca(loc); dp = null;
+    if (t) { t.value = v; ['input', 'change'].forEach(n => { try { t.dispatchEvent(new Event(n, { bubbles: true })); } catch (e) { } }); }   // o resto da app reage como se o valor tivesse sido escrito à mão
+    dpDesenha(); dpRefoca(loc);
+  }
+  function dpIrMes(ym) { dp.ym = ym; dp.foco = ym + '-' + E.pad(Math.min(+String(dp.foco || '01-01').slice(8) || 1, diasNoMes(ym))); }
+  function dpAcao(act, a1) {
+    const d = dp; if (!d) return;
+    const mesMais = (ym, n) => { const t = new Date(Date.UTC(+ym.slice(0, 4), +ym.slice(5, 7) - 1 + n, 1)); return E.ymd(t.getUTCFullYear(), t.getUTCMonth() + 1, 1).slice(0, 7); };
+    if (act === 'dp-mes' || act === 'dp-ano') { dpIrMes(mesMais(d.ym, (act === 'dp-ano' ? 12 : 1) * (+a1 || 0))); dpDesenha(); const e = document.querySelector('[data-act="' + act + ':' + a1 + '"]'); if (e && e.focus) e.focus({ preventScroll: true }); }
+    else if (act === 'dp-vista') { d.vista = d.vista === 'dias' ? 'meses' : 'dias'; dpDesenha(); dpFoca(); }
+    else if (act === 'dp-ym') { if (/^\d{4}-\d{2}$/.test(a1 || '')) { dpIrMes(a1); d.vista = 'dias'; dpDesenha(); dpFoca(); } }
+    else if (act === 'dp-dia') { const v = a1 === 'hoje' ? hojeIso() : a1 === 'ontem' ? addDiasIso(hojeIso(), -1) : a1; if (dataOk(v || '') && v >= d.min && v <= d.max) dpAplica(v); }
+    else if (act === 'dp-limpar') dpAplica('');
+    else if (act === 'dp-h') { if (/^([01]\d|2[0-3])$/.test(a1 || '')) { d.h = a1; if (!d.m) d.m = '00'; dpDesenha(); dpFoca(); } }
+    else if (act === 'dp-n') { if (/^[0-5]\d$/.test(a1 || '')) { dpAplica((d.h || E.pad(new Date().getHours())) + ':' + a1); } }
+    else if (act === 'dp-agora') { const n = new Date(); dpAplica(E.pad(n.getHours()) + ':' + E.pad(n.getMinutes())); }
+    else if (act === 'dp-ok') { if (d.h) dpAplica(d.h + ':' + (d.m || '00')); }
+  }
+  function dpTecla(ev) {   // true = a tecla foi tratada aqui
+    const d = dp, k = ev.key;
+    if (k === 'Escape') { if (ev.preventDefault) ev.preventDefault(); dpFecha(); return true; }
+    if (d.tipo !== 'data' || d.vista !== 'dias') return false;
+    const passo = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[k];
+    if (!passo && k !== 'PageUp' && k !== 'PageDown') return false;
+    ev.preventDefault();
+    const base = d.foco || hojeIso(); let n;
+    if (passo) n = addDiasIso(base, passo);
+    else { const t = new Date(Date.UTC(+base.slice(0, 4), +base.slice(5, 7) - 1 + (k === 'PageUp' ? -1 : 1), 1)), ym = E.ymd(t.getUTCFullYear(), t.getUTCMonth() + 1, 1).slice(0, 7); n = ym + '-' + E.pad(Math.min(+base.slice(8), diasNoMes(ym))); }
+    if (n < d.min || n > d.max) return true;
+    d.foco = n; d.ym = n.slice(0, 7); dpDesenha(); dpFoca(); return true;
+  }
+  function dpDados() {
+    const [y, m] = dp.ym.split('-').map(Number), nav = (act, txt, rot) => '<button type="button" class="dp-nav" data-act="' + act + '" aria-label="' + rot + '">' + txt + '</button>', hi = hojeIso();
+    if (dp.vista === 'meses') {
+      return '<div class="dp-top">' + nav('dp-ano:-1', '‹', 'Ano anterior') + '<span class="dp-tit" aria-live="polite">' + y + '</span>' + nav('dp-ano:1', '›', 'Ano seguinte') + '</div>' +
+        '<div class="dp-meses">' + MES_L.map((n, i) => { const ym = y + '-' + E.pad(i + 1); return '<button type="button" id="dpm-' + ym + '" class="dp-m' + (ym === dp.valor.slice(0, 7) ? ' sel' : '') + (ym === hi.slice(0, 7) ? ' hoje' : '') + '" data-act="dp-ym:' + ym + '">' + n.slice(0, 3) + '</button>'; }).join('') + '</div>';
+    }
+    const off = (wdIso(E.ymd(y, m, 1)) + 6) % 7; let cel = ''; for (let i = 0; i < off; i++) cel += '<span></span>';
+    for (let n = 1; n <= diasNoMes(dp.ym); n++) {
+      const iso = E.ymd(y, m, n), w = wdIso(iso), c = ['dp-d'], fora = iso < dp.min || iso > dp.max, feriado = dp.hol.has(iso), ferias = dp.fer.has(iso);
+      if (w === 0 || w === 6) c.push('we'); if (iso === hi) c.push('hoje'); if (iso === dp.valor) c.push('sel'); if (feriado) c.push('hol'); else if (ferias) c.push('fer');
+      cel += '<button type="button" id="dpd-' + iso + '" class="' + c.join(' ') + '" data-act="dp-dia:' + iso + '"' + (fora ? ' disabled' : '') + (iso === dp.valor ? ' aria-pressed="true"' : '') + (iso === dp.foco ? '' : ' tabindex="-1"') +
+        ' aria-label="' + esc(diaTxt(iso) + '/' + y + (feriado ? ', feriado' : '') + (ferias ? ', férias' : '')) + '">' + n + '</button>';
+    }
+    for (let i = off + diasNoMes(dp.ym); i < 42; i++) cel += '<span></span>';   // 6 filas sempre: o seletor não muda de altura de mês para mês
+    return '<div class="dp-top">' + nav('dp-mes:-1', '‹', 'Mês anterior') + '<button type="button" class="dp-tit" data-act="dp-vista" aria-label="Escolher o mês e o ano">' + MES_L[m - 1].replace(/^./, c => c.toUpperCase()) + ' ' + y + ' ▾</button>' + nav('dp-mes:1', '›', 'Mês seguinte') + '</div>' +
+      '<div class="dp-sem" aria-hidden="true"><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span><span>D</span></div><div class="dp-grid">' + cel + '</div>' +
+      '<div class="dp-pe"><button type="button" class="dp-link" data-act="dp-limpar">Limpar</button><span><button type="button" class="dp-link" data-act="dp-dia:ontem">Ontem</button><button type="button" class="dp-link" data-act="dp-dia:hoje">Hoje</button></span></div>';
+  }
+  function dpHoras() {
+    const b = (id, act, txt, on) => '<button type="button" id="' + id + '" class="dp-h' + (on ? ' sel' : '') + '" data-act="' + act + '"' + (on ? ' aria-pressed="true"' : '') + '>' + txt + '</button>';
+    return '<div class="dp-top"><span class="dp-tit" aria-live="polite">' + (dp.h ? dp.h + ':' + (dp.m || '00') : 'Escolher a hora') + '</span></div>' +
+      '<p class="dp-rot">Hora</p><div class="dp-horas" role="group" aria-label="Hora">' + Array.from({ length: 24 }, (_, i) => E.pad(i)).map(h => b('dph-' + h, 'dp-h:' + h, h, dp.h === h)).join('') + '</div>' +
+      '<p class="dp-rot">Minutos</p><div class="dp-horas" role="group" aria-label="Minutos">' + Array.from({ length: 12 }, (_, i) => E.pad(i * 5)).map(m => b('dpn-' + m, 'dp-n:' + m, m, dp.m === m)).join('') + '</div>' +
+      '<p class="dp-nota">Para minutos exatos, escreva no campo.</p>' +
+      '<div class="dp-pe"><button type="button" class="dp-link" data-act="dp-limpar">Limpar</button><span><button type="button" class="dp-link" data-act="dp-agora">Agora</button><button type="button" class="btn pri dp-ok" data-act="dp-ok"' + (dp.h ? '' : ' disabled') + '>OK</button></span></div>';
+  }
+  function dpHtml() {
+    if (!dp) return '';
+    return '<div class="dp-bg" data-act="dp-fechar"><div class="dp-pop" role="dialog" aria-modal="true" aria-label="' + (dp.tipo === 'data' ? 'Escolher a data' : 'Escolher a hora') + '" style="left:' + dp.x + 'px;top:' + dp.y + 'px">' + (dp.tipo === 'data' ? dpDados() : dpHoras()) + '</div></div>';
+  }
+
   /* ---------- menus: botão "+" com ações rápidas e "Ir para…" (os separadores principais ficam como estão) ---------- */
   let menu = null;   // null | 'mais' | 'ir'
-  const ACOES = [['Novo gasto', '💸', 'despesas', 'g-valor', 'rapido:g'], ['Novo rendimento', '💰', 'rendimentos', 'r-valor', 'rapido:r'], ['Abastecimento', '⛽', 'combustivel', 'a-valor'], ['Registar um dia de trabalho', '⏰', 'horas', 'h-i1'], ['Marcar férias ou feriado', '📅', 'calendario', ''], ['Importar extrato do banco', '📥', 'importar', 'imp-texto']];
+  const ACOES = [['Novo gasto', '💸', 'despesas', 'g-valor', 'rapido:g'], ['Novo rendimento', '💰', 'rendimentos', 'r-valor', 'rapido:r'], ['Abastecimento', '⛽', 'combustivel', 'a-valor', 'rapido:a'], ['Registar um dia de trabalho', '⏰', 'horas', 'h-i1', 'rapido:h'], ['Marcar férias ou feriado', '📅', 'calendario', '', 'rapido:c'], ['Importar extrato do banco', '📥', 'importar', 'imp-texto']];
   const PAGINAS = [['inicio', 'Início', 'Visão geral, gráficos e próximos pagamentos'], ['despesas', 'Gastos', 'Registo do dia a dia, por mês e categoria'], ['rendimentos', 'Rendimentos', 'Subsídios, prendas, vendas e reembolsos'], ['importar', 'Importar', 'Extrato do banco em CSV, PDF ou texto'], ['orcamento', 'Orçamento', 'Limites por categoria e como vai cada uma'], ['recorrentes', 'Recorrentes', 'Pagamentos que se repetem e categorias'], ['combustivel', 'Combustível', 'Abastecimentos, consumo e preço médio'], ['horas', 'Horas', 'Registo, banco de horas e trabalhador-estudante'], ['calendario', 'Calendário', 'Férias, feriados, pontes e dias oferecidos'], ['plano', 'Plano mensal', 'De 6 meses a 10 anos, mês a mês'], ['poupanca', 'Poupança e contas', 'Objetivos e saldos reais'], ['propostas', 'Propostas', 'Comparar contratos e cenários de salário'], ['apoios', 'Apoios', 'Apoio à compra de um carro elétrico'], ['definicoes', 'Definições', 'Pressupostos, contratos, IRS, combustível e guia'], ['categorias', 'Categorias e ícones', 'Nomes, ícones e cores das categorias'], ['trabcfg', 'Regras do trabalho', 'Horas extra e trabalhador-estudante']];
   function lateralHtml() {
     const item = (ico, txt, act, sub, atual) => '<button type="button" class="dr-item' + (atual ? ' atual' : '') + '" data-act="' + act + '"' + (atual ? ' aria-current="page"' : '') + '>' + ic(ico) + '<span><b>' + txt + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</span></button>';
@@ -4186,7 +4641,7 @@ table.quebra td { white-space: normal; }
       (resetArm ? confirma('Repor os valores iniciais apaga as suas alterações e volta aos dados de origem.', 'reset', 'Confirmar: apagar as minhas alterações') : item('dados', 'Repor valores iniciais do Excel…', 'reset', 'Volta aos dados de origem')) +
       (apagarArm ? confirma('Apagar toda a informação deixa a app vazia: gastos, rendimentos, recorrentes, contratos, horas, férias e objetivos. As categorias ficam.', 'apagar', 'Confirmar: apagar tudo') : item('dados', 'Apagar toda a informação…', 'apagar', 'Deixa a app vazia')) + '</div>' +
       '<div class="dr-sec"><h3>Aparência</h3><div class="seg" role="group" aria-label="Tema">' + TEMAS_LAT.map(x => '<button type="button" data-act="tema-set:' + x[0] + '" aria-pressed="' + (tema === x[0]) + '">' + x[1] + '</button>').join('') + '</div></div>' +
-      '<div class="dr-sec"><h3>Ajuda</h3>' + item('ajuda', 'Ir para… (tecla /)', 'menu:ir', 'Procurar uma página') + item('ajuda', 'O que há em cada separador', 'ir:definicoes:def-guia') + '</div></aside></div>';
+      '<div class="dr-sec"><h3>Ajuda</h3>' + item('ajuda', 'Ir para… (tecla /)', 'menu:ir', 'Procurar uma página') + item('ajuda', 'Registo rápido (tecla N)', 'menu:mais', 'Abre o «+»: gasto, horas, abastecimento…') + item('ajuda', 'O que há em cada separador', 'ir:definicoes:def-guia') + '</div></aside></div>';
   }
   /* A app sem nenhuma informação da pessoa: ficam só as regras (IRS, salário mínimo, acréscimos) e as categorias, sem limites */
   function dadosVazios() {
@@ -4221,8 +4676,9 @@ table.quebra td { white-space: normal; }
       PAGINAS.map(x => '<button type="button" class="iritem' + (x[0] === tab ? ' atual' : '') + '" data-act="ir:' + x[0] + '" data-txt="' + esc((x[1] + ' ' + x[2]).toLowerCase()) + '">' + ic(x[0]) + '<span><b>' + esc(x[1]) + '</b><small>' + esc(x[2]) + '</small></span></button>').join('') + '<div id="ir-res"></div></div></div></div>';
     return '<div class="fab-wrap' + (menu === 'mais' ? ' aberto' : '') + '">' + (menu === 'mais' ? '<div class="fab-menu" role="group" aria-label="Ações rápidas">' +
       ACOES.map(a => '<button type="button" data-act="' + (a[4] || 'ir:' + a[2] + ':' + a[3]) + '"><span class="cem" aria-hidden="true">' + a[1] + '</span>' + esc(a[0]) + '</button>').join('') + '</div>' : '') +
-      '<button type="button" class="fab" data-act="fab" aria-label="Ações rápidas" aria-expanded="' + (menu === 'mais') + '">' + (menu === 'mais' ? '×' : '+') + '</button></div>';
+      '<button type="button" class="fab" data-act="fab" aria-label="Ações rápidas" title="Registo rápido (tecla N)" aria-keyshortcuts="n" aria-expanded="' + (menu === 'mais') + '">' + (menu === 'mais' ? '×' : '+') + '</button></div>';
   }
+  const focaFab = () => { const b = document.querySelector('.fab-menu button'); if (b && b.focus) b.focus(); };   // com o «+» aberto pelo teclado, o foco vai para a primeira ação
   function vaiPara(t, foco) {
     if (!RENDER[t]) return;
     menu = null; resetArm = false; apagarArm = false; tab = t; try { history.replaceState(null, '', '#' + tab); } catch (e) { } animar = true; render(); window.scrollTo(0, 0);
@@ -4325,7 +4781,7 @@ table.quebra td { white-space: normal; }
     }
   }
   const novoId = () => 'f' + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
-  const CHAVES_TEXTO = new Set(['id', 'cat', 'desc', 'icone', 'period', 'inicio', 'fim', 'ativa', 'conta', 'notas', 'data', 'tipo', 'origem', 'freq', 'ate', 'contar', 'salMin', 'cartao', 'irsModo', 'nome', 'cor', 'periodo', 'de', 'nota', 'repete', 'desconta', 'fixa', 'ocorr', 'prioridade', 'posto', 'obs', 'tarefas', 'disciplina', 'dispensa', 'i1', 'f1', 'i2', 'f2']);
+  const CHAVES_TEXTO = new Set(['id', 'cat', 'desc', 'icone', 'period', 'inicio', 'fim', 'ativa', 'conta', 'notas', 'data', 'tipo', 'origem', 'freq', 'ate', 'contar', 'salMin', 'cartao', 'irsModo', 'subsidios', 'diasTrab', 'nome', 'cor', 'periodo', 'de', 'nota', 'repete', 'desconta', 'fixa', 'ocorr', 'prioridade', 'posto', 'obs', 'tarefas', 'disciplina', 'dispensa', 'i1', 'f1', 'i2', 'f2']);
   const CHAVES_DATA = new Set(['data', 'inicio', 'fim', 'ate', 'de', 'ocorr']);
   const soObjetos = l =>(Array.isArray(l) ? l : []).filter(x => x && typeof x === 'object' && !Array.isArray(x));
   /* Um ficheiro estragado ou mexido à mão pode trazer, num campo de texto, um número, uma lista ou nada. O texto passa a texto (ou vazio) e o que não devia ser uma lista ou um objeto sai, para o resto da app não rebentar. */
@@ -4406,7 +4862,10 @@ table.quebra td { white-space: normal; }
       const i = out.categorias.findIndex(c => c.nome === 'Carro'); out.categorias.splice(i >= 0 ? i + 1 : out.categorias.length, 0, { nome: 'Combustível', icone: '⛽', cor: '#B5542E', limite: '', periodo: 'Mensal' });
     }
     sanearTipos(out);
-    out.ver = 13;
+    // 1.39.0: tabela de retenção da pessoa e limites do subsídio de alimentação: só ficam objetos, sem valores que sejam listas ou objetos
+    [['irsLinhas', 400], ['subsLimites', 60]].forEach(([k, max]) => { out[k] = soObjetos(out[k]).slice(0, max); out[k].forEach(r => Object.keys(r).forEach(c => { if (r[c] !== null && typeof r[c] === 'object') r[c] = ''; })); });
+    if ((saved.ver || 1) < 14 && out.press.estudante && typeof out.press.estudante === 'object' && num(out.press.estudante.limiteSemana) === 6) out.press.estudante.limiteSemana = '';   // 1.39.0: o limite de dispensa passa a seguir as horas por semana (vazio); o 6 era o valor de origem, errado para horários de 34 a 37 h
+    out.ver = 14;
     return out;
   }
   /* Carregar uma cópia .json guardada antes (por exemplo, para trazer os dados de outro aparelho). Pode desfazer-se logo a seguir. */
@@ -4525,6 +4984,7 @@ table.quebra td { white-space: normal; }
     investimentos: () => ({ nome: '', tipo: 'Ações', investido: '', atual: '', aporte: '', inicio: '', rend: '' }),
     propostas: () => ({ nome: 'Nova opção', tipo: 'Contrato', bruto: 920, irs: 0, irsModo: 'Automático', subs: 0, km: 0, port: 0, dias: 22 }),
     periodos: () => ({ inicio: '', tipo: 'Contrato', desc: '', salMin: 'Não', bruto: '', irsModo: 'Automático', irs: 0, subs: '', cartao: 'Sim', km: '', portagens: '', notas: '' }),
+    irsLinhas: () => ({ ano: '', ate: '', taxa: '', parcela: '', k: '', r0: '' }), subsLimites: () => ({ ano: '', cartao: '', dinheiro: '' }),
     salMin: () => ({ ano: '', valor: '', nota: '' }), feriados: () => ({ data: '', nome: '', repete: 'Não' }), pontes: () => ({ inicio: '', ate: '', desc: '', desconta: 'Não', repete: 'Não' }), ferias: () => ({ de: '', ate: '' })
   };
   document.addEventListener('change', ev => {
@@ -4573,8 +5033,12 @@ table.quebra td { white-space: normal; }
   document.addEventListener('pointerdown', () => { premido = true; esperas = 0; }, true);
   ['pointerup', 'pointercancel'].forEach(t => document.addEventListener(t, () => { premido = false; }, true));
   function renderDepois() { if (premido && esperas++ < 40) { setTimeout(renderDepois, 50); return; } premido = false; renderKeep(); }
+  window.addEventListener('resize', () => { if (dp) dpFecha(); });   // o seletor está ancorado ao campo: se a página mexe, fecha
+  window.addEventListener('scroll', () => { if (dp && Date.now() - dp.t > 300) dpFecha(); }, { passive: true });
   document.addEventListener('keydown', ev => {
     const t = ev.target || {}, escreve = /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || '') || t.isContentEditable;
+    if (dp) { if (dpTecla(ev)) return; }   // o seletor de data e hora aberto trata as setas, o PageUp/PageDown e o Escape
+    else if (ev.key === 'F4' || (ev.altKey && ev.key === 'ArrowDown')) { const di = dpEntrada(ev); if (di) { ev.preventDefault(); dpAbrir(di); return; } }
     if (ev.key === 'Tab') {   // dentro de uma folha, Tab dá a volta à folha
       const d = dialogoTopo();
       if (d) {
@@ -4587,10 +5051,12 @@ table.quebra td { white-space: normal; }
       return;
     }
     if (ev.key === 'Escape' && (menu || picker || calSheet || fixaSheet != null || rendSheet != null || planoSheet || detSheet || simSheet || rapido || gastoSheet != null || objSheet != null || contaSheet || corPick || novaCat || nuvemAsk)) {   // com o seletor de ícones por cima de uma folha, fecha só o seletor
-      if (nuvemAsk) nuvemAsk = false; else if (novaCat) novaCat = null; else if (corPick) corPick = null; else if (picker && fixaSheet != null) picker = null; else { if (boas) boasFechar(); menu = null; picker = null; calSheet = null; fixaSheet = null; rendSheet = null; planoSheet = null; detSheet = null; simSheet = null; rapido = null; gastoSheet = null; objSheet = null; contaSheet = null; }
+      if (nuvemAsk) nuvemAsk = false; else if (novaCat) novaCat = null; else if (corPick) corPick = null; else if (picker && fixaSheet != null) picker = null; else { if (boas) boasFechar(); menu = null; picker = null; calSheet = null; fixaSheet = null; rendSheet = null; planoSheet = null; detSheet = null; simSheet = null; fechaRapido(); gastoSheet = null; objSheet = null; contaSheet = null; }
       resetArm = false; apagarArm = false; renderKeep(); return;
     }
     if (ev.key === '/' && !escreve && !ev.ctrlKey && !ev.metaKey && !ev.altKey) { ev.preventDefault(); menu = 'ir'; renderKeep(); setTimeout(() => { const q = document.getElementById('ir-q'); if (q && q.focus) q.focus(); }, 0); return; }
+    if ((ev.key === 'n' || ev.key === 'N') && !escreve && !ev.ctrlKey && !ev.metaKey && !ev.altKey && !dialogoTopo()) { ev.preventDefault(); menu = menu === 'mais' ? null : 'mais'; renderKeep(); if (menu === 'mais') setTimeout(focaFab, 0); return; }   // N abre e fecha o «+»
+    if (menu === 'mais' && (ev.key === 'ArrowDown' || ev.key === 'ArrowUp')) { const bs = Array.from(document.querySelectorAll('.fab-menu button')), i = bs.indexOf(document.activeElement); if (bs.length) { ev.preventDefault(); const j = i < 0 ? (ev.key === 'ArrowDown' ? 0 : bs.length - 1) : (i + (ev.key === 'ArrowDown' ? 1 : bs.length - 1)) % bs.length; bs[j].focus(); } return; }
     if (t.id === 'ir-q' && ev.key === 'Enter') { const p = document.querySelector('.iritem:not([hidden])'); if (p && p.click) { ev.preventDefault(); p.click(); } return; }
     if ((ev.key === 'Enter' || ev.key === ' ') && t.getAttribute && (t.getAttribute('role') === 'link' || t.getAttribute('role') === 'button') && t.dataset && t.dataset.act && !/^(BUTTON|A)$/.test(t.tagName || '')) { ev.preventDefault(); t.click(); }
   });
@@ -4609,21 +5075,34 @@ table.quebra td { white-space: normal; }
     const m = (rapido.tipo === 'g' ? S.gastos : S.extras).slice().reverse().find(x => String(x.desc || '').trim().toLowerCase() === v), c = m ? (rapido.tipo === 'g' ? m.cat : m.tipo) : '';
     if (c && (rapido.tipo === 'g' ? catNomes() : LISTAS.tipos).indexOf(c) >= 0) { rapido.cat = c; const l = rapido.tipo === 'g' ? catNomes() : LISTAS.tipos; document.querySelectorAll('[data-act^="q-cat:"]').forEach((bt, i) => bt.setAttribute('aria-pressed', String(l[i] === rapido.cat))); }
   });
+  const rapidoAtualiza = ev => {   // o total do dia (horas) e a previsão das férias acompanham o que se escreve, sem redesenhar a folha
+    const t = ev.target; if (!rapido || !t || !/^q-/.test(t.id || '')) return;
+    if (rapido.tipo === 'h' && /^q-(i1|b1|b2|f2)$/.test(t.id)) { lerRapido(); const e = document.getElementById('q-resumo'); if (e) e.textContent = resumoHoras(rapido.f) || DICA_ALMOCO; }
+    else if (rapido.tipo === 'c' && /^q-(data|ate)$/.test(t.id)) { lerRapido(); const e = document.getElementById('q-previsao'); if (e) e.textContent = previsaoRapida(); }
+  };
+  document.addEventListener('input', rapidoAtualiza); document.addEventListener('change', rapidoAtualiza);
+  document.addEventListener('input', ev => { if (ev.target && ev.target.id === 'imp-busca') impFiltra(); });
   document.addEventListener('input', ev => { if (ev.target && ev.target.id === 'g-busca') filtraLista('g'); if (ev.target && ev.target.id === 'r-busca') filtraLista('r'); });
   document.addEventListener('input', ev => { if (ev.target && ev.target.id === 'irs-bruto') { irsSim = Math.max(0, parseFloat(ev.target.value) || 0); const o = document.getElementById('irs-out'); if (o) o.innerHTML = irsSimHtml(irsSim); } });
   document.addEventListener('input', ev => { if (ev.target && ev.target.id === 'v-km') { const o = document.getElementById('v-out'); if (o && R) o.textContent = eur((parseFloat(ev.target.value) || 0) * R.cb.consumoUsado / 100 * R.cb.precoUsado); } });
   document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && calSheet) { calSheet = null; render(); return; } if (ev.key === 'Escape' && picker) { picker = null; render(); return; } if (ev.key === 'Enter' && ev.target && /^g-/.test(ev.target.id || '')) { ev.preventDefault(); document.querySelector('[data-act="gasto-add"]').click(); } if (ev.key === 'Enter' && !ev.isComposing && ev.target && /^nc-/.test(ev.target.id || '') && novaCat) { ev.preventDefault(); novaCatCriar(); return; } if (ev.key === 'Enter' && !ev.isComposing && ev.target && /^q-/.test(ev.target.id || '') && rapido) { ev.preventDefault(); rapidoGuardar(); return; } if (ev.key === 'Enter' && ev.target && /^a-/.test(ev.target.id || '')) { ev.preventDefault(); document.querySelector('[data-act="abast-add"]').click(); } });
   document.addEventListener('click', async ev => {
+    const di = dpEntrada(ev); if (di) { ev.preventDefault(); dpAbrir(di); return; }   // o ícone de um campo de data ou hora abre o seletor da app (no computador)
     const gb = ev.target.closest('[data-grupo]');
     if (gb) { const g = gruposVisiveis().find(x => x[0] === gb.dataset.grupo); if (!g) return; tab = (ultimaAba[g[0]] && g[2].indexOf(ultimaAba[g[0]]) >= 0) ? ultimaAba[g[0]] : g[2][0]; try { history.replaceState(null, '', '#' + tab); } catch (e) { } animar = true; render(); window.scrollTo(0, 0); return; }
     const tb = ev.target.closest('[data-tab]'); if (tb) { tab = tb.dataset.tab; try { history.replaceState(null, '', '#' + tab); } catch (e) { } animar = true; render(); window.scrollTo(0, 0); return; }
     const b = ev.target.closest('[data-act]'); if (!b) return;
     const [act, a1, a2] = b.dataset.act.split(':');
+    if (act === 'dp-fechar') { if (ev.target === b && dp) dpFecha(); return; }
+    if (/^dp-/.test(act)) { dpAcao(act, a1); return; }
     if (act === 'add') {
       if (a1 === 'contasExtra' && !Array.isArray(S.contasExtra)) S.contasExtra = [];
       if (a1 === 'contasExtra' && S.contasExtra.length >= 20) { aviso('No máximo 20 contas.'); return; }
       if (a1 === 'investimentos' && !Array.isArray(S.investimentos)) S.investimentos = [];
       if (a1 === 'investimentos' && S.investimentos.length >= 30) { aviso('No máximo 30 investimentos.'); return; }
+      if ((a1 === 'irsLinhas' || a1 === 'subsLimites') && !Array.isArray(S[a1])) S[a1] = [];
+      if (a1 === 'irsLinhas' && S.irsLinhas.length >= 400) { aviso('No máximo 400 linhas de tabela.'); return; }
+      if (a1 === 'subsLimites' && S.subsLimites.length >= 60) { aviso('No máximo 60 anos.'); return; }
       getP(a1).push(NEW[a1]()); queueSave();
       if (a1 === 'fixas') fixaSheet = S.fixas.length - 1;   // um recorrente ou um rendimento novo abre logo na folha de edição
       if (a1 === 'extras') rendSheet = S.extras.length - 1;
@@ -4674,11 +5153,33 @@ table.quebra td { white-space: normal; }
       if (ir) { if (ir.tab === 'despesas' && ir.mes) { gastoMes = ir.mes; filtroAtual.g = ir.cat ? (ir.cat === 'Sem categoria' ? SEM : ir.cat) : ''; } vaiPara(ir.tab); } else renderKeep();
     }
     else if (act === 'rapido') {
-      if (a1 === 'g' || a1 === 'r') { menu = null; rapido = { tipo: a1, valor: '', desc: '', data: hojeIso(), cat: ultimaCat(a1), conta: rapidoDefaults[a1].conta, novo: true, catEscolhida: false }; renderKeep(); setTimeout(() => { const e = document.getElementById('q-valor'); if (e && e.focus) e.focus(); }, 0); }
+      if (a1 === 'g' || a1 === 'r' || a1 === 'a' || a1 === 'h' || a1 === 'c') { menu = null; calSheet = null; rapido = rapidoNovo(a1, a2); renderKeep(); if (a1 === 'g' || a1 === 'r' || a1 === 'a') setTimeout(() => { const e = document.getElementById('q-valor'); if (e && e.focus) e.focus(); }, 0); }   // no dia de trabalho e nas férias o foco fica na folha: um campo de hora abriria logo o seletor
     }
+    else if (act === 'rapido-limpar') { if (rapido) { const t = rapido.tipo; rapidoRasc[t] = null; rapido = rapidoBase(t); renderKeep(); if (t === 'g' || t === 'r' || t === 'a') setTimeout(() => { const e = document.getElementById('q-valor'); if (e && e.focus) e.focus(); }, 0); } }
+    else if (act === 'q-rec') {
+      if (rapido && (rapido.tipo === 'g' || rapido.tipo === 'r')) {
+        lerRapido(); const r = recentesRapido(rapido.tipo)[+a1];
+        if (r) {
+          rapido.desc = r.desc; if (!String(rapido.valor).trim()) rapido.valor = String(r.valor);
+          if (r.cat && (rapido.tipo === 'g' ? catNomes() : LISTAS.tipos).indexOf(r.cat) >= 0) { rapido.cat = r.cat; rapido.catEscolhida = true; }
+          rapido.novo = true; renderKeep();   // novo: o desenho usa o que acabou de preencher, em vez de ler os campos antigos
+          setTimeout(() => { const e = document.getElementById('q-valor'); if (e && e.focus) { e.focus(); if (e.select) e.select(); } }, 0);
+        }
+      }
+    }
+    else if (act === 'rapido-ir') { if (rapido && RENDER[a1]) { rapido = null; vaiPara(a1); } }
+    else if (act === 'q-tipo') {
+      if (rapido && rapido.f) {
+        lerRapido();
+        if (rapido.tipo === 'h') { const t = E.TIPOS_DIA[+a1]; if (t) rapido.f.tipo = t; }
+        else if (rapido.tipo === 'c' && MARCAS.some(m => m[0] === a1)) { rapido.f.tipo = a1; if (a1 === 'ferias') rapido.f.nome = ''; }
+        renderKeep();
+      }
+    }
+    else if (act === 'q-repete') { if (rapido && rapido.f) { lerRapido(); rapido.f.repete = !rapido.f.repete; renderKeep(); } }
     else if (act === 'boas-fechar') { if (ev.target === b || b.classList.contains('x')) { boasFechar(); renderKeep(); } }
     else if (act === 'boas') { boasFechar(); if (a1 === 'extrato') vaiPara('importar'); else if (a1 === 'copia') { menu = 'lateral'; renderKeep(); } else if (a1 === 'nuvem') { nuvemAsk = true; renderKeep(); } else if (a1 === 'mao') vaiPara('definicoes', 'def-contratos'); else renderKeep(); }
-    else if (act === 'rapido-fechar') { if (ev.target === b || b.classList.contains('x')) { lerRapido(); rapido = null; renderKeep(); } }
+    else if (act === 'rapido-fechar') { if (ev.target === b || b.classList.contains('x')) { fechaRapido(); renderKeep(); } }
     else if (act === 'rapido-ok') { if (rapido) rapidoGuardar(); }
     else if (act === 'q-cat') {
       if (rapido) { lerRapido(); const l = rapido.tipo === 'g' ? catNomes() : LISTAS.tipos, n = l[+a1]; if (n !== undefined) { rapido.cat = rapido.cat === n ? '' : n; rapido.catEscolhida = true; document.querySelectorAll('[data-act^="q-cat:"]').forEach((bt, i) => bt.setAttribute('aria-pressed', String(l[i] === rapido.cat))); } }
@@ -4699,22 +5200,35 @@ table.quebra td { white-space: normal; }
     else if (act === 'sim-zero') { if (simSheet) { simSheet.rend = 0; simSheet.desp = 0; simSheet.unico = 0; renderKeep(); } }
     else if (act === 'pode') { if (a1 === 'dia' || a1 === 'semana' || a1 === 'mes') { podeVista = a1; renderKeep(); } }
     else if (act === 'del') { apagaDe(a1, a2); }
+    else if (act === 'dia-trab') {   // dias da semana em que se trabalha neste período (pelo menos um)
+      const p = S.periodos[+a1], w = +a2; if (!p || !(w >= 0 && w <= 6)) return;
+      const set = E.diasTrabSet(p); if (set.has(w)) set.delete(w); else set.add(w);
+      if (!set.size) { aviso('Tem de trabalhar pelo menos um dia da semana.'); return; }
+      p.diasTrab = [1, 2, 3, 4, 5, 6, 0].filter(d => set.has(d)).join(''); queueSave(); renderKeep();
+    }
+    else if (act === 'irs-copiar') {   // começa uma tabela de retenção nova a partir da de 2026, para a pessoa só corrigir os valores
+      const campo = document.getElementById('irs-ano-novo'), ano = campo ? Math.round(Number(String(campo.value || '').replace(',', '.'))) : NaN;
+      if (!isFinite(ano) || ano < 2027 || ano > 2100) { aviso('Escreva o ano da tabela (de 2027 a 2100).'); return; }
+      if (!Array.isArray(S.irsLinhas)) S.irsLinhas = [];
+      if (S.irsLinhas.some(x => String(x.ano).trim() === String(ano))) { aviso('Já há linhas para ' + ano + '. Edite-as, ou apague-as primeiro.'); return; }
+      if (S.irsLinhas.length + E.IRS_TABELA_I_2026.length > 400) { aviso('No máximo 400 linhas de tabela.'); return; }
+      const antes = JSON.stringify(S);
+      E.IRS_TABELA_I_2026.forEach(x => S.irsLinhas.push({ ano, ate: x.ate === Infinity ? '' : x.ate, taxa: x.taxa, parcela: x.parcela != null ? x.parcela : '', k: x.k != null ? x.k : '', r0: x.r0 != null ? x.r0 : '' }));
+      queueSave(); render();
+      aviso('Copiei a tabela de 2026 para ' + ano + '. Substitua pelos valores do despacho desse ano.', () => { S = merge(DEFAULTS, JSON.parse(antes)); queueSave(); render(); });
+    }
     else if (act === 'desfazer-apagar') { if (desfazer) { const f = desfazer; desfazer = null; f(); const el = document.getElementById('toast'); if (el) el.className = 'toast'; } }
     else if (act === 'somar') {
       const inpEl = document.getElementById('somar-' + a1), v = parseFloat(inpEl ? inpEl.value : '');
       if (isFinite(v) && Math.abs(v) <= LIM.num && S.objetivos[+a1]) { S.objetivos[+a1].poupado = num(S.objetivos[+a1].poupado) + v; queueSave(); render(); }
     }
     else if (act === 'orc-ano') { const ks = R.months.map(m => m.key).filter(x => x.slice(0, 4) === a1); if (ks.length) { orcSel = ks.indexOf(hojeYm) >= 0 ? hojeYm : ks[0]; renderKeep(); } }
+    else if (act === 'est-alterna') { const e = S.press.estudante || (S.press.estudante = {}); e.ativo = e.ativo === 'Sim' ? 'Não' : 'Sim'; queueSave(); renderKeep(); }
     else if (act === 'horas-add') {
-      const g = id => document.getElementById(id), msg = g('h-msg');
-      const data = g('h-data').value || hojeIso(), tipo = g('h-tipo').value || 'Trabalho', trab = tipo === 'Trabalho';
-      if (S.horas.registo.some(r => r.data === data)) { msg.textContent = 'Esse dia já está registado.'; return; }
-      if (!dataOk(data)) { msg.textContent = 'Data inválida.'; return; }
-      if (trab && (!g('h-i1').value || !g('h-f1').value)) { msg.textContent = 'Falta o início e o fim da manhã.'; return; }
-      if (trab) { const er = errosHorario(g('h-i1').value, g('h-f1').value, g('h-i2').value, g('h-f2').value); if (er) { msg.textContent = er; return; } }
-      const de = g('h-disp'), dsp = de ? parseFloat(de.value) : NaN;
-      S.horas.registo.push({ data, tipo, i1: trab ? g('h-i1').value : '', f1: trab ? g('h-f1').value : '', i2: trab ? g('h-i2').value : '', f2: trab ? g('h-f2').value : '', tarefas: limpaTexto(g('h-tar').value.trim(), 200), obs: limpaTexto(g('h-obs').value.trim(), 200), disciplina: limpaTexto(g('h-disc').value.trim(), 60), dispensa: isFinite(dsp) ? dsp : '' });
-      horaMes = data.slice(0, 7); queueSave(); render(); document.getElementById('h-msg').textContent = 'Dia registado.';
+      const g = id => document.getElementById(id), msg = g('h-msg'), de = g('h-disp');
+      const er = registoHoras({ data: g('h-data').value, tipo: g('h-tipo').value, i1: g('h-i1').value, f1: g('h-f1').value, i2: g('h-i2').value, f2: g('h-f2').value, tar: g('h-tar').value, obs: g('h-obs').value, disc: g('h-disc').value, disp: de ? de.value : '' });
+      if (er) { msg.textContent = er; return; }
+      queueSave(); render(); document.getElementById('h-msg').textContent = 'Dia registado.';
     }
     else if (act === 'horas-mes') {
       const g = id => document.getElementById(id), msg = g('h-msg');
@@ -4727,7 +5241,7 @@ table.quebra td { white-space: normal; }
       let n = 0, nf = 0;
       for (let d = 1; d <= nd; d++) {
         const iso = ym + '-' + E.pad(d), w = wdIso(iso);
-        if (w === 0 || w === 6 || hol.has(iso) || off.has(iso) || ja.has(iso)) continue;
+        if (!E.trabalhaEm(S, iso) || hol.has(iso) || off.has(iso) || ja.has(iso)) continue;
         if (fer.has(iso)) { S.horas.registo.push({ data: iso, tipo: 'Férias', i1: '', f1: '', i2: '', f2: '', tarefas: '', obs: '', disciplina: '', dispensa: '' }); nf++; }
         else { S.horas.registo.push({ data: iso, tipo: 'Trabalho', i1, f1, i2, f2, tarefas: '', obs: '', disciplina: '', dispensa: '' }); n++; }
       }
@@ -4755,7 +5269,7 @@ table.quebra td { white-space: normal; }
     else if (act === 'ui-cor-repor') { uiSet(u => { u.aspeto = Object.assign({}, u.aspeto); delete u.aspeto.cor; }); renderKeep(); }
     else if (act === 'imp-desligar') { const i = +a1; if (imp && imp.fix && imp.fix[i]) { delete imp.fix[i]; const c = E.categorizar(imp.movs[i].desc, S.importacao.regras, S.categorias); imp.cat[i] = c.cat; imp.cat0[i] = c.cat; imp.org[i] = c.origem; renderKeep(); } }
     else if (act === 'imp-grp') { const g = imp && imp.grupos && imp.grupos[+a1]; if (g) { imp.aberto[g.chave] = !imp.aberto[g.chave]; renderKeep(); } }
-    else if (act === 'imp-todos') { if (imp && imp.cat) { const alguma = imp.movs.some((m, i) => !imp.sel[i] && !imp.dup[i]), marcar = a1 === '1' ? true : a1 === '0' ? false : alguma; imp.movs.forEach((m, i) => { imp.sel[i] = marcar && !imp.dup[i]; }); renderKeep(); } }   // "1" marca todos, "0" desmarca todos (os já registados nunca se marcam); sem número, alterna
+    else if (act === 'imp-todos') { if (imp && imp.cat) { const ac = impAcertos(imp), alvo = imp.movs.map((m, i) => i).filter(i => !ac || ac.has(i)), alguma = alvo.some(i => !imp.sel[i] && !imp.dup[i]), marcar = a1 === '1' ? true : a1 === '0' ? false : alguma; alvo.forEach(i => { imp.sel[i] = marcar && !imp.dup[i]; }); renderKeep(); } }   // "1" marca todos, "0" desmarca todos (os já registados nunca se marcam); sem número, alterna
     else if (act === 'imp-cancelar') { const antes = imp; impOp++; imp = null; render(); if (antes && antes.movs && antes.movs.length) aviso('Importação cancelada.', () => { impOp++; imp = antes; render(); }, 'Desfazer', 10000); }   // um toque sem querer não deita fora a seleção e as categorias já corrigidas
     else if (act === 'imp-sug') impSugestoesAplicar();
     else if (act === 'imp-ok') { if (imp && imp.cat) impConfirmar(); }
@@ -4763,7 +5277,7 @@ table.quebra td { white-space: normal; }
     else if (act === 'g-cat') { const n = catNomes()[+a1], sel = document.getElementById('g-cat'); if (sel && n !== undefined) sel.value = n; document.querySelectorAll('[data-act^="g-cat:"]').forEach((bt, i) => bt.setAttribute('aria-pressed', String(i === +a1))); }
     else if (act === 'r-tipo') { const n = LISTAS.tipos[+a1], sel = document.getElementById('r-tipo'); if (sel && n !== undefined) sel.value = n; document.querySelectorAll('[data-act^="r-tipo:"]').forEach((bt, i) => bt.setAttribute('aria-pressed', String(i === +a1))); }
     else if (act === 'fab') { menu = menu === 'mais' ? null : 'mais'; renderKeep(); }
-    else if (act === 'menu') { menu = (a1 === 'ir' || a1 === 'lateral') ? a1 : null; renderKeep(); setTimeout(() => { const q = document.getElementById(a1 === 'ir' ? 'ir-q' : ''); if (q && q.focus) q.focus(); }, 0); }
+    else if (act === 'menu') { menu = (a1 === 'ir' || a1 === 'lateral' || a1 === 'mais') ? a1 : null; renderKeep(); setTimeout(() => { if (a1 === 'mais') { focaFab(); return; } const q = document.getElementById(a1 === 'ir' ? 'ir-q' : ''); if (q && q.focus) q.focus(); }, 0); }
     else if (act === 'tema-set') { if (TEMAS.indexOf(a1) >= 0) { tema = a1; try { localStorage.setItem('planner-tema', tema); } catch (e) { } aplicaTema(); renderKeep(); } }
     else if (act === 'menu-fechar') { if (ev.target === b || b.classList.contains('x')) { menu = null; resetArm = false; apagarArm = false; renderKeep(); } }
     else if (act === 'ir') { vaiPara(a1, a2); }
@@ -4832,23 +5346,8 @@ table.quebra td { white-space: normal; }
     else if (act === 'desfazer') { desfazerOc(a1, a2); renderKeep(); }
     else if (act === 'abast-add') {
       const g = id => document.getElementById(id), msg = g('a-msg');
-      let valor = parseFloat(g('a-valor').value), litros = parseFloat(g('a-litros').value), preco = parseFloat(g('a-preco').value);
-      const n = [valor, litros, preco].filter(isFinite).length;
-      if (n < 2) { msg.textContent = 'Preencha 2 dos 3: valor, litros, preço.'; return; }
-      if ([valor, litros, preco].some(x => isFinite(x) && x <= 0) || valor > 5000 || litros > 500 || preco > 20) { msg.textContent = 'Valores fora do normal: valor até 5000 €, litros até 500 e preço até 20 €/L.'; return; }
-      if (!isFinite(valor)) valor = Math.round(litros * preco * 100) / 100;
-      if (!isFinite(litros)) litros = Math.round(valor / preco * 100) / 100;
-      if (valor > 5000 || litros > 500) { msg.textContent = 'O valor calculado passa o máximo (5000 € ou 500 litros). Verifique os números.'; return; }
-      if (n === 3 && Math.abs(valor - litros * preco) > 0.05) { msg.textContent = 'Atenção: valor ≠ litros × preço. Verifique o talão.'; return; }
-      const km = parseFloat(g('a-km').value);
-      const dataA = g('a-data').value;
-      if (dataA && !dataOk(dataA)) { msg.textContent = 'Data inválida.'; return; }
-      if (isFinite(km) && (km < 0 || km > 5e6)) { msg.textContent = 'Km fora do intervalo.'; return; }
-      const antes = S.combustivel.abast.filter(a => a.data && a.data <= dataA && isFinite(parseFloat(a.kmConta))).sort((x, y) => x.data < y.data ? -1 : 1).pop();
-      const depoisA = S.combustivel.abast.filter(a => a.data && a.data > dataA && isFinite(parseFloat(a.kmConta))).sort((x, y) => x.data < y.data ? -1 : 1)[0];
-      if (isFinite(km) && depoisA && km >= parseFloat(depoisA.kmConta)) { msg.textContent = 'O km tem de ser inferior ao do abastecimento seguinte (' + f0.format(parseFloat(depoisA.kmConta)) + ').'; return; }
-      if (isFinite(km) && antes && km <= parseFloat(antes.kmConta)) { msg.textContent = 'O km tem de ser superior ao do abastecimento anterior (' + f0.format(parseFloat(antes.kmConta)) + ').'; return; }
-      S.combustivel.abast.push({ data: g('a-data').value, valor, litros, kmConta: isFinite(km) ? km : '', posto: g('a-posto').value.trim() });
+      const er = registoAbast({ valor: g('a-valor').value, litros: g('a-litros').value, preco: g('a-preco').value, km: g('a-km').value, data: g('a-data').value, posto: g('a-posto').value });
+      if (er) { msg.textContent = er; return; }
       queueSave(); render(); document.getElementById('a-msg').textContent = 'Abastecimento registado.';
     }
     else if (act === 'gasto-add') {
