@@ -880,6 +880,12 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
 .mini.ui-lista td.l label.row > span { min-width: 0; overflow-wrap: anywhere; white-space: normal; }
 .mini.ui-lista td:last-child { width: 92px; text-align: right; white-space: nowrap; }
 
+/* Registo do dia: as tarefas têm um espaço grande, de largura total; a tabela dos dias também ganha uma caixa de várias linhas */
+.fields > .field.full { grid-column: 1 / -1; }
+.field textarea { min-height: 44px; line-height: 1.45; }
+textarea.tarefas-tab { min-width: 260px; min-height: 64px; }
+#h-tar, #q-tar { min-height: 120px; }
+
 </style>
 </head>
 <body>
@@ -965,6 +971,11 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
 
   /* Um número de meses por ano escrito pela pessoa: vale se estiver entre o mínimo e o máximo; em branco ou fora disso, o valor por omissão */
   const mesesAno = (v, def, min, max) => { const n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isFinite(n) && n >= min && n <= max ? n : def; };   // texto que não é número também volta ao valor por omissão
+  /* Subsídios de férias e de Natal calculados pelo contrato: 'Duodécimos' (1/12 de cada um todos os meses) ou 'Em meses escolhidos' (cada um no mês que a pessoa escolher; por omissão
+     junho e novembro, e 0 = não tem). 'Junho e novembro' é o nome antigo desta segunda escolha e continua a valer. */
+  const SUBS_MESES = 'Em meses escolhidos';
+  const modoSubsidios = per => { const s = per && per.subsidios; return s === 'Duodécimos' ? 'dd' : (s === SUBS_MESES || s === 'Junho e novembro') ? 'mm' : ''; };
+  const mesSubsidio = (v, def) => { if (v === '' || v == null) return def; const n = parseInt(v, 10); return n >= 0 && n <= 12 ? n : def; };   // 1 a 12, ou 0 (não tem); vazio ou inválido: o mês por omissão
   /* Horas extra de um dia que levam o acréscimo da 1.ª taxa (por omissão 1; as seguintes levam o da 2.ª): press.horasTaxa1 */
   const horasTaxa1 = pr => mesesAno((pr || {}).horasTaxa1, 1, 0, 24);
 
@@ -1210,12 +1221,18 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
       const irsT = irsAplicado(per.irsModo, per.irs, bruto, tabY);
       const liq = X !== null ? X : bruto * (1 - ss - irsT);
       // subsídios de férias e de Natal calculados pelo contrato (per.subsidios): cada um vale um salário bruto e tem retenção própria, pela taxa do valor do subsídio (CIRS, art. 99.º-C).
-      // Em duodécimos: 1/12 de cada em todos os meses. Em junho e novembro: um em cada mês, proporcional aos meses do ano (até esse mês) em que há um período com a mesma escolha.
+      // Em duodécimos: 1/12 de cada em todos os meses. Em meses escolhidos (por omissão, junho e novembro): um subsídio de férias e um de Natal, cada um no mês que a pessoa escolher, proporcional aos meses do ano (até esse mês) em que há um período com a mesma escolha.
       let subsAuto = 0, subsAutoLiq = 0;
-      if (X === null && bruto > 0 && (per.subsidios === 'Duodécimos' || per.subsidios === 'Junho e novembro')) {
-        if (per.subsidios === 'Duodécimos') subsAuto = bruto / 6;
-        else if (m === 6 || m === 11) { let ativos = 0; for (let k = 1; k <= m; k++) { const pk = periodoAt(S, ymd(y, k, 1)); if (pk.subsidios === per.subsidios && String(pk.inicio).slice(0, 7) <= ymd(y, k, 1).slice(0, 7)) ativos++; } subsAuto = bruto * ativos / m; }   // (antes do 1.º período, periodoAt devolve esse: só conta a partir do mês em que ele começa)
-        const tx = per.irsModo === 'Automático' ? irsTaxa(per.subsidios === 'Duodécimos' ? bruto : subsAuto, tabY) : num(per.irs);
+      const modoSub = modoSubsidios(per);
+      if (X === null && bruto > 0 && modoSub) {
+        let valorUm = bruto, nPag = 1;   // valorUm: o valor de cada subsídio pago neste mês; nPag: quantos
+        if (modoSub === 'dd') nPag = 1 / 6;
+        else {
+          nPag = [mesSubsidio(per.mesFerias, 6), mesSubsidio(per.mesNatal, 11)].filter(x => x === m).length;
+          if (nPag) { let ativos = 0; for (let k = 1; k <= m; k++) { const pk = periodoAt(S, ymd(y, k, 1)); if (modoSubsidios(pk) === 'mm' && String(pk.inicio).slice(0, 7) <= ymd(y, k, 1).slice(0, 7)) ativos++; } valorUm = bruto * ativos / m; }   // (antes do 1.º período, periodoAt devolve esse: só conta a partir do mês em que ele começa)
+        }
+        subsAuto = valorUm * nPag;
+        const tx = per.irsModo === 'Automático' ? irsTaxa(valorUm, tabY) : num(per.irs);
         subsAutoLiq = subsAuto * (1 - ss - tx);
       }
       const mesCb = cb.mes[key];
@@ -1429,7 +1446,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
       const e1 = sum('extra1'), eN = sum('extraN'), eD = sum('extraDesc');
       const estimado = regime === 'Banco de horas' ? 0 : vh * (e1 * (1 + a1) + eN * (1 + a2) + eD * (1 + a3));
       out.push({ key: k, diasTrab: rs.filter(r => r.tipo === 'Trabalho' || (r.tipo === '' && num(r.trabalhadas) > 0)).length,
-        diasFerias: rs.filter(r => r.tipo === 'Férias').length, outrasAus: rs.filter(r => r.tipo !== '' && r.tipo !== 'Trabalho' && r.tipo !== 'Férias').length,
+        diasFerias: rs.filter(r => r.tipo === 'Férias').length, outrasAus: rs.filter(r => r.tipo !== '' && r.tipo !== 'Trabalho' && r.tipo !== 'Férias' && r.tipo !== 'Feriado' && r.tipo !== 'Ponte').length,   // um feriado ou uma ponte não é uma ausência
         trabalhadas: sum('trabalhadas'), previstas: sum('previstas'), dispensa: sum('dispensa'), saldo: r6(saldo), compensadas: comp, acumulado: r6(acum),
         valorHora: vh, extra1: e1, extraN: eN, extraDesc: eD, estimado, recibo: has(m.recibo) ? num(m.recibo) : null,
         diferenca: has(m.recibo) ? num(m.recibo) - estimado : null, nota: m.nota || '' });
@@ -2042,7 +2059,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
       investido: Math.max(0, num(c.investido)), atual: has(c.atual) ? Math.max(0, num(c.atual)) : Math.max(0, num(c.investido)), atualDefinido: has(c.atual),
       aporte: Math.max(0, num(c.aporte)), rend: Math.max(-100, Math.min(1000, num(c.rend))), inicio: dataReal(c.inicio) }));
   }
-  root.PlannerEngine = { idMovimento, investimentos, TIPOS_INVESTIMENTO, contasExtra, contasPoupancaExtra, grupoDesc, gruposMovimentos, linhasDeXlsx, fechoMes, reservaAnuais, liquidezMes, subidasPreco, ritmoObjetivo, calc, previsao, semRendimento, taxaPoupanca, sugestoesExtrato, apoios, simularApoio, horizonte, abaixoDoMinimo, combustivel, addM, mk, num, has, parse, fixaEquiv, ocorrencias, periodoAt, salMinAno, ymd, pad, limiteMensal, orcMes, PERIODOS_ORC, irsRetencao, irsTaxa, irsAplicado, irsTabela, IRS_TABELA_I_2026, mesesAno, horasTaxa1, subsIsento, SUBS_ISENTO_2026, diasTrabSet, trabalhaEm, DIAS_TRAB_PADRAO, limiteDispensa, pascoa, feriadosNacionais, feriadosSet, expandir, expandirPontes, horaDe, horasDias, bancoHoras, saldoFerias, TIPOS_DIA, estudanteAtivo,
+  root.PlannerEngine = { idMovimento, investimentos, TIPOS_INVESTIMENTO, contasExtra, contasPoupancaExtra, grupoDesc, gruposMovimentos, linhasDeXlsx, fechoMes, reservaAnuais, liquidezMes, subidasPreco, ritmoObjetivo, calc, previsao, semRendimento, taxaPoupanca, sugestoesExtrato, apoios, simularApoio, horizonte, abaixoDoMinimo, combustivel, addM, mk, num, has, parse, fixaEquiv, ocorrencias, periodoAt, salMinAno, ymd, pad, limiteMensal, orcMes, PERIODOS_ORC, irsRetencao, irsTaxa, irsAplicado, irsTabela, IRS_TABELA_I_2026, mesesAno, horasTaxa1, SUBS_MESES, modoSubsidios, mesSubsidio, subsIsento, SUBS_ISENTO_2026, diasTrabSet, trabalhaEm, DIAS_TRAB_PADRAO, limiteDispensa, pascoa, feriadosNacionais, feriadosSet, expandir, expandirPontes, horaDe, horasDias, bancoHoras, saldoFerias, TIPOS_DIA, estudanteAtivo,
     parseNumero, parseData, parseCSV, detectarColunas, movimentosDeCSV, movimentosDeTexto, movimentosDePdf, conferirSaldos, normalizaDesc, chaveDesc, categorizar, aprender, jaRegistado, duplicados };
   if (typeof module !== 'undefined') module.exports = root.PlannerEngine;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -2253,7 +2270,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
   const LISTAS = {
     get contas() { const b = LISTAS_BASE.contas.slice(); E.contasExtra(S).forEach(c => b.splice(b.length - 1, 0, c.nome)); return b; },
     get tipos() { return juntaLista(LISTAS_BASE.tipos, uiCfg().tiposRend); },
-    irsModo: ['Automático', 'Manual'], subsidios: ['Não calcular', 'Duodécimos', 'Junho e novembro'], get tipoContrato() { return juntaLista(LISTAS_BASE.tipoContrato, uiCfg().tiposPeriodo); },
+    irsModo: ['Automático', 'Manual'], subsidios: ['Não calcular', 'Duodécimos', 'Em meses escolhidos'], get tipoContrato() { return juntaLista(LISTAS_BASE.tipoContrato, uiCfg().tiposPeriodo); },
     period: ['Semanal', 'Quinzenal', 'Mensal', 'Trimestral', 'Semestral', 'Anual'], periodoOrc: ['Diário', 'Semanal', 'Quinzenal', 'Mensal'], simnao: ['Sim', 'Não'], freq: ['Única', 'Mensal', 'Anual']
   };
   const TABS = [['inicio', 'Início'], ['apoios', 'Apoios'], ['sintese', 'Síntese e previsão', 'Poupança daqui a 1, 2, 3, 5 e 10 anos'], ['plano', 'Plano mensal'], ['sintese', 'Síntese e previsão'], ['rendimentos', 'Rendimentos'], ['despesas', 'Gastos'], ['importar', 'Importar'], ['orcamento', 'Orçamento'], ['recorrentes', 'Recorrentes'], ['horas', 'Horas'], ['calendario', 'Calendário'], ['combustivel', 'Combustível'], ['poupanca', 'Poupança e contas'], ['propostas', 'Propostas'], ['definicoes', 'Definições'], ['categorias', 'Categorias e ícones'], ['trabcfg', 'Regras do trabalho']];
@@ -2521,6 +2538,9 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
   /* ---------- validação, segurança e avisos ---------- */
   const LIM = { num: 1e9, texto: 500, ficheiro: 5e6, pdf: 15e6, movimentos: 5000 };
   const limpaTexto = (x, n) => String(x == null ? '' : x).replace(/[\u0000-\u001F\u007F]/g, ' ').slice(0, n || LIM.texto);
+  /* Texto de várias linhas (as tarefas do dia): mantém as mudanças de linha, tira o resto dos caracteres de controlo; até 2000 caracteres */
+  const LIM_TAREFAS = 2000;
+  const limpaLinhas = (x, n) => String(x == null ? '' : x).replace(/\r\n?/g, '\n').replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, ' ').slice(0, n || LIM_TAREFAS);
   const corOk = c => /^#[0-9a-fA-F]{6}$/.test(String(c)) ? c : '#6B7C87';
   const dataOk = x => { if (!/^\d{4}-\d{2}(-\d{2})?$/.test(x)) return false; const y = +x.slice(0, 4), m = +x.slice(5, 7), d = x.length > 7 ? +x.slice(8, 10) : 1; return y >= 1990 && y <= 2100 && m >= 1 && m <= 12 && d >= 1 && d <= new Date(Date.UTC(y, m, 0)).getUTCDate(); };
   const horaOk = x => /^([01]\d|2[0-3]):[0-5]\d$/.test(String(x));
@@ -2549,7 +2569,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
   const f1 = new Intl.NumberFormat('pt-PT', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   const pctTxt = x => (x == null || !isFinite(x)) ? '' : f1.format(x * 100) + ' %';
   let irsSim = 1000;
-  const subsAutoAtivo = () => (S.periodos || []).some(p => p && (p.subsidios === 'Duodécimos' || p.subsidios === 'Junho e novembro'));   // os subsídios de férias e de Natal vêm de algum contrato
+  const subsAutoAtivo = () => (S.periodos || []).some(p => p && E.modoSubsidios(p) !== '');   // os subsídios de férias e de Natal vêm de algum contrato
   function irsSimHtml(b) {
     const tab = E.irsTabela(S, hoje.getFullYear()), ret = E.irsRetencao(b, tab), ss = b * num(S.press.ss);
     return '<div class="tablewrap"><table class="mini"><tbody><tr><td>Retenção de IRS</td><td><b>' + eur(ret) + '</b> (' + pctTxt(E.irsTaxa(b, tab)) + ')</td></tr><tr><td>Segurança Social (' + pctTxt(num(S.press.ss)) + ')</td><td>' + eur(ss) + '</td></tr><tr class="tot"><td>Salário líquido</td><td>' + eur(b - ret - ss) + '</td></tr></tbody></table></div>';
@@ -2815,6 +2835,8 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
   /* ---- as folhas do abastecimento, do dia de trabalho e das férias/feriados: o mesmo gesto do gasto, sem sair da página ---- */
   const qData = (rot, amanha) => field(rot, '<div class="comb"><input type="date" id="q-data" min="1990-01-01" max="2100-12-31" value="' + esc(rapido.data) + '"><button type="button" class="btn" data-act="q-data:0">Hoje</button><button type="button" class="btn" data-act="q-data:' + (amanha ? '-1">Amanhã' : '1">Ontem') + '</button></div>');
   const qTxt = (id, v, o) => '<input type="' + ((o && o.t) || 'text') + '" id="q-' + id + '" value="' + esc(v) + '"' + ((o && o.extra) || '') + '>';
+  const qArea = (id, v, o) => '<textarea id="q-' + id + '" rows="' + ((o && o.rows) || 4) + '"' + ((o && o.extra) || '') + '>' + esc(v) + '</textarea>';   // várias linhas (as tarefas do dia)
+  const campoLargo = html => html.replace('<div class="field">', '<div class="field full">');   // o campo ocupa a largura toda da grelha
   const qChip = (id, act, txt, on) => '<button type="button" class="catchip" id="' + id + '" data-act="' + act + '" aria-pressed="' + (!!on) + '">' + txt + '</button>';
   function rapidoFolha(titulo, ico, corpo, botao, irTab, irTxt) {
     return '<div class="modal baixo" data-act="rapido-fechar"><div class="sheet larga" role="dialog" aria-modal="true" aria-label="' + esc(titulo) + '">' +
@@ -2843,10 +2865,10 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     const chips = E.TIPOS_DIA.map((t, i) => qChip('q-tipo-' + i, 'q-tipo:' + i, esc(t), f.tipo === t)).join('');
     const tm = (id, rot) => field(rot, qTxt(id, f[id], { t: 'time' }));
     return rapidoFolha('Registar um dia de trabalho', '⏰',
-      qData('Dia') +
+      qData('Dia') + '<p class="note" id="q-dia-info" aria-live="polite" style="margin:6px 0 0">' + esc(diaInfo(rapido.data)) + '</p>' +
       '<div class="field" style="margin-top:10px"><label>Tipo de dia</label><div class="catchips" role="group" aria-label="Tipo de dia">' + chips + '</div></div>' +
       (trab ? '<div class="fields fx-campos q-campos q-horas">' + tm('i1', 'Entrada') + tm('b1', 'Início do almoço') + tm('b2', 'Fim do almoço') + tm('f2', 'Saída') + '</div><p class="note" id="q-resumo" aria-live="polite">' + esc(resumoHoras(f) || DICA_ALMOCO) + '</p>' : '') +
-      '<div class="fields fx-campos q-campos">' + field('Tarefas realizadas', qTxt('tar', f.tar, { extra: ' maxlength="200" autocomplete="off" placeholder="ex.: reunião, relatório"' })) + field('Observações', qTxt('obs', f.obs, { extra: ' maxlength="200" autocomplete="off"' })) +
+      '<div class="fields fx-campos q-campos">' + campoLargo(field('Tarefas realizadas', qArea('tar', f.tar, { rows: 5, extra: ' maxlength="' + LIM_TAREFAS + '" placeholder="O que fez hoje: uma tarefa por linha."' }))) + campoLargo(field('Observações', qArea('obs', f.obs, { rows: 2, extra: ' maxlength="500"' }))) +
       (f.tipo === 'Exame' ? field('Disciplina', qTxt('disc', f.disc, { extra: ' maxlength="60"' })) : '') +
       (est.ativo === 'Sim' ? field('Dispensa de estudante (h)', qTxt('disp', f.disp, { t: 'number', extra: ' inputmode="decimal" step="any" placeholder="auto"' }), 'Vazio: a dispensa do dia da semana.') : '') + '</div>',
       'Registar dia', 'horas', 'Abrir as Horas');
@@ -2907,7 +2929,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     if (trab && (!v.i1 || !v.f1)) return 'Falta o início e o fim da manhã.';
     if (trab) { const er = errosHorario(v.i1, v.f1, v.i2, v.f2); if (er) return er; }
     const dsp = parseFloat(v.disp);
-    S.horas.registo.push({ data, tipo, i1: trab ? v.i1 : '', f1: trab ? v.f1 : '', i2: trab ? v.i2 : '', f2: trab ? v.f2 : '', tarefas: limpaTexto(String(v.tar || '').trim(), 200), obs: limpaTexto(String(v.obs || '').trim(), 200), disciplina: limpaTexto(String(v.disc || '').trim(), 60), dispensa: isFinite(dsp) ? dsp : '' });
+    S.horas.registo.push({ data, tipo, i1: trab ? v.i1 : '', f1: trab ? v.f1 : '', i2: trab ? v.i2 : '', f2: trab ? v.f2 : '', tarefas: limpaLinhas(String(v.tar || '').trim(), LIM_TAREFAS), obs: limpaLinhas(String(v.obs || '').trim(), 500), disciplina: limpaTexto(String(v.disc || '').trim(), 60), dispensa: isFinite(dsp) ? dsp : '' });
     horaMes = data.slice(0, 7);
     return '';
   }
@@ -3078,6 +3100,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     if (t === 'sel') return '<select data-p="' + p + '" data-t="sel"' + extra + '>' + (o.blank ? '<option value=""></option>' : '') + o.list.map(x => '<option' + (CONTAS_APP.indexOf(x) >= 0 ? ' value="' + esc(x) + '"' : '') + (x === v ? ' selected' : '') + '>' + esc(x) + '</option>').join('') + '</select>';
     if (t === 'chk') return '<input type="checkbox" data-p="' + p + '" data-t="chk"' + (v ? ' checked' : '') + extra + '>';
     if (t === 'text') return '<input type="text" data-p="' + p + '" data-t="text" maxlength="' + (o.max || 200) + '" value="' + esc(v) + '"' + ph + extra + '>';
+    if (t === 'area') return '<textarea data-p="' + p + '" data-t="area" rows="' + (o.rows || 2) + '" maxlength="' + LIM_TAREFAS + '"' + ph + extra + '>' + esc(v) + '</textarea>';   // várias linhas
     if (t === 'color') return '<button type="button" class="cor-btn" style="--c:' + esc(corOk(v)) + '" data-act="cor:' + esc(p) + '" aria-label="' + esc((o.aria || 'Cor') + ': escolher outra cor') + '" title="Escolher cor"></button>';
     if (t === 'time') return '<input type="time" data-p="' + p + '" data-t="text" value="' + esc(v) + '"' + extra + '>';
     if (t === 'date') return '<input type="date" min="1990-01-01" max="2100-12-31" data-p="' + p + '" data-t="text" value="' + esc(v) + '"' + extra + '>';
@@ -3759,6 +3782,19 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     (S.pontes || []).forEach((p, i) => { if (E.expandir(p, y, y).some(r => d >= r.de && d <= r.ate)) m.push({ k: p.desconta === 'Sim' ? 'pt' : 'of', txt: (p.desconta === 'Sim' ? 'Ponte (desconta das férias): ' : 'Dia oferecido: ') + (p.desc || 'sem nome'), lista: 'pontes', i }); });
     return m;
   }
+  /* O que se precisa de saber de um dia antes de o registar: feriado (nacional ou da lista), férias, ponte, dia oferecido ou dia em que o contrato não pede trabalho */
+  function diaInfo(iso) {
+    if (!iso || !dataOk(String(iso))) return '';
+    const m = marcasDoDia(iso), sem = !E.trabalhaEm(S, iso);
+    if (!m.length && !sem) return '';
+    const nac = m.filter(x => /^Feriado nacional: /.test(x.txt)).map(x => x.txt.slice(18)), t = m.filter(x => !(/^Feriado: /.test(x.txt) && nac.indexOf(x.txt.slice(9)) >= 0)).map(x => x.txt);   // um feriado nacional que também está escrito à mão na lista aparece uma vez só
+    return (t.length ? t.join(' · ') : 'Sem trabalho neste dia (fim de semana, ou fora dos dias de trabalho do contrato)') + '.' + (m.some(x => x.k === 'hol') ? ' Não conta como dia de trabalho: o que trabalhar entra como horas extra.' : '');
+  }
+  function tipoSugerido(iso) {   // o tipo de dia que o calendário aponta para esta data (Trabalho se não aponta nenhum)
+    if (!iso || !dataOk(String(iso))) return 'Trabalho';
+    const m = marcasDoDia(iso);
+    return m.some(x => x.k === 'fer') ? 'Férias' : m.some(x => x.k === 'hol') ? 'Feriado' : m.some(x => x.k === 'pt') ? 'Ponte' : m.some(x => x.k === 'of') ? 'Folga' : 'Trabalho';
+  }
   function aplicarMarca(St, sh) {
     const anos = sh.repete ? [] : sh.anos.slice();
     if (sh.tipo === 'feriado') St.feriados.push({ data: sh.data, nome: sh.nome || 'Feriado municipal', repete: sh.repete ? 'Sim' : 'Não', anos });
@@ -3814,7 +3850,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
       return '<tr><td>' + inp(b + 'data', { t: 'date', aria: 'Data' }) + '</td><td>' + diaTxt(r.data).slice(0, 3) + '</td><td>' + inp(b + 'tipo', { t: 'sel', list: E.TIPOS_DIA, blank: true, aria: 'Tipo de dia' }) + '</td>' +
         ['i1', 'f1', 'i2', 'f2'].map((c, j) => '<td>' + inp(b + c, { t: 'time', aria: ['Início da manhã', 'Fim da manhã', 'Início da tarde', 'Fim da tarde'][j] }) + '</td>').join('') +
         '<td>' + inp(b + 'dispensa', { ph: est.ativo === 'Sim' ? String(r.dispensa) : '', aria: 'Dispensa de estudante (h)' }) + '</td><td>' + hh(r.previstas) + '</td><td>' + hh(r.trabalhadas) + '</td><td class="' + (r.saldo < 0 ? 'neg-v' : '') + '"><b>' + hhs(r.saldo) + '</b></td><td>' + hh(r.extra1 + r.extraN + r.extraDesc) + '</td>' +
-        '<td class="l">' + inp(b + 'tarefas', { t: 'text', cls: 'wide', aria: 'Tarefas realizadas' }) + (r.tipo === 'Exame' ? ' ' + inp(b + 'disciplina', { t: 'text', ph: 'Disciplina', aria: 'Disciplina' }) + (r.provasExcede ? ' <span class="chip bad">Mais de ' + num(est.limiteProvas || 4) + ' provas</span>' : '') : '') + '</td><td>' + delBtn('horas.registo', r._i) + '</td></tr>';
+        '<td class="l">' + inp(b + 'tarefas', { t: 'area', rows: 3, cls: 'tarefas-tab', aria: 'Tarefas realizadas' }) + (r.tipo === 'Exame' ? ' ' + inp(b + 'disciplina', { t: 'text', ph: 'Disciplina', aria: 'Disciplina' }) + (r.provasExcede ? ' <span class="chip bad">Mais de ' + num(est.limiteProvas || 4) + ' provas</span>' : '') : '') + '</td><td>' + delBtn('horas.registo', r._i) + '</td></tr>';
     }).join('');
     const brows = bl.map(b => {
       const base = 'horas.meses.' + b.key + '.';
@@ -3826,12 +3862,15 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     return '<section><h2>Horas</h2><p class="lead">Registo dia a dia, como no Excel: as horas previstas vêm do contrato e do calendário (fins de semana, feriados, pontes e dias oferecidos não contam), e o saldo entra no banco de horas.</p>' + estatutoHtml() +
       '<div class="row">' + stepper('horaMes', keys, horaMes, kk => mesLongo(kk + '-01'), hojeYm) + '</div><div style="margin-top:12px">' + kpis + '</div></section>' +
       '<section class="card novo"><h3>Registar um dia</h3><div class="fields">' + field('Data', '<input type="date" id="h-data" value="' + hojeIso() + '">') +
-      field('Tipo de dia', '<select id="h-tipo">' + E.TIPOS_DIA.map(t => '<option>' + t + '</option>').join('') + '</select>') +
-      field('Início (manhã)', tm('h-i1', ult.i1, 'Início da manhã')) + field('Fim (manhã)', tm('h-f1', ult.f1, 'Fim da manhã')) + field('Início (tarde)', tm('h-i2', ult.i2, 'Início da tarde')) + field('Fim (tarde)', tm('h-f2', ult.f2, 'Fim da tarde')) +
-      (est.ativo === 'Sim' ? field('Dispensa de estudante (h)', '<input type="number" inputmode="decimal" step="any" id="h-disp" placeholder="auto">', 'Vazio: a dispensa do dia da semana, até cobrir a falta.') : '') +
-      field('Disciplina (exames)', '<input type="text" id="h-disc">') + field('Tarefas realizadas', '<input type="text" id="h-tar">') + field('Observações', '<input type="text" id="h-obs">') + '</div>' +
+      field('Tipo de dia', '<select id="h-tipo">' + E.TIPOS_DIA.map(t => '<option' + (t === tipoSugerido(hojeIso()) ? ' selected' : '') + '>' + t + '</option>').join('') + '</select>') + '</div>' +
+      '<p class="note" id="h-dia-info" aria-live="polite" style="margin:8px 0 0">' + esc(diaInfo(hojeIso())) + '</p>' +
+      '<div class="fields" style="margin-top:12px">' + field('Início (manhã)', tm('h-i1', ult.i1, 'Início da manhã')) + field('Fim (manhã)', tm('h-f1', ult.f1, 'Fim da manhã')) + field('Início (tarde)', tm('h-i2', ult.i2, 'Início da tarde')) + field('Fim (tarde)', tm('h-f2', ult.f2, 'Fim da tarde')) +
+      (est.ativo === 'Sim' ? field('Dispensa de estudante (h)', '<input type="number" inputmode="decimal" step="any" id="h-disp" placeholder="auto">', 'Vazio: a do dia da semana.') : '') +
+      field('Disciplina (exames)', '<input type="text" id="h-disc" maxlength="60">').replace('<div class="field">', '<div class="field" id="h-disc-box"' + (tipoSugerido(hojeIso()) === 'Exame' ? '' : ' hidden') + '>') + '</div>' +
+      '<div class="fields" style="margin-top:12px">' + field('Tarefas realizadas', '<textarea id="h-tar" rows="6" maxlength="' + LIM_TAREFAS + '" placeholder="O que fez hoje: uma tarefa por linha."></textarea>').replace('<div class="field">', '<div class="field full">') +
+      field('Observações', '<textarea id="h-obs" rows="2" maxlength="500"></textarea>').replace('<div class="field">', '<div class="field full">') + '</div>' +
       '<div class="row" style="margin-top:12px"><button class="btn pri" data-act="horas-add">Registar dia</button><button class="btn" data-act="horas-mes">Preencher o mês inteiro (' + mesTxt(horaMes + '-01') + ')</button><span id="h-msg" class="muted" role="status"></span></div>' +
-      '<p class="note" style="margin-top:8px">Os horários vêm do último dia registado. "Preencher o mês inteiro" usa estes horários nos dias úteis que ainda não têm registo, salta feriados, pontes e dias oferecidos, e regista como férias os dias marcados no calendário.</p></section>' +
+      '<p class="note" style="margin-top:8px">Os horários vêm do último dia registado. "Preencher o mês inteiro" usa estes horários nos dias úteis que ainda não têm registo, regista como feriado os feriados e como ponte ou folga as pontes e os dias oferecidos, e como férias os dias marcados no calendário.</p></section>' +
       '<section><h2>Dias de ' + mesLongo(horaMes + '-01') + '</h2><div class="tablewrap"><table><thead><tr><th>Data</th><th>Dia</th><th>Tipo</th><th>Início</th><th>Fim</th><th>Início</th><th>Fim</th><th>Dispensa (h)</th><th>Previstas</th><th>Trabalhadas</th><th>Saldo</th><th>Extra</th><th class="l">Tarefas</th><th></th></tr></thead><tbody>' + (linhas || '<tr><td colspan="14" class="empty">Sem dias registados neste mês.</td></tr>') + '</tbody></table></div></section>' +
       '<section><h2>Banco de horas</h2><p class="lead">' + regimeTxt + '</p><div class="tablewrap tall"><table class="sticky"><thead><tr><th>Mês</th><th>Dias trabalhados</th><th>Férias</th><th>Outras ausências</th><th>Trabalhadas</th><th>Previstas</th><th>Saldo</th><th>Compensadas</th><th>Acumulado</th><th>Valor da hora</th><th>Extra 1.ª hora</th><th>Extra seguintes</th><th>Extra descanso/feriado</th><th>Extras estimados</th><th>Recebido no recibo (€)</th><th>Recibo − estimado</th><th class="l">Nota</th></tr></thead><tbody>' + brows + '</tbody></table></div></section>' +
       (window.Chart ? '<section><h2>Saldo por mês</h2><div class="chartbox on" data-chart="horas-saldo" role="img" aria-label="Saldo de horas por mês e banco acumulado"></div></section>' : '') +
@@ -4517,10 +4556,12 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     // subsídios de férias e de Natal e dias da semana em que se trabalha, por período
     const DIAS_ROT = [['Seg', 1], ['Ter', 2], ['Qua', 3], ['Qui', 4], ['Sex', 5], ['Sáb', 6], ['Dom', 0]], extrasSub = S.extras.some(e => /^Subsídio/.test(e.tipo || '') && e.contar === 'Sim');
     const det = S.periodos.map((x, i) => {
-      const b = 'periodos.' + i + '.', trab = E.diasTrabSet(x), ms = R.months.filter(m => m.per === x), totSub = ms.reduce((a, m) => a + num(m.subsAutoLiq), 0), modo = x.subsidios === 'Duodécimos' || x.subsidios === 'Junho e novembro';
+      const b = 'periodos.' + i + '.', trab = E.diasTrabSet(x), ms = R.months.filter(m => m.per === x), totSub = ms.reduce((a, m) => a + num(m.subsAutoLiq), 0), modo = E.modoSubsidios(x) !== '', emMeses = E.modoSubsidios(x) === 'mm';
+      const selMes = (campo, def, aria) => { const atual = E.mesSubsidio(x[campo], def); return '<select data-p="' + b + campo + '" data-t="num" aria-label="' + esc(aria) + '"><option value="0"' + (atual === 0 ? ' selected' : '') + '>Não paga</option>' + MES_L.map((n, k) => '<option value="' + (k + 1) + '"' + (atual === k + 1 ? ' selected' : '') + '>' + n + '</option>').join('') + '</select>'; };   // 0 = esse subsídio não existe neste contrato
       const nome = esc(x.desc || x.tipo || 'Sem nome') + (x.inicio ? ' · desde ' + esc(String(x.inicio).split('-').reverse().join('/')) : '');
       return '<div class="pdet"><h4>' + nome + '</h4><div class="fields">' +
-        field('Subsídios de férias e de Natal', inp(b + 'subsidios', { t: 'sel', list: LISTAS.subsidios, aria: 'Subsídios de férias e de Natal do período ' + (i + 1) }), 'Cada subsídio vale um salário bruto, com Segurança Social e retenção próprias. Duodécimos: 1/12 de cada um em todos os meses. Junho e novembro: um em cada mês (proporcional no ano em que o período começa). Não calcular: escreve-os em Rendimentos. É uma estimativa: confirme no recibo.') +
+        field('Subsídios de férias e de Natal', inp(b + 'subsidios', { t: 'sel', list: LISTAS.subsidios, aria: 'Subsídios de férias e de Natal do período ' + (i + 1) }), 'Cada subsídio vale um salário bruto, com Segurança Social e retenção próprias. Duodécimos: 1/12 de cada um em todos os meses. Em meses escolhidos: cada um no mês que indicar abaixo (proporcional no ano em que o período começa). Não calcular: escreve-os em Rendimentos. É uma estimativa: confirme no recibo.') +
+        (emMeses ? field('Subsídio de férias pago em', selMes('mesFerias', 6, 'Mês em que se recebe o subsídio de férias do período ' + (i + 1)), 'Por omissão junho. «Não paga»: este contrato não o tem.') + field('Subsídio de Natal pago em', selMes('mesNatal', 11, 'Mês em que se recebe o subsídio de Natal do período ' + (i + 1)), 'Por omissão novembro. A lei dá até 15 de dezembro: escolha o mês do seu recibo.') : '') +
         '<div class="field"><label id="dt-' + i + '">Dias da semana em que trabalha</label><div class="seg dias" role="group" aria-labelledby="dt-' + i + '">' + DIAS_ROT.map(([n, w]) => '<button type="button" id="dt-' + i + '-' + w + '" data-act="dia-trab:' + i + ':' + w + '" aria-pressed="' + trab.has(w) + '">' + n + '</button>').join('') + '</div><span class="hint">Decide os dias úteis do mês, as horas previstas e os km estimados. Feriados, férias e pontes contam à parte.</span></div></div>' +
         (modo && ms.length ? '<p class="note">Neste período o plano conta ' + eur(totSub) + ' líquidos de subsídios, nos ' + ms.length + ' meses do plano.</p>' : '') +
         (modo && extrasSub ? '<p class="note bad">Já tem subsídios escritos em Rendimentos. Com esta escolha ficam contados duas vezes: apague-os de lá (ou ponha «Não calcular»).</p>' : '') + '</div>';
@@ -4952,6 +4993,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
       const i = out.categorias.findIndex(c => c.nome === 'Carro'); out.categorias.splice(i >= 0 ? i + 1 : out.categorias.length, 0, { nome: 'Combustível', icone: '⛽', cor: '#B5542E', limite: '', periodo: 'Mensal' });
     }
     sanearTipos(out);
+    (out.periodos || []).forEach(p => { if (p && p.subsidios === 'Junho e novembro') p.subsidios = E.SUBS_MESES; });   // 1.41.0: «Junho e novembro» passou a «Em meses escolhidos» (os meses são da pessoa; por omissão os mesmos)
     // 1.39.0: tabela de retenção da pessoa e limites do subsídio de alimentação: só ficam objetos, sem valores que sejam listas ou objetos
     [['irsLinhas', 400], ['subsLimites', 60]].forEach(([k, max]) => { out[k] = soObjetos(out[k]).slice(0, max); out[k].forEach(r => Object.keys(r).forEach(c => { if (r[c] !== null && typeof r[c] === 'object') r[c] = ''; })); });
     if ((saved.ver || 1) < 14 && out.press.estudante && typeof out.press.estudante === 'object' && num(out.press.estudante.limiteSemana) === 6) out.press.estudante.limiteSemana = '';   // 1.39.0: o limite de dispensa passa a seguir as horas por semana (vazio); o 6 era o valor de origem, errado para horários de 34 a 37 h
@@ -5093,6 +5135,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     const t = el.dataset.t; let v;
     if (t === 'chk') v = el.checked; else if (t === 'num') v = el.value === '' ? '' : parseFloat(el.value); else v = el.value;
     if (t === 'num' && v !== '' && (!isFinite(v) || Math.abs(v) > LIM.num)) { aviso('Valor fora do intervalo permitido (até 1 000 000 000). Ficou o valor anterior.'); renderKeep(); return; }
+    if (t === 'area' && typeof v === 'string') v = limpaLinhas(v);
     if (t === 'text' && typeof v === 'string') { v = limpaTexto(v); if (/^\d{4}-\d{2}(-\d{2})?$/.test(v) && !dataOk(v)) { aviso('Data inválida: use um ano entre 1990 e 2100 e um dia que exista. Ficou o valor anterior.'); renderKeep(); return; } }
     if (el.dataset.p === 'press.diaSalario' && v !== '' && (v < 1 || v > 31 || v !== Math.round(v))) { aviso('O dia do salário tem de ser um número inteiro de 1 a 31. Ficou o valor anterior.'); renderKeep(); return; }
     if (el.dataset.p === 'press.reservaMin' && v !== '' && v < 0) { aviso('A reserva mínima não pode ser negativa. Ficou o valor anterior.'); renderKeep(); return; }
@@ -5167,10 +5210,23 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
   });
   const rapidoAtualiza = ev => {   // o total do dia (horas) e a previsão das férias acompanham o que se escreve, sem redesenhar a folha
     const t = ev.target; if (!rapido || !t || !/^q-/.test(t.id || '')) return;
+    if (rapido.tipo === 'h' && t.id === 'q-data') { const e = document.getElementById('q-dia-info'); if (e) e.textContent = diaInfo(t.value); }
     if (rapido.tipo === 'h' && /^q-(i1|b1|b2|f2)$/.test(t.id)) { lerRapido(); const e = document.getElementById('q-resumo'); if (e) e.textContent = resumoHoras(rapido.f) || DICA_ALMOCO; }
     else if (rapido.tipo === 'c' && /^q-(data|ate)$/.test(t.id)) { lerRapido(); const e = document.getElementById('q-previsao'); if (e) e.textContent = previsaoRapida(); }
   };
   document.addEventListener('input', rapidoAtualiza); document.addEventListener('change', rapidoAtualiza);
+  /* Formulário «Registar um dia» da página: a data diz o que o calendário sabe dela (feriado, férias, ponte…) e, se a pessoa ainda não escolheu o tipo de dia, propõe o certo; a disciplina só aparece nos exames */
+  const horasFormAtualiza = ev => {
+    const t = ev.target; if (!t || !/^h-(data|tipo)$/.test(t.id || '')) return;
+    const tipo = document.getElementById('h-tipo'), box = document.getElementById('h-disc-box');
+    if (t.id === 'h-tipo') { if (ev.type === 'change' && tipo && tipo.dataset) tipo.dataset.manual = '1'; }
+    else {
+      const info = document.getElementById('h-dia-info'); if (info) info.textContent = diaInfo(t.value);
+      if (tipo && !(tipo.dataset && tipo.dataset.manual) && dataOk(String(t.value || ''))) tipo.value = tipoSugerido(t.value);
+    }
+    if (box && tipo) box.hidden = tipo.value !== 'Exame';
+  };
+  document.addEventListener('input', horasFormAtualiza); document.addEventListener('change', horasFormAtualiza);
   document.addEventListener('input', ev => { if (ev.target && ev.target.id === 'imp-busca') impFiltra(); });
   document.addEventListener('input', ev => { if (ev.target && ev.target.id === 'g-busca') filtraLista('g'); if (ev.target && ev.target.id === 'r-busca') filtraLista('r'); });
   document.addEventListener('input', ev => { if (ev.target && ev.target.id === 'irs-bruto') { irsSim = Math.max(0, parseFloat(ev.target.value) || 0); const o = document.getElementById('irs-out'); if (o) o.innerHTML = irsSimHtml(irsSim); } });
@@ -5327,15 +5383,18 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
       { const er = errosHorario(i1, f1, i2, f2); if (er) { msg.textContent = er; return; } }
       const ym = horaMes, nd = new Date(Date.UTC(+ym.slice(0, 4), +ym.slice(5), 0)).getUTCDate();
       const hol = E.feriadosSet(S), fer = feriasSetUi(), off = new Set(), ja = new Set(S.horas.registo.map(r => r.data));
-      E.expandirPontes(S).forEach(r => eachIso(r.de, r.ate, d => off.add(d)));
-      let n = 0, nf = 0;
+      const offTipo = new Map(); E.expandirPontes(S).forEach(r => eachIso(r.de, r.ate, d => { off.add(d); offTipo.set(d, r.desconta ? 'Ponte' : 'Folga'); }));   // pontes (desconta das férias) e dias oferecidos
+      let n = 0, nf = 0, nh = 0;
+      const vazio = (iso, tipo) => S.horas.registo.push({ data: iso, tipo, i1: '', f1: '', i2: '', f2: '', tarefas: '', obs: '', disciplina: '', dispensa: '' });
       for (let d = 1; d <= nd; d++) {
         const iso = ym + '-' + E.pad(d), w = wdIso(iso);
-        if (!E.trabalhaEm(S, iso) || hol.has(iso) || off.has(iso) || ja.has(iso)) continue;
+        if (!E.trabalhaEm(S, iso) || ja.has(iso)) continue;
+        if (hol.has(iso)) { vazio(iso, 'Feriado'); nh++; continue; }   // os feriados ficam registados como feriados, e as pontes e os dias oferecidos também
+        if (off.has(iso)) { vazio(iso, offTipo.get(iso) || 'Folga'); nh++; continue; }
         if (fer.has(iso)) { S.horas.registo.push({ data: iso, tipo: 'Férias', i1: '', f1: '', i2: '', f2: '', tarefas: '', obs: '', disciplina: '', dispensa: '' }); nf++; }
         else { S.horas.registo.push({ data: iso, tipo: 'Trabalho', i1, f1, i2, f2, tarefas: '', obs: '', disciplina: '', dispensa: '' }); n++; }
       }
-      queueSave(); render(); document.getElementById('h-msg').textContent = n + ' dias de trabalho e ' + nf + ' de férias preenchidos.';
+      queueSave(); render(); document.getElementById('h-msg').textContent = n + ' dias de trabalho e ' + nf + ' de férias preenchidos' + (nh ? ' (mais ' + nh + (nh === 1 ? ' feriado ou ponte registado' : ' feriados e pontes registados') + ')' : '') + '.';
     }
     else if (act === 'cal') { calSheet = { data: a1, tipo: '', nome: '', repete: true, anos: [], carnaval: false }; render(); }
     else if (act === 'cal-fechar') { if (ev.target === b || b.classList.contains('x')) { calSheet = null; render(); } }
