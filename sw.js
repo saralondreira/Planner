@@ -1,5 +1,5 @@
-/* Service worker do Planner: a app abre sem internet. A versão muda sempre que o código muda (o build escreve o número em e2c97de6ae). */
-const VERSAO = 'planner-e2c97de6ae';
+/* Service worker do Planner: a app abre sem internet. A versão muda sempre que o código muda (o build escreve o número em 6c3e80392a). */
+const VERSAO = 'planner-6c3e80392a';
 const FICHEIROS = ['./', 'index.html', 'manifest.webmanifest', 'icone-180.png', 'icone-192.png', 'icone-512.png'];
 
 self.addEventListener('install', e => {

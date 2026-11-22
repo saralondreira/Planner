@@ -872,6 +872,14 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
 .nc-ico-btn { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: flex-start; text-align: left; min-height: 44px; }
 .nc-ico-btn .ico { flex: none; }
 
+/* Listas de «Personalizar a app» (indicadores, ações do «+»): a caixa fica ao lado do texto, que quebra linha se for comprido, e as setas ficam sempre à vista */
+.mini.ui-lista { width: 100%; table-layout: fixed; }
+.mini.ui-lista td.l label.row { flex-wrap: nowrap; align-items: center; min-width: 0; }
+.mini.ui-lista td.l label.row input { flex: none; }
+.mini.ui-lista td.l { white-space: normal; }
+.mini.ui-lista td.l label.row > span { min-width: 0; overflow-wrap: anywhere; white-space: normal; }
+.mini.ui-lista td:last-child { width: 92px; text-align: right; white-space: nowrap; }
+
 </style>
 </head>
 <body>
@@ -885,7 +893,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
 <div id="dp-raiz"></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </div>
-<script id="seed" type="application/json">{"press": {"ss": 0.11, "kmExtra": 0, "manut": 0.02, "dias": 22, "mesInicial": "2026-10-01", "inicioLic": "2027-09-01", "horasDia": 8, "diasFerias": 22, "saldoPrincipal": 0, "revolut": 0, "gasoleoManual": 2.3, "consumoManual": 6, "usarPrecoMedido": "Sim", "usarConsumoMedido": "Sim", "horizonte": 36, "horasSemana": 35, "regimeExtras": "Ainda não sei", "acr1": 0.25, "acr2": 0.375, "acr3": 0.5, "estudante": {"ativo": "Não", "de": "", "ate": "", "dias": [1, 1, 1, 1, 1], "limiteSemana": "", "limiteProvas": 4}, "feriadosAuto": "Sim"}, "periodos": [], "salMin": [{"ano": 2026, "valor": 920, "nota": "DGERT — retribuição mínima mensal garantida 2026"}, {"ano": 2027, "valor": 970, "nota": "Previsto: acordo de Concertação Social e proposta de OE 2027. Falta o decreto-lei"}, {"ano": 2028, "valor": 1020, "nota": "Acordo tripartido de outubro de 2024: subidas de 50 € por ano até 1 020 € em 2028 (falta o decreto-lei)"}, {"ano": 2029, "valor": 1100, "nota": "Meta do programa do Governo (1 100 €); ainda não consta de um acordo. Por confirmar"}], "fixas": [], "extras": [], "gastos": [], "feriados": [], "pontes": [], "plano": {}, "contas": {}, "objetivos": [], "ferias": [], "combustivel": {"nRecente": 4, "iva": 0.23, "abast": []}, "propostas": [], "ver": 14, "irsLinhas": [], "subsLimites": [], "importacao": {"regras": []}, "saltadas": [], "horas": {"saldoInicial": 0, "meses": {}, "registo": []}, "categorias": [{"nome": "Carro", "icone": "🚗", "cor": "#0D6A73", "limite": "", "periodo": "Mensal"}, {"nome": "Combustível", "icone": "⛽", "cor": "#B5542E", "limite": "", "periodo": "Mensal"}, {"nome": "Portagens", "icone": "🛣️", "cor": "#7A6A4F", "limite": "", "periodo": "Mensal"}, {"nome": "Comunicações", "icone": "📱", "cor": "#3B6FD4", "limite": "", "periodo": "Mensal"}, {"nome": "Estudos", "icone": "🎓", "cor": "#7A52C7", "limite": "", "periodo": "Mensal"}, {"nome": "Lazer", "icone": "🎮", "cor": "#D1488A", "limite": "", "periodo": "Mensal"}, {"nome": "Saúde", "icone": "💊", "cor": "#C94B3B", "limite": "", "periodo": "Mensal"}, {"nome": "Subscrições", "icone": "🔁", "cor": "#B07A12", "limite": "", "periodo": "Mensal"}, {"nome": "Casa", "icone": "🏠", "cor": "#4F8A3A", "limite": "", "periodo": "Mensal"}, {"nome": "Alimentação", "icone": "🛒", "cor": "#D9822B", "limite": "", "periodo": "Mensal"}, {"nome": "Restauração", "icone": "🍽️", "cor": "#E0A030", "limite": "", "periodo": "Mensal"}, {"nome": "Compras", "icone": "🛍️", "cor": "#8E5BB8", "limite": "", "periodo": "Mensal"}, {"nome": "Prendas", "icone": "🎁", "cor": "#E0607E", "limite": "", "periodo": "Mensal"}, {"nome": "Transportes", "icone": "🚌", "cor": "#2F8F9D", "limite": "", "periodo": "Mensal"}, {"nome": "Transferências", "icone": "🔄", "cor": "#5B7FA6", "limite": "", "periodo": "Mensal"}, {"nome": "Animais", "icone": "🐾", "cor": "#A0683A", "limite": "", "periodo": "Mensal"}, {"nome": "Outros", "icone": "📦", "cor": "#6B7C87", "limite": "", "periodo": "Mensal"}], "orcamento": {"geral": 0, "geralMeses": {}}, "apoios": {"ano": 2026, "contarSubs": true, "modo": "agregado", "adultos": 1, "outrosAdultos": "", "tarifaSocial": false, "refManual": false, "rendOutroAno": "", "limite": 11572, "apoioPct": 0.8, "pctMin": 0.7, "pctMax": 0.9, "tetoPreco": 15000, "tetoModo": "apoio", "precoMax": 37500, "majAbate": 1000, "posto": 1000, "vagas": 5500, "iva": 0.23, "sim": {"preco": 12000, "abate": true, "posto": false, "custoPosto": 1000}, "sims": [], "ledger": {}}}</script>
+<script id="seed" type="application/json">{"press": {"ss": 0.11, "kmExtra": 0, "manut": 0.02, "dias": 22, "mesInicial": "", "inicioLic": "2027-09-01", "horasDia": 8, "diasFerias": 22, "saldoPrincipal": 0, "revolut": 0, "gasoleoManual": 2.3, "consumoManual": 6, "usarPrecoMedido": "Sim", "usarConsumoMedido": "Sim", "horizonte": 36, "horasSemana": 35, "regimeExtras": "Ainda não sei", "acr1": 0.25, "acr2": 0.375, "acr3": 0.5, "estudante": {"ativo": "Não", "de": "", "ate": "", "dias": [1, 1, 1, 1, 1], "limiteSemana": "", "limiteProvas": 4}, "feriadosAuto": "Sim"}, "periodos": [], "salMin": [{"ano": 2026, "valor": 920, "nota": "DGERT — retribuição mínima mensal garantida 2026"}, {"ano": 2027, "valor": 970, "nota": "Previsto: acordo de Concertação Social e proposta de OE 2027. Falta o decreto-lei"}, {"ano": 2028, "valor": 1020, "nota": "Acordo tripartido de outubro de 2024: subidas de 50 € por ano até 1 020 € em 2028 (falta o decreto-lei)"}, {"ano": 2029, "valor": 1100, "nota": "Meta do programa do Governo (1 100 €); ainda não consta de um acordo. Por confirmar"}], "fixas": [], "extras": [], "gastos": [], "feriados": [], "pontes": [], "plano": {}, "contas": {}, "objetivos": [], "ferias": [], "combustivel": {"nRecente": 4, "iva": 0.23, "abast": []}, "propostas": [], "ver": 14, "irsLinhas": [], "subsLimites": [], "importacao": {"regras": []}, "saltadas": [], "horas": {"saldoInicial": 0, "meses": {}, "registo": []}, "categorias": [{"nome": "Carro", "icone": "🚗", "cor": "#0D6A73", "limite": "", "periodo": "Mensal"}, {"nome": "Combustível", "icone": "⛽", "cor": "#B5542E", "limite": "", "periodo": "Mensal"}, {"nome": "Portagens", "icone": "🛣️", "cor": "#7A6A4F", "limite": "", "periodo": "Mensal"}, {"nome": "Comunicações", "icone": "📱", "cor": "#3B6FD4", "limite": "", "periodo": "Mensal"}, {"nome": "Estudos", "icone": "🎓", "cor": "#7A52C7", "limite": "", "periodo": "Mensal"}, {"nome": "Lazer", "icone": "🎮", "cor": "#D1488A", "limite": "", "periodo": "Mensal"}, {"nome": "Saúde", "icone": "💊", "cor": "#C94B3B", "limite": "", "periodo": "Mensal"}, {"nome": "Subscrições", "icone": "🔁", "cor": "#B07A12", "limite": "", "periodo": "Mensal"}, {"nome": "Casa", "icone": "🏠", "cor": "#4F8A3A", "limite": "", "periodo": "Mensal"}, {"nome": "Alimentação", "icone": "🛒", "cor": "#D9822B", "limite": "", "periodo": "Mensal"}, {"nome": "Restauração", "icone": "🍽️", "cor": "#E0A030", "limite": "", "periodo": "Mensal"}, {"nome": "Compras", "icone": "🛍️", "cor": "#8E5BB8", "limite": "", "periodo": "Mensal"}, {"nome": "Prendas", "icone": "🎁", "cor": "#E0607E", "limite": "", "periodo": "Mensal"}, {"nome": "Transportes", "icone": "🚌", "cor": "#2F8F9D", "limite": "", "periodo": "Mensal"}, {"nome": "Transferências", "icone": "🔄", "cor": "#5B7FA6", "limite": "", "periodo": "Mensal"}, {"nome": "Animais", "icone": "🐾", "cor": "#A0683A", "limite": "", "periodo": "Mensal"}, {"nome": "Outros", "icone": "📦", "cor": "#6B7C87", "limite": "", "periodo": "Mensal"}], "orcamento": {"geral": 0, "geralMeses": {}}, "apoios": {"ano": 2026, "contarSubs": true, "modo": "agregado", "adultos": 1, "outrosAdultos": "", "tarifaSocial": false, "refManual": false, "rendOutroAno": "", "limite": 11572, "apoioPct": 0.8, "pctMin": 0.7, "pctMax": 0.9, "tetoPreco": 15000, "tetoModo": "apoio", "precoMax": 37500, "majAbate": 1000, "posto": 1000, "vagas": 5500, "iva": 0.23, "sim": {"preco": 12000, "abate": true, "posto": false, "custoPosto": 1000}, "sims": [], "ledger": {}}}</script>
 <script>
 /* Motor de cálculo — porta das fórmulas do Planner Financeiro (Excel). Sem DOM. */
 (function (root) {
@@ -954,6 +962,11 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
       .sort((a, b) => +String(b.ano).trim() - +String(a.ano).trim());
     return rows.length ? num(rows[0][campo]) : SUBS_ISENTO_2026[campo];
   }
+
+  /* Um número de meses por ano escrito pela pessoa: vale se estiver entre o mínimo e o máximo; em branco ou fora disso, o valor por omissão */
+  const mesesAno = (v, def, min, max) => { const n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isFinite(n) && n >= min && n <= max ? n : def; };   // texto que não é número também volta ao valor por omissão
+  /* Horas extra de um dia que levam o acréscimo da 1.ª taxa (por omissão 1; as seguintes levam o da 2.ª): press.horasTaxa1 */
+  const horasTaxa1 = pr => mesesAno((pr || {}).horasTaxa1, 1, 0, 24);
 
   /* Dia de trabalho da semana: cada período diz em que dias da semana se trabalha (diasTrab, números do JavaScript: 0 domingo a 6 sábado). Sem escolha válida: segunda a sexta. */
   const DIAS_TRAB_PADRAO = '12345';
@@ -1156,8 +1169,8 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
   function calc(S, opt) {
     opt = opt || {};
     const pr = Object.assign({}, S.press), ss = num(pr.ss), dataValida = x => /^\d{4}-\d{2}-\d{2}$/.test(String(x)) && parse(x).y >= 1990 && parse(x).y <= 2100 && parse(x).m >= 1 && parse(x).m <= 12;
-    if (!dataValida(pr.mesInicial)) pr.mesInicial = '2026-10-01';
     const agora = new Date(), hojeFull = opt.hoje || ymd(agora.getFullYear(), agora.getMonth() + 1, agora.getDate());
+    if (!dataValida(pr.mesInicial)) pr.mesInicial = hojeFull.slice(0, 7) + '-01';   // sem mês inicial (ou inválido): o plano começa no mês de hoje, não num mês escolhido no código
     const cb = combustivel(S);
     const holidays = feriadosSet(S);
     const tabsIrs = {}, tabIrs = y => (y in tabsIrs) ? tabsIrs[y] : (tabsIrs[y] = irsTabela(S, y));   // a tabela de retenção de cada ano, lida uma só vez
@@ -1285,13 +1298,15 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     const pI = periodoAt(S, pr.mesInicial), pL = periodoAt(S, months[N - 1].ym);   // o período do início do plano e o do fim
     const preco = cb.precoUsado, cons = cb.consumoUsado, dp = num(pr.dias), manutKm = num(pr.manut);
     const deslocMes = (km, port) => dp * (km * cons / 100 * preco + port + km * manutKm);
+    // anos dos cenários e das propostas: quantos pagamentos de salário (14 com subsídios, 12 sem) e quantos meses de trabalho (deslocações e subsídio de refeição) há por ano; vêm de press.mesesSalario e press.mesesTrabalho (por omissão 14 e 11, como no Excel)
+    const nSal = mesesAno(pr.mesesSalario, 14, 1, 24), nTrab = mesesAno(pr.mesesTrabalho, 11, 0, 12);
     const cenarios = [920, 1000, 1100, 1200, 1300].map(b => {
       const irsC = irsAplicado(pI.irsModo, pI.irs, b, tabIrs(parse(hojeFull).y)), liqC = b * (1 - ss - irsC);
       return { bruto: b, liq: liqC, irs: irsC,
         mesI: liqC - deslocMes(num(pI.km), num(pI.portagens)) - fixasMensal,
         mesL: liqC - deslocMes(num(pL.km), num(pL.portagens)) - fixasMensal,
-        anoI: liqC * 14 - 11 * deslocMes(num(pI.km), num(pI.portagens)) - 12 * fixasMensal,
-        anoL: liqC * 14 - 11 * deslocMes(num(pL.km), num(pL.portagens)) - 12 * fixasMensal };
+        anoI: liqC * nSal - nTrab * deslocMes(num(pI.km), num(pI.portagens)) - 12 * fixasMensal,
+        anoL: liqC * nSal - nTrab * deslocMes(num(pL.km), num(pL.portagens)) - 12 * fixasMensal };
     });
     const propostas = (S.propostas || []).map(o => {
       const irsP = irsAplicado(o.irsModo, o.irs, o.bruto, tabIrs(parse(hojeFull).y)), liqP = num(o.bruto) * (1 - ss - irsP);
@@ -1300,8 +1315,8 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
       const portP = num(o.dias) * num(o.port);
       const manP = num(o.dias) * num(o.km) * manutKm;
       const sobraMes = liqP - (combP + portP + manP + fixasMensal);
-      const sobraAno = liqP * 14 - 11 * (combP + portP + manP) - 12 * fixasMensal;
-      return { liq: liqP, irs: irsP, cartao, comb: combP, port: portP, manut: manP, fixas: fixasMensal, sobraMes, sobraAno, cartaoAno: cartao * 11 };
+      const sobraAno = liqP * nSal - nTrab * (combP + portP + manP) - 12 * fixasMensal;
+      return { liq: liqP, irs: irsP, cartao, comb: combP, port: portP, manut: manP, fixas: fixasMensal, sobraMes, sobraAno, cartaoAno: cartao * nTrab };
     });
     if (propostas[0]) propostas.forEach(p => { p.dif = p.sobraAno - propostas[0].sobraAno; });
 
@@ -1334,7 +1349,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     const invSoma = k => invLista.reduce((a, c) => a + c[k], 0), invTot = { n: invLista.length, investido: invSoma('investido'), atual: invSoma('atual'), ganho: invSoma('ganho'), aporte: invSoma('aporte'), fim: invSoma('fim'), totAporte: invSoma('totAporte'), totRend: invSoma('totRend') };
     invTot.rent = invTot.investido > 0 ? invTot.ganho / invTot.investido : null;
     const horas = horasCalc(S, months);
-    return { cb, months, horas, investimentos: invLista, inv: invTot, extras: extrasRes, fases, tot, rotuloIni: fases[0].fase, rotuloFim: fases[fases.length - 1].fase, cenarios, propostas, contas, minPrincipal, deslocMes: deslocMes(num(pI.km), num(pI.portagens)),
+    return { cb, months, horas, investimentos: invLista, inv: invTot, extras: extrasRes, fases, tot, rotuloIni: fases[0].fase, rotuloFim: fases[fases.length - 1].fase, cenarios, propostas, mesesSalario: nSal, mesesTrabalho: nTrab, contas, minPrincipal, deslocMes: deslocMes(num(pI.km), num(pI.portagens)),
       fixasMensal, fixasPorConta, fixasPorCat, fixasSoMensais: S.fixas.reduce((a, f) => a + (f.period === 'Mensal' && f.ativa !== 'Não' ? num(f.valor) : 0), 0),
       fixasAnuais: S.fixas.reduce((a, f) => a + (f.period === 'Anual' && f.ativa !== 'Não' ? num(f.valor) : 0), 0),
       contasExtra: contasPoupancaExtra(S).map((c, i) => ({ nome: c.nome, fim: months.length ? months[N - 1].contasExtra[i] : num(c.saldo), aporte: Math.max(0, num(c.aporte)) })), reservaMin, poupancaLivre: Math.max(0, months[N - 1].acum - reservaMin), objetivos, necessarioMes, cabe: tot.media >= necessarioMes, poupancaPrevista: months[N - 1].acum, horizonte: N, poupancaReal: num(pr.revolut) + months.reduce((a, x) => a + num(x.man.transf), 0) };
@@ -1367,7 +1382,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
   // até ao que faltar para as horas previstas (por defeito a dispensa do dia da semana, ou o valor escrito no registo).
   function horasDias(S) {
     const pr = S.press || {}, e = pr.estudante || {}, reg = (S.horas && S.horas.registo) || [];
-    const hol = feriadosSet(S), pontes = new Set(), provas = {};
+    const hol = feriadosSet(S), pontes = new Set(), provas = {}, h1 = horasTaxa1(pr);   // h1: horas extra do dia à 1.ª taxa
     expandirPontes(S).forEach(r => eachDay(r.de, r.ate, d => pontes.add(d)));
     return reg.map((r, i) => Object.assign({ _i: i }, r)).filter(r => r.data)
       .sort((a, b) => a.data < b.data ? -1 : a.data > b.data ? 1 : a._i - b._i)
@@ -1386,7 +1401,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
         }
         const saldo = r6(num(trab) + disp - previstas);
         const out = { _i: r._i, data: r.data, mes: mk(r.data), tipo, dia: w, previstas, trabalhadas: trab, dispensa: r6(disp), saldo,
-          extra1: previstas > 0 ? Math.min(Math.max(saldo, 0), 1) : 0, extraN: previstas > 0 ? Math.max(Math.max(saldo, 0) - 1, 0) : 0,
+          extra1: previstas > 0 ? Math.min(Math.max(saldo, 0), h1) : 0, extraN: previstas > 0 ? Math.max(Math.max(saldo, 0) - h1, 0) : 0,
           extraDesc: previstas === 0 && num(trab) > 0 ? trab : 0, falta: previstas > 0 && saldo < 0 ? -saldo : 0, provasN: 0, provasExcede: false };
         if (tipo === 'Exame' && r.disciplina) {
           const k = r.disciplina + '|' + (p.m >= 9 ? p.y : p.y - 1);
@@ -2027,7 +2042,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
       investido: Math.max(0, num(c.investido)), atual: has(c.atual) ? Math.max(0, num(c.atual)) : Math.max(0, num(c.investido)), atualDefinido: has(c.atual),
       aporte: Math.max(0, num(c.aporte)), rend: Math.max(-100, Math.min(1000, num(c.rend))), inicio: dataReal(c.inicio) }));
   }
-  root.PlannerEngine = { idMovimento, investimentos, TIPOS_INVESTIMENTO, contasExtra, contasPoupancaExtra, grupoDesc, gruposMovimentos, linhasDeXlsx, fechoMes, reservaAnuais, liquidezMes, subidasPreco, ritmoObjetivo, calc, previsao, semRendimento, taxaPoupanca, sugestoesExtrato, apoios, simularApoio, horizonte, abaixoDoMinimo, combustivel, addM, mk, num, has, parse, fixaEquiv, ocorrencias, periodoAt, salMinAno, ymd, pad, limiteMensal, orcMes, PERIODOS_ORC, irsRetencao, irsTaxa, irsAplicado, irsTabela, IRS_TABELA_I_2026, subsIsento, SUBS_ISENTO_2026, diasTrabSet, trabalhaEm, DIAS_TRAB_PADRAO, limiteDispensa, pascoa, feriadosNacionais, feriadosSet, expandir, expandirPontes, horaDe, horasDias, bancoHoras, saldoFerias, TIPOS_DIA, estudanteAtivo,
+  root.PlannerEngine = { idMovimento, investimentos, TIPOS_INVESTIMENTO, contasExtra, contasPoupancaExtra, grupoDesc, gruposMovimentos, linhasDeXlsx, fechoMes, reservaAnuais, liquidezMes, subidasPreco, ritmoObjetivo, calc, previsao, semRendimento, taxaPoupanca, sugestoesExtrato, apoios, simularApoio, horizonte, abaixoDoMinimo, combustivel, addM, mk, num, has, parse, fixaEquiv, ocorrencias, periodoAt, salMinAno, ymd, pad, limiteMensal, orcMes, PERIODOS_ORC, irsRetencao, irsTaxa, irsAplicado, irsTabela, IRS_TABELA_I_2026, mesesAno, horasTaxa1, subsIsento, SUBS_ISENTO_2026, diasTrabSet, trabalhaEm, DIAS_TRAB_PADRAO, limiteDispensa, pascoa, feriadosNacionais, feriadosSet, expandir, expandirPontes, horaDe, horasDias, bancoHoras, saldoFerias, TIPOS_DIA, estudanteAtivo,
     parseNumero, parseData, parseCSV, detectarColunas, movimentosDeCSV, movimentosDeTexto, movimentosDePdf, conferirSaldos, normalizaDesc, chaveDesc, categorizar, aprender, jaRegistado, duplicados };
   if (typeof module !== 'undefined') module.exports = root.PlannerEngine;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -2258,12 +2273,22 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
   function uiCfg() {
     const u = (S && S.ui && typeof S.ui === 'object') ? S.ui : {}, al = u.alertas || {}, as = u.aspeto || {};
     const lim = (v, a, b, d) => { const n = parseFloat(v); return isFinite(n) ? Math.min(b, Math.max(a, n)) : d; };
+    const jn = (u.janela && typeof u.janela === 'object') ? u.janela : {}, fm = (u.formatos && typeof u.formatos === 'object') ? u.formatos : {};
     return {
       inicioOcultos: listaTxt(u.inicioOcultos), inicioOrdem: listaTxt(u.inicioOrdem), abasOcultas: listaTxt(u.abasOcultas), tiposPeriodo: listaTxt(u.tiposPeriodo), tiposRend: listaTxt(u.tiposRend),
+      kpiOcultos: listaTxt(u.kpiOcultos), kpiOrdem: listaTxt(u.kpiOrdem), acoesOcultas: listaTxt(u.acoesOcultas), acoesOrdem: listaTxt(u.acoesOrdem), perIniOcultos: listaTxt(u.perIniOcultos),
+      janela: { tras: Math.round(lim(jn.tras, 0, 365, 20)), frente: Math.round(lim(jn.frente, 0, 365, 30)) },   // pagamentos por pagar no Início: dias para trás e para a frente
+      formatos: { semana: fm.semana === 'dom' ? 'dom' : 'seg', data: ['dmy', 'dmy-', 'ymd'].indexOf(fm.data) >= 0 ? fm.data : 'dmy' },
       alertas: { precoPct: lim(al.precoPct, 0, 100, 3), lembreteDias: Math.round(lim(al.lembreteDias, 1, 60, 7)), saldoMin: lim(al.saldoMin, -1e6, 1e6, 0) },
       aspeto: { letra: ['pequena', 'normal', 'grande', 'muito grande'].indexOf(as.letra) >= 0 ? as.letra : 'normal', compacto: as.compacto === true, cor: /^#[0-9a-f]{6}$/i.test(String(as.cor || '')) ? as.cor : '' }
     };
   }
+  /* O que a pessoa pode escolher mostrar e pôr por ordem no Início: os indicadores (os 3 primeiros ficam à vista, os outros em «Mais indicadores»), as ações do «+» e os períodos dos cartões de gastos e rendimentos */
+  const KPIS_INICIO = [['saldo', 'Saldo do mês'], ['contas', 'Dinheiro em contas'], ['orcamento', 'Orçamento do mês'], ['rend', 'Rendimento do ano (com previsão)'], ['apoio', 'Apoio ao carro elétrico'], ['minimo', 'Mínimo a manter na principal']];
+  const ACOES_IDS = ['gasto', 'rendimento', 'abastecimento', 'dia', 'ferias', 'extrato'];   // pela ordem de ACOES
+  const ordenaIds = (ids, ordem) => { const pos = k => { const i = ordem.indexOf(k); return i < 0 ? 100 + ids.indexOf(k) : i; }; return ids.slice().sort((a, b) => pos(a) - pos(b)); };   // o que não está na ordem escolhida fica no sítio de origem, a seguir
+  const inicioSemana = () => uiCfg().formatos.semana === 'dom' ? 0 : 1;   // 1 segunda, 0 domingo
+  const janelaTxt = () => { const j = uiCfg().janela; return j.tras > 0 && j.frente > 0 ? 'nos últimos ' + j.tras + ' e próximos ' + j.frente + ' dias' : j.frente > 0 ? 'nos próximos ' + j.frente + ' dias' : j.tras > 0 ? 'nos últimos ' + j.tras + ' dias' : 'para hoje'; };   // a janela dos pagamentos por pagar no Início
   const CONTAS_APP = ['Principal', 'Revolut', 'Cartão refeição'];
   function nomesContas() { const n = (S && S.ui && S.ui.nomesContas && typeof S.ui.nomesContas === 'object') ? S.ui.nomesContas : {}, out = Object.create(null); CONTAS_APP.forEach(k => { const v = String(n[k] == null ? '' : n[k]).replace(/[\u0000-\u001F\u007F<>]/g, ' ').trim().slice(0, 30); if (v && v !== k) out[k] = v; }); return out; }
   const nomeConta = c => nomesContas()[c] || String(c == null ? '' : c);
@@ -2287,6 +2312,9 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
   let S = clone(DEFAULTS), R, AP, tab = 'inicio', gastoMes = '', orcSel = '';
   let hoje = new Date(), hojeYm = hoje.getFullYear() + '-' + E.pad(hoje.getMonth() + 1);
   function diaMudou() { const n = new Date(); if (n.toDateString() === hoje.toDateString()) return false; hoje = n; hojeYm = n.getFullYear() + '-' + E.pad(n.getMonth() + 1); return true; }   // depois da meia-noite, "hoje" passa a ser o dia novo
+  /* O plano não assume um mês: os dados sem mês inicial (a versão sem dados pessoais, na primeira abertura, ou depois de apagar tudo) começam no mês de hoje, e fica guardado */
+  const comecaHoje = x => { const m = String((x.press || {}).mesInicial || ''); if (!/^\d{4}-(0[1-9]|1[0-2])-\d{2}$/.test(m)) { x.press = x.press || {}; x.press.mesInicial = hojeYm + '-01'; } return x; };
+  S = comecaHoje(S);
 
   /* ---------- formatação ---------- */
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -2410,7 +2438,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     const soma = (ms, f) => ms.reduce((a, m) => a + f(m), 0);
     const filtra = (rot, val, cor) => { const i = val.map((x, k) => k).filter(k => val[k] > 0.005); return i.length ? [i.map(k => rot[k]), i.map(k => val[k]), i.map(k => cor[k])] : null; };
     if (nome === 'ini-receitas' || nome === 'ini-despesas') {   // carrossel do Início: as setas mudam o período
-      const t = nome === 'ini-despesas' ? 'd' : 'r', d = dadosInicio(t, PER_INI[iniPer[t]][0]);
+      const t = nome === 'ini-despesas' ? 'd' : 'r', d = dadosInicio(t, perIniAtual(t)[0]);
       return pizza(d.rot, d.val, d.cores);
     }
     if (nome === 'ini-cats') {   // gastos do mês atual por categoria
@@ -2567,8 +2595,10 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
       '<div class="row" style="margin-top:12px"><input type="text" id="ico-custom" placeholder="Outro emoji" aria-label="Outro emoji" maxlength="8" style="width:120px;min-width:0"><button class="btn" data-act="ico-custom">Usar</button><button class="btn" data-act="setico:-1">Sem ícone</button></div></div></div>';
   }
   const hojeIso = () => E.ymd(hoje.getFullYear(), hoje.getMonth() + 1, hoje.getDate());
+  const wdSem = iso => (wdIso(iso) - inicioSemana() + 7) % 7;   // o dia da semana de uma data, a contar do primeiro dia da semana escolhido (0 = o primeiro)
+  const cabSemana = () => (inicioSemana() === 0 ? ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'] : ['S', 'T', 'Q', 'Q', 'S', 'S', 'D']).map(x => '<span>' + x + '</span>').join('');
   const addDiasIso = (iso, n) => { const p = E.parse(iso), t = new Date(Date.UTC(p.y, p.m - 1, p.d) + n * 86400000); return E.ymd(t.getUTCFullYear(), t.getUTCMonth() + 1, t.getUTCDate()); };
-  const diaTxt = iso => { const p = E.parse(iso); return ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'][new Date(Date.UTC(p.y, p.m - 1, p.d)).getUTCDay()] + ' ' + E.pad(p.d) + '/' + E.pad(p.m); };
+  const diaTxt = iso => { const p = E.parse(iso), f = uiCfg().formatos.data, sep = f === 'dmy' ? '/' : '-'; return ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'][new Date(Date.UTC(p.y, p.m - 1, p.d)).getUTCDay()] + ' ' + (f === 'ymd' ? E.pad(p.m) + sep + E.pad(p.d) : E.pad(p.d) + sep + E.pad(p.m)); };
   function payRows(list) {
     if (!list.length) return '<div class="empty">Sem pagamentos neste período.</div>';
     const hi = hojeIso();
@@ -2684,7 +2714,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
 
   /* ---------- gráficos clicáveis: tocar numa fatia, barra ou mês abre o detalhe ---------- */
   let detSheet = null;   // { tab, titulo, sub, itens: [{ desc, sub, valor }], total, vazio, ir: { tab, mes, cat } | null }
-  const intervaloIni = per => { const hi = hojeIso(), w = (wdIso(hi) + 6) % 7; return per === 'dia' ? [hi, hi] : [addDiasIso(hi, -w), addDiasIso(hi, 6 - w)]; };
+  const intervaloIni = per => { const hi = hojeIso(), w = wdSem(hi); return per === 'dia' ? [hi, hi] : [addDiasIso(hi, -w), addDiasIso(hi, 6 - w)]; };
   const catDe = g => g.cat || 'Sem categoria';
   const itensGastos = filtro => S.gastos.filter(g => g.data && filtro(g)).sort((a, b) => b.data.localeCompare(a.data)).map(g => ({ desc: g.desc, sub: diaTxt(g.data) + (g.cat ? ' · ' + g.cat : '') + (g.fixa ? ' · recorrente' : ''), valor: num(g.valor) }));
   /* nome = o gráfico, idx = a posição tocada, rot = o rótulo (as pizzas escondem fatias a zero, por isso o nome é mais seguro do que a posição) */
@@ -2700,7 +2730,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     else if (nome === 'desp-dias') { const dia = gastoMes + '-' + E.pad(idx + 1); if (!dataOk(dia)) return; d = { titulo: diaTxt(dia), sub: 'Gastos desse dia', itens: itensGastos(g => g.data === dia), ir: { tab: 'despesas', mes: gastoMes } }; }
     else if (nome === 'orc-rosca' || nome === 'orc-barras') d = { titulo: rot, sub: 'Gastos de ' + mesLongo(orcSel + '-01'), itens: itensGastos(g => noMes(orcSel)(g) && catDe(g) === rot), ir: { tab: 'despesas', mes: orcSel, cat: rot } };
     else if (nome === 'ini-despesas' || nome === 'ini-receitas') {
-      const t = nome === 'ini-despesas' ? 'd' : 'r', per = PER_INI[iniPer[t]][0], dd = dadosInicio(t, per), k = dd.rot.indexOf(rot); if (k < 0) return;
+      const t = nome === 'ini-despesas' ? 'd' : 'r', per = perIniAtual(t)[0], dd = dadosInicio(t, per), k = dd.rot.indexOf(rot); if (k < 0) return;
       if (per === 'dia' || per === 'semana') {
         const iv = intervaloIni(per), de = iv[0], ate = iv[1];
         d = t === 'd' ? { titulo: rot, sub: dd.nota, itens: itensGastos(g => g.data >= de && g.data <= ate && num(g.valor) > 0 && catDe(g) === rot), ir: { tab: 'despesas', mes: de.slice(0, 7), cat: rot } }
@@ -3127,10 +3157,12 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
   /* ---------- separadores ---------- */
   /* Início: gráficos em carrossel. As setas mudam o período: hoje e esta semana mostram o que foi registado; daí para cima, a previsão do plano */
   const PER_INI = [['dia', 'Hoje'], ['semana', 'Esta semana'], ['mes', 'Este mês'], ['trim', '3 meses'], ['sem', '6 meses'], ['ano', '12 meses']];
-  let iniPer = { d: 5, r: 5 };
+  let iniPer = { d: 5, r: 5 };   // o lugar do período entre os que estão visíveis (por omissão, o último)
+  const perIniVis = () => { const oc = uiCfg().perIniOcultos, v = PER_INI.filter(p => oc.indexOf(p[0]) < 0); return v.length ? v : PER_INI; };   // os períodos que a pessoa não escondeu (nunca nenhum: ficam todos)
+  const perIniAtual = t => { const v = perIniVis(); return v[Math.min(Math.max(iniPer[t], 0), v.length - 1)]; };
   function dadosInicio(tipo, per) {
     if (per === 'dia' || per === 'semana') {
-      const hi = hojeIso(), w = (wdIso(hi) + 6) % 7, de = per === 'dia' ? hi : addDiasIso(hi, -w), ate = per === 'dia' ? hi : addDiasIso(hi, 6 - w), mapa = {};
+      const hi = hojeIso(), w = wdSem(hi), de = per === 'dia' ? hi : addDiasIso(hi, -w), ate = per === 'dia' ? hi : addDiasIso(hi, 6 - w), mapa = {};
       if (tipo === 'd') S.gastos.forEach(g => { if (g.data >= de && g.data <= ate && num(g.valor) > 0) { const c = g.cat || 'Sem categoria'; mapa[c] = (mapa[c] || 0) + num(g.valor); } });
       else R.extras.forEach(e => { if (e.data >= de && e.data <= ate && e.val > 0) { const t = e.tipo || 'Outro'; mapa[t] = (mapa[t] || 0) + e.val; } });
       const ks = Object.keys(mapa);
@@ -3151,7 +3183,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
   function podeHtml(mo) {
     if (!mo || mo.key !== hojeYm) return '';
     const o = mo.orc, hi = hojeIso(), od = orcamentoDia(mo), orcam = od.orcam, real = od.real;
-    const resta = od.resta, faltam = Math.max(1, o.nd - o.dias + 1), w = (wdIso(hi) + 6) % 7, diasSem = Math.min(7 - w, faltam);
+    const resta = od.resta, faltam = Math.max(1, o.nd - o.dias + 1), w = wdSem(hi), diasSem = Math.min(7 - w, faltam);
     const gastoHoje = S.gastos.reduce((a, g) => a + (g.data === hi && !g.fixa ? num(g.valor) : 0), 0);
     const botoes = [['dia', 'Hoje'], ['semana', 'Esta semana'], ['mes', 'Este mês']].map(x => '<button type="button" data-act="pode:' + x[0] + '" aria-pressed="' + (podeVista === x[0]) + '">' + x[1] + '</button>').join('');
     let corpo;
@@ -3169,12 +3201,12 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     return '<section class="card sec pode"><div class="row" style="justify-content:space-between"><h2>💸 Quanto posso gastar?</h2><div class="seg" role="group" aria-label="Período">' + botoes + '</div></div>' + corpo + '</section>';
   }
   /* uma frase que resume o mês: saldo previsto, o que ainda pode gastar e o que falta pagar */
-  function resumoInicio(mo, prox) {
-    const hi = hojeIso(), od = orcamentoDia(mo), orcam = od.orcam, resta = od.resta;
-    const partes = ['Em ' + mesLongo(mo.ym) + ' o plano prevê fechar com ' + eur(mo.saldo, 0) + (mo.saldo < 0 ? ' (no vermelho)' : '') + '.'];
+  function resumoInicio(mo, prox, fora) {
+    const hi = hojeIso(), od = orcamentoDia(mo), orcam = od.orcam, resta = od.resta, mes = mesLongo(mo.ym), saldo = eur(mo.saldo, 0) + (mo.saldo < 0 ? ' (no vermelho)' : '');
+    const partes = [fora === 'antes' ? 'O plano só começa em ' + mes + ' e prevê fechar esse mês com ' + saldo + '.' : fora === 'depois' ? 'O plano acabou em ' + mes + ', mês que previa fechar com ' + saldo + '.' : 'Em ' + mes + ' o plano prevê fechar com ' + saldo + '.'];
     if (mo.key === hojeYm && orcam > 0) partes.push(resta >= 0 ? 'Ainda pode gastar ' + eur(resta, 0) + ' no dia a dia.' : 'Já passou ' + eur(-resta, 0) + ' do orçamento do dia a dia.');
     const atraso = prox.filter(x => x.data < hi).length;
-    partes.push(prox.length ? 'Tem ' + prox.length + (prox.length === 1 ? ' pagamento' : ' pagamentos') + ' por pagar nos últimos 20 e próximos 30 dias' + (atraso ? ', ' + atraso + ' em atraso' : '') + '.' : 'Não tem pagamentos por pagar nos últimos 20 e próximos 30 dias.');
+    partes.push(prox.length ? 'Tem ' + prox.length + (prox.length === 1 ? ' pagamento' : ' pagamentos') + ' por pagar ' + janelaTxt() + (atraso ? ', ' + atraso + ' em atraso' : '') + '.' : 'Não tem pagamentos por pagar ' + janelaTxt() + '.');
     return partes.join(' ');
   }
   /* Janela de boas-vindas: na primeira vez, com a app vazia, propõe como começar (extrato, cópia, OneDrive ou à mão) */
@@ -3258,23 +3290,30 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     const ord = k => { const i = cfg.inicioOrdem.indexOf(k); return i < 0 ? 100 + BLOCOS_INICIO.findIndex(x => x[0] === k) : i; };
     return topo.join('') + blocos.filter(b => cfg.inicioOcultos.indexOf(b[0]) < 0).sort((a, b) => ord(a[0]) - ord(b[0])).map(b => b[1]).join('') + fim.join('');
   }
+  /* Os indicadores do Início pela ordem e com a visibilidade que a pessoa escolheu: os 3 primeiros ficam à vista e os outros em «Mais indicadores» */
+  function kpisInicio(todos) {
+    const c = uiCfg(), vis = ordenaIds(KPIS_INICIO.map(x => x[0]), c.kpiOrdem).filter(id => c.kpiOcultos.indexOf(id) < 0).map(id => todos[id]);
+    return (vis.length ? '<div class="grid">' + vis.slice(0, 3).join('') + '</div>' : '') +
+      (vis.length > 3 ? '<details class="ajuda"><summary>Mais indicadores</summary><div class="grid" style="margin-top:10px">' + vis.slice(3).join('') + '</div></details>' : '');
+  }
   function tabInicioBase() {
-    const a = AP, mesAtual = R.months.find(m => m.key === hojeYm) || R.months[0];
+    const mesHoje = R.months.find(m => m.key === hojeYm), fora = mesHoje ? '' : hojeYm < R.months[0].key ? 'antes' : 'depois';   // o mês de hoje pode não estar no plano (começa mais tarde ou já acabou): diz-se, em vez de passar o 1.º mês por «o mês»
+    const a = AP, mesAtual = mesHoje || (fora === 'antes' ? R.months[0] : R.months[R.months.length - 1]);
     const k = (l, v, s, extra, go) => '<div class="kpi' + (go ? ' go' : '') + '"' + (go ? ' data-act="ir:' + go + '" role="link" tabindex="0" title="Abrir"' : '') + '><div class="l">' + l + '</div><div class="v' + (extra || '') + '">' + v + '</div><div class="s">' + s + '</div></div>';
     const contaUlt = R.contas.slice().reverse().find(c => c.E !== null), ce = E.contasExtra(S), nExtra = ce.length;
     const dinheiroContas = (contaUlt ? contaUlt.E : num(S.press.saldoPrincipal) + num(S.press.revolut)) + ce.reduce((a, c) => a + num(c.saldo), 0);
     const chip = S.apoios.tarifaSocial ? '<span class="chip good">Tarifa social</span>' : a.pendente ? '<span class="chip">Por completar</span>' : a.ok ? '<span class="chip good">Dentro do limite</span>' : '<span class="chip">Acima do limite</span>';   // no painel principal nunca há alertas
-    const prox = E.ocorrencias(S, addDiasIso(hojeIso(), -20), addDiasIso(hojeIso(), 30)).filter(o => o.estado === 'pendente');
+    const prox = E.ocorrencias(S, addDiasIso(hojeIso(), -uiCfg().janela.tras), addDiasIso(hojeIso(), uiCfg().janela.frente)).filter(o => o.estado === 'pendente');
     const carro = (t, titulo, emoji) => {
-      const pr = PER_INI[iniPer[t]], d = dadosInicio(t, pr[0]), tot = d.val.reduce((x, y) => x + y, 0);
+      const pr = perIniAtual(t), d = dadosInicio(t, pr[0]), tot = d.val.reduce((x, y) => x + y, 0);
       return '<div class="card" data-sl="car:' + t + ':1" data-sr="car:' + t + ':-1"><div class="carro"><button type="button" class="stp-b" data-act="car:' + t + ':-1" aria-label="Período anterior">‹</button><div class="carro-t"><h3>' + emoji + ' ' + titulo + '</h3><b aria-live="polite">' + pr[1] + '</b></div><button type="button" class="stp-b" data-act="car:' + t + ':1" aria-label="Período seguinte">›</button></div>' +
         '<div class="chartbox on pizza" data-chart="ini-' + (t === 'd' ? 'despesas' : 'receitas') + '" role="img" aria-label="' + titulo + ', ' + pr[1].toLowerCase() + '"></div>' +
-        '<p class="note center">' + esc(d.nota) + ' · total ' + eur(tot, 0) + '</p>' + listaGraf('ini-' + (t === 'd' ? 'despesas' : 'receitas')) + '<div class="dots" aria-hidden="true">' + PER_INI.map((x, i) => '<i' + (i === iniPer[t] ? ' class="on"' : '') + '></i>').join('') + '</div></div>';
+        '<p class="note center">' + esc(d.nota) + ' · total ' + eur(tot, 0) + '</p>' + listaGraf('ini-' + (t === 'd' ? 'despesas' : 'receitas')) + '<div class="dots" aria-hidden="true">' + perIniVis().map(x => '<i' + (x === pr ? ' class="on"' : '') + '></i>').join('') + '</div></div>';
     };
-    const kRend = k('Rendimento de ' + S.apoios.ano + ' (com previsão)', eur(a.totalLedger, 0), 'Recebido até hoje: ' + eur(a.recebidoAteHoje, 0), '', 'apoios'), kApoio = k('Apoio carro elétrico (Fundo Ambiental)', chip, a.pendente ? 'Adicione os membros do agregado' : a.rotulo + ': ' + eur(a.valor, 0) + ' · limite ' + eur(num(S.apoios.limite), 0), '', 'apoios'), kSaldo = k('Saldo do mês (' + mesTxt(mesAtual.ym) + ')', eur(mesAtual.saldo), 'Rendimentos menos despesas previstas', cls(mesAtual.saldo), 'plano'), kConta = k('Dinheiro em contas', eur(dinheiroContas), (contaUlt ? 'Último saldo registado (' + mesTxt(contaUlt.ym) + ')' : 'Saldo inicial: principal + Revolut') + (nExtra ? ' + ' + nExtra + (nExtra === 1 ? ' outra conta' : ' outras contas') : ''), cls(dinheiroContas), 'poupanca'), kMin = k('Mínimo a manter na principal', eur(R.minPrincipal), 'Despesas fixas + deslocações do mês', '', 'poupanca'), kOrc = (mesAtual.orc.totalLimite > 0 ? k('Orçamento de ' + mesTxt(mesAtual.ym), eur(mesAtual.orc.totalGasto, 0) + ' / ' + eur(mesAtual.orc.totalLimite, 0), mesAtual.orc.totalGasto > mesAtual.orc.totalLimite ? 'Acima do limite total' : 'Gasto face ao limite, em categorias com limite', mesAtual.orc.totalGasto > mesAtual.orc.totalLimite ? ' neg-v' : '', 'orcamento') : k('Orçamento do mês', 'Por definir', 'Defina os limites no separador Orçamento', '', 'orcamento'));
-    return '<section><h2>Visão geral</h2><p class="lead resumo">' + esc(resumoInicio(mesAtual, prox)) + '</p>' +
-      '<div class="grid">' + kSaldo + kConta + kOrc + '</div>' +
-      '<details class="ajuda"><summary>Mais indicadores</summary><div class="grid" style="margin-top:10px">' + kRend + kApoio + kMin + '</div></details></section>' +
+    const kRend = k('Rendimento de ' + S.apoios.ano + ' (com previsão)', eur(a.totalLedger, 0), 'Recebido até hoje: ' + eur(a.recebidoAteHoje, 0), '', 'apoios'), kApoio = k('Apoio carro elétrico (Fundo Ambiental)', chip, a.pendente ? 'Adicione os membros do agregado' : a.rotulo + ': ' + eur(a.valor, 0) + ' · limite ' + eur(num(S.apoios.limite), 0), '', 'apoios'), kSaldo = k((fora === 'antes' ? 'Saldo do 1.º mês do plano (' : fora === 'depois' ? 'Saldo do último mês do plano (' : 'Saldo do mês (') + mesTxt(mesAtual.ym) + ')', eur(mesAtual.saldo), 'Rendimentos menos despesas previstas', cls(mesAtual.saldo), 'plano'), kConta = k('Dinheiro em contas', eur(dinheiroContas), (contaUlt ? 'Último saldo registado (' + mesTxt(contaUlt.ym) + ')' : 'Saldo inicial: principal + Revolut') + (nExtra ? ' + ' + nExtra + (nExtra === 1 ? ' outra conta' : ' outras contas') : ''), cls(dinheiroContas), 'poupanca'), kMin = k('Mínimo a manter na principal', eur(R.minPrincipal), 'Despesas fixas + deslocações do mês', '', 'poupanca'), kOrc = (mesAtual.orc.totalLimite > 0 ? k('Orçamento de ' + mesTxt(mesAtual.ym), eur(mesAtual.orc.totalGasto, 0) + ' / ' + eur(mesAtual.orc.totalLimite, 0), mesAtual.orc.totalGasto > mesAtual.orc.totalLimite ? 'Acima do limite total' : 'Gasto face ao limite, em categorias com limite', mesAtual.orc.totalGasto > mesAtual.orc.totalLimite ? ' neg-v' : '', 'orcamento') : k('Orçamento do mês', 'Por definir', 'Defina os limites no separador Orçamento', '', 'orcamento'));
+    return '<section><h2>Visão geral</h2><p class="lead resumo">' + esc(resumoInicio(mesAtual, prox, fora)) + '</p>' +
+      (fora ? '<p class="note"><button type="button" class="lnk" data-act="ir:definicoes:def-pressupostos">Mudar o mês inicial ou a duração do plano</button></p>' : '') +
+      kpisInicio({ saldo: kSaldo, contas: kConta, orcamento: kOrc, rend: kRend, apoio: kApoio, minimo: kMin }) + '</section>' +
       primeiraVezHtml() + lembretesHtml() + trabalhoHtml() + podeHtml(mesAtual) +
       '<section><h2>Próximos pagamentos</h2><p class="lead">Os mais próximos por pagar. Toque em "Pago" quando sair da conta e fica registado nos gastos. No telemóvel, também pode deslizar um pagamento para a direita (pago) ou para a esquerda (saltar).</p>' + payRows(prox.slice(0, 4)) +
       '<div class="row" style="margin-top:12px"><button class="btn" data-act="ir:recorrentes">Ver todos os recorrentes' + (prox.length > 4 ? ' (mais ' + (prox.length - 4) + ' por pagar)' : '') + '</button></div></section>' +
@@ -3808,7 +3847,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     (S.pontes || []).forEach(p => E.expandir(p, y, y).forEach(r => eachIso(r.de, r.ate, d => { pt[d] = { desconta: p.desconta === 'Sim', nome: p.desc || '' }; })));
     R.horas.rows.forEach(r => { reg[r.data] = r.tipo || 'Trabalho'; });
     const mesBloco = m => {
-      const nd = new Date(Date.UTC(y, m, 0)).getUTCDate(), off = (wdIso(E.ymd(y, m, 1)) + 6) % 7;
+      const nd = new Date(Date.UTC(y, m, 0)).getUTCDate(), off = wdSem(E.ymd(y, m, 1));
       let cel = ''; for (let i = 0; i < off; i++) cel += '<span class="cd vazio"></span>';
       for (let d = 1; d <= nd; d++) {
         const iso = E.ymd(y, m, d), w = wdIso(iso), c = ['cd'], tit = [];
@@ -3820,7 +3859,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
         if (iso === hi) c.push('hoje');
         cel += '<button class="' + c.join(' ') + '" data-act="cal:' + iso + '" title="' + esc(diaTxt(iso) + (tit.length ? ' · ' + tit.join(' · ') : '')) + '" aria-label="' + esc(diaTxt(iso) + (tit.length ? ', ' + tit.join(', ') : '')) + '">' + d + '</button>';
       }
-      return '<div class="card cal"><h3>' + MES[m - 1] + ' ' + y + '</h3><div class="calg"><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span><span>D</span>' + cel + '</div></div>';
+      return '<div class="card cal"><h3>' + MES[m - 1] + ' ' + y + '</h3><div class="calg">' + cabSemana() + cel + '</div></div>';
     };
     const mesesTodos = Array.from({ length: 12 }, (_, i) => E.pad(i + 1));
     if (mesesTodos.indexOf(calMes) < 0) calMes = (String(y) === String(hoje.getFullYear())) ? E.pad(hoje.getMonth() + 1) : '01';
@@ -3843,7 +3882,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
   let imp = null, novaCat = null;
   const NOVA_CAT = '__nova';
   const ehCatComb = cat => E.normalizaDesc(cat || '') === 'combustivel';   // a categoria Combustível: o que lá cair na importação entra também em Combustível (litros e km)
-  const dataPt = iso => iso.slice(8) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4);
+  const dataPt = iso => { const f = uiCfg().formatos.data, d = iso.slice(8), m = iso.slice(5, 7), y = iso.slice(0, 4); return f === 'ymd' ? y + '-' + m + '-' + d : f === 'dmy-' ? d + '-' + m + '-' + y : d + '/' + m + '/' + y; };   // o formato da data é escolha da pessoa (por omissão 21/11/2026)
   function impRecalcula(manterMapa) {
     const I = imp;
     if (I.modo === 'pdf') I.movs = I.pdfMovs;
@@ -4283,7 +4322,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     const kpisPr = at.length ? '<div class="grid">' + at.map((x, k) => kpi(esc(propDados.nomes[k]) + (k === melhor ? ' ⭐' : ''), eur(x.r.sobraMes), k === 0 ? 'Sobra por mês · referência' : 'Sobra por mês · ' + (dif(x) >= 0 ? '+' : '−') + eur(Math.abs(dif(x)), 0) + ' por ano vs opção 1', cls(x.r.sobraMes))).join('') + '</div>' : '';
     const cen = R.cenarios.map(c => '<tr><td>' + eur(c.bruto, 0) + '</td><td>' + pctTxt(c.irs) + '</td><td>' + eur(c.liq) + '</td><td>' + eur(c.mesI, 0) + '</td>' + (R.fases.length > 1 ? '<td>' + eur(c.mesL, 0) + '</td>' : '') + '<td>' + eur(c.anoI, 0) + '</td>' + (R.fases.length > 1 ? '<td>' + eur(c.anoL, 0) + '</td>' : '') + '</tr>').join('');
     const hist = arq.map(x => '<tr><td class="l">' + esc(x.o.nome || 'Sem nome') + '</td><td class="l">' + esc(x.o.tipo || '') + '</td><td>' + eur(num(x.o.bruto), 0) + '</td><td class="' + (x.r.sobraMes < 0 ? 'neg-v' : '') + '">' + eur(x.r.sobraMes) + '</td><td>' + (dataOk(String(x.o.arquivada)) ? dataPt(String(x.o.arquivada)) : '') + '</td><td class="l"><button class="btn" data-act="prop-repor:' + x.i + '">Repor</button></td><td>' + delBtn('propostas', x.i) + '</td></tr>').join('');
-    return '<section><h2>Comparar propostas</h2><p class="lead">Km por dia deve incluir todas as deslocações do dia, trabalho e aulas. Mês normal sem subsídios. O anual usa 14 salários e 11 meses de deslocações.</p>' + kpisPr +
+    return '<section><h2>Comparar propostas</h2><p class="lead">Km por dia deve incluir todas as deslocações do dia, trabalho e aulas. Mês normal sem subsídios. O anual usa ' + R.mesesSalario + ' salários e ' + R.mesesTrabalho + ' meses de deslocações (muda em Definições › Pressupostos).</p>' + kpisPr +
       (window.Chart && at.length ? '<div class="chartbox on" data-chart="prop-sobra" role="img" aria-label="Quanto sobra por mês em cada proposta" style="margin:14px 0"></div>' : '') +
       (at.length ? '<div class="tablewrap" style="margin-top:14px"><table><thead><tr><th class="l"></th>' + at.map((x, k) => '<th>Opção ' + (k + 1) + '<div class="th-acts"><button class="btn" data-act="prop-arq:' + x.i + '">Arquivar</button>' + delBtn('propostas', x.i) + '</div></th>').join('') + '</tr></thead><tbody>' +
       rowIn('Nome', 'nome', { t: 'text' }) + rowIn('Tipo (contrato / estágio)', 'tipo', { t: 'text' }) + rowIn('Salário bruto mensal', 'bruto') + rowIn('Retenção de IRS', 'irsModo', { t: 'sel', list: LISTAS.irsModo }) + rowIn('Retenção manual (ex.: 0,02)', 'irs') + rowIn('Subsídio de alimentação por dia', 'subs') + rowIn('Km por dia', 'km') + rowIn('Portagens por dia', 'port') + rowIn('Dias de trabalho por mês', 'dias') +
@@ -4293,7 +4332,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
       '<div class="row" style="margin-top:12px">' + addBtn('propostas', 'Nova opção') + '<span class="muted">"Arquivar" tira a opção da comparação e guarda-a no histórico. O × apaga-a de vez.</span></div></section>' +
       '<section><h2>Histórico</h2><p class="lead">Propostas que já comparou e arquivou. Pode repô-las na comparação quando quiser.</p>' +
       '<div class="tablewrap"><table><thead><tr><th class="l">Nome</th><th class="l">Tipo</th><th>Salário bruto</th><th>Sobra por mês</th><th>Arquivada em</th><th class="l"></th><th></th></tr></thead><tbody>' + (hist || '<tr><td colspan="7" class="empty">Ainda sem propostas arquivadas.</td></tr>') + '</tbody></table></div></section>' +
-      '<section><h2>Cenários de salário</h2><p class="lead">Mês normal, sem subsídios, com os pressupostos atuais. A sobra por ano usa 14 salários, 11 meses de deslocações e 12 meses de despesas fixas.</p>' +
+      '<section><h2>Cenários de salário</h2><p class="lead">Mês normal, sem subsídios, com os pressupostos atuais. A sobra por ano usa ' + R.mesesSalario + ' salários, ' + R.mesesTrabalho + ' meses de deslocações e 12 meses de despesas fixas (muda em Definições › Pressupostos).</p>' +
       '<div class="tablewrap"><table><thead><tr><th>Salário bruto</th><th>IRS</th><th>Líquido</th><th>Sobra/mês' + (R.fases.length > 1 ? ' (início do plano)' : '') + '</th>' + (R.fases.length > 1 ? '<th>Sobra/mês (fim do plano)</th>' : '') + '<th>Sobra/ano' + (R.fases.length > 1 ? ' (início do plano)' : '') + '</th>' + (R.fases.length > 1 ? '<th>Sobra/ano (fim do plano)</th>' : '') + '</tr></thead><tbody>' + cen + '</tbody></table></div></section>';
   }
 
@@ -4316,7 +4355,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     return '<section class="card"><h2>Regras das horas extra</h2><div class="fields">' +
       field('Horas extra: como são compensadas?', inp('press.regimeExtras', { t: 'sel', list: ['Pagas em dinheiro', 'Banco de horas', 'Ainda não sei'] })) +
       field('Saldo inicial do banco de horas (h)', inp('horas.saldoInicial')) + field('Horas por dia (contrato)', inp('press.horasDia'), 'Cada contrato pode ter o seu, em Definições.') + field('Horas por semana (contrato)', inp('press.horasSemana'), 'Para o valor da hora: salário × 12 ÷ (52 × horas por semana).') +
-      field('Acréscimo, 1.ª hora extra em dia útil', inp('press.acr1'), '0,25 = 25%. Código do Trabalho, art. 268.º. Confirme no contrato.') + field('Acréscimo, horas extra seguintes', inp('press.acr2'), '0,375 = 37,5%') + field('Acréscimo, dia de descanso ou feriado', inp('press.acr3'), '0,5 = 50%, por cada hora trabalhada') + '</div></section>' +
+      field('Horas extra à 1.ª taxa (por dia)', inp('press.horasTaxa1', { ph: '1' }), 'As horas extra de um dia até este número levam o acréscimo da 1.ª taxa; as seguintes, o da 2.ª. Por omissão 1 hora (Código do Trabalho, art. 268.º).') + field('Acréscimo, 1.ª hora extra em dia útil', inp('press.acr1'), '0,25 = 25%. Código do Trabalho, art. 268.º. Confirme no contrato.') + field('Acréscimo, horas extra seguintes', inp('press.acr2'), '0,375 = 37,5%') + field('Acréscimo, dia de descanso ou feriado', inp('press.acr3'), '0,5 = 50%, por cada hora trabalhada') + '</div></section>' +
       '<section class="card"><h2>Trabalhador-estudante</h2><p class="lead">A dispensa paga (por exemplo, sair 1 h mais cedo) conta como horas feitas, até ao que faltar para as horas previstas. Assim não aparecem horas em falta nem horas extra por engano.</p><div class="fields">' +
       field('Tem o estatuto?', inp('press.estudante.ativo', { t: 'sel', list: LISTAS.simnao })) + field('Vale desde', inp('press.estudante.de', { t: 'date' }), 'Vazio: sem data de início.') + field('Vale até', inp('press.estudante.ate', { t: 'date' }), 'Vazio: sem data de fim.') + dias5 +
       field('Limite semanal de dispensa (h)', inp('press.estudante.limiteSemana', { ph: limAuto ? String(limAuto) : '' }), 'Vazio: segue as horas por semana do contrato' + (horasSem > 0 ? ' (' + hh(horasSem) + ' → ' + (limAuto ? hh(limAuto) : 'sem referência') + ')' : '') + '. Código do Trabalho, art. 90.º: 3 h (20 a 29 h por semana), 4 h (30 a 33 h), 5 h (34 a 37 h), 6 h (38 h ou mais). Confirme com o empregador.') + field('Dias de provas por disciplina e ano letivo', inp('press.estudante.limiteProvas'), 'Referência: o dia da prova e o anterior, até 4 dias.') + '</div>' +
@@ -4408,14 +4447,26 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     const todosVis = que => '<div class="row" style="margin:8px 0"><button type="button" class="btn" id="ui-vis-' + que + '-1" data-act="ui-vis:' + que + ':1">Mostrar todos</button><button type="button" class="btn" id="ui-vis-' + que + '-0" data-act="ui-vis:' + que + ':0">Esconder todos</button></div>';   // sempre ativos e com id: o foco volta ao botão depois de desenhar
     const txt = (k, v, ph, aria) => '<input type="text" data-ui="' + k + '" value="' + esc(v.join(', ')) + '" placeholder="' + esc(ph) + '" aria-label="' + esc(aria) + '">';
     const numI = (k, v, aria, min, max) => '<input type="number" step="any" data-ui="' + k + '" value="' + esc(v) + '" min="' + min + '" max="' + max + '" aria-label="' + esc(aria) + '">';
+    // listas de coisas que se mostram, escondem e põem por ordem: indicadores e ações do «+»
+    const linhasOrd = (lst, ids, nomeDe, ocultos, ordem) => ordenaIds(ids, ordem).map((k, i, o) => '<tr><td class="l"><label class="row"><input type="checkbox" data-ui="' + lst + ':' + k + '"' + (ocultos.indexOf(k) < 0 ? ' checked' : '') + '> <span>' + esc(nomeDe(k)) + '</span></label></td><td><button type="button" class="btn mini" data-act="ui-ord:' + lst + '.' + k + ':-1"' + (i ? '' : ' disabled') + ' aria-label="Subir ' + esc(nomeDe(k)) + '">↑</button> <button type="button" class="btn mini" data-act="ui-ord:' + lst + '.' + k + ':1"' + (i < o.length - 1 ? '' : ' disabled') + ' aria-label="Descer ' + esc(nomeDe(k)) + '">↓</button></td></tr>').join('');
+    const kpiLinhas = linhasOrd('kpi', KPIS_INICIO.map(x => x[0]), k => KPIS_INICIO.find(x => x[0] === k)[1], c.kpiOcultos, c.kpiOrdem), acaoLinhas = linhasOrd('acao', ACOES_IDS, k => ACOES[ACOES_IDS.indexOf(k)][0], c.acoesOcultas, c.acoesOrdem);
+    const perIniCaixas = PER_INI.map(p => '<label class="row"><input type="checkbox" data-ui="perIni:' + p[0] + '"' + (c.perIniOcultos.indexOf(p[0]) < 0 ? ' checked' : '') + '> ' + esc(p[1]) + '</label>').join('');
+    const selI = (k, v, opcoes, aria) => '<select data-ui="' + k + '" aria-label="' + esc(aria) + '">' + opcoes.map(o => '<option value="' + o[0] + '"' + (o[0] === v ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select>';
     return '<section class="card"><h2 id="def-personalizar">Personalizar a app</h2><p class="lead">Escolha o que vê e como vê. Fica guardado com os seus dados e vale em todos os aparelhos.</p>' +
       '<h3>Início</h3><p class="note">Os blocos que aparecem no Início e por que ordem. A visão geral fica sempre no topo.</p>' + todosVis('inicio') + '<div class="tablewrap"><table class="mini"><tbody>' + blocos + '</tbody></table></div>' +
+      '<details style="margin-top:12px"><summary>Indicadores, ações do «+», períodos dos gráficos e pagamentos por pagar</summary>' +
+      '<h4 style="margin:12px 0 4px">Indicadores da visão geral</h4><p class="note">Os três primeiros que estiverem visíveis ficam à vista; os outros ficam em «Mais indicadores».</p><div class="tablewrap"><table class="mini ui-lista"><tbody>' + kpiLinhas + '</tbody></table></div>' +
+      '<h4 style="margin:12px 0 4px">Ações do botão «+»</h4><p class="note">As que aparecem no menu do «+» e a ordem. Fica sempre pelo menos uma.</p><div class="tablewrap"><table class="mini ui-lista"><tbody>' + acaoLinhas + '</tbody></table></div>' +
+      '<h4 style="margin:12px 0 4px">Períodos dos gráficos de gastos e rendimentos</h4><p class="note">Os períodos por onde se passa nas setas. Fica sempre pelo menos um.</p><div class="ui-abas-grid"><fieldset class="ui-abas"><legend>Períodos</legend>' + perIniCaixas + '</fieldset></div>' +
+      '<h4 style="margin:12px 0 4px">Pagamentos por pagar</h4><div class="fields">' + field('Ver os últimos (dias)', numI('janelaTras', c.janela.tras, 'Dias para trás dos pagamentos por pagar', 0, 365), 'Pagamentos que já deviam ter sido feitos. 0: nenhum.') + field('e os próximos (dias)', numI('janelaFrente', c.janela.frente, 'Dias para a frente dos pagamentos por pagar', 0, 365), 'Os que vão chegar. Vale no resumo e em «Próximos pagamentos».') + '</div></details>' +
       '<h3 style="margin-top:14px">Menu</h3><p class="note">Os separadores que não usa ficam escondidos do menu de baixo (continuam no menu lateral).</p>' + todosVis('aba') + '<div class="ui-abas-grid">' + abas + '</div>' +
       '<h3 style="margin-top:14px">Nomes das contas</h3><p class="note">Dê às contas da app os nomes que usa. O nome muda em toda a app; os registos antigos ficam ligados à mesma conta.</p><div class="fields">' +
       CONTAS_APP.map(k => field(k === 'Principal' ? 'Conta principal (à ordem)' : k === 'Revolut' ? 'Conta poupança principal' : 'Cartão refeição', '<input type="text" maxlength="30" data-ui="nomeConta:' + esc(k) + '" value="' + esc(nomesContas()[k] || '') + '" placeholder="' + esc(k) + '" aria-label="Nome para a conta ' + esc(k) + '">', 'Em branco: ' + esc(k) + '.')).join('') + '</div>' +
       '<h3 style="margin-top:14px">Tipos próprios</h3><div class="fields">' + field('Tipos de período (contratos)', txt('tiposPeriodo', c.tiposPeriodo, 'ex.: Freelance, Erasmus', 'Tipos de período próprios'), 'Separe com vírgulas. Juntam-se a Contrato, Estágio, Bolsa e Part-time.') +
       field('Tipos de rendimento', txt('tiposRend', c.tiposRend, 'ex.: Explicações, Mesada', 'Tipos de rendimento próprios'), 'Separe com vírgulas.') + '</div>' +
       '<h3 style="margin-top:14px">Alertas</h3><div class="fields">' + field('Subida de preço a partir de (%)', numI('precoPct', c.alertas.precoPct, 'Subida de preço mínima em percentagem', 0, 100)) + field('Lembrar pagamentos com (dias)', numI('lembreteDias', c.alertas.lembreteDias, 'Dias de antecedência dos lembretes', 1, 60)) + field('Avisar se o saldo descer abaixo de (€)', numI('saldoMin', c.alertas.saldoMin, 'Saldo mínimo da conta principal', -1000000, 1000000), 'No calendário de liquidez.') + '</div>' +
+      '<h3 style="margin-top:14px">Formatos</h3><div class="fields">' + field('Primeiro dia da semana', selI('semana', c.formatos.semana, [['seg', 'Segunda-feira'], ['dom', 'Domingo']], 'Primeiro dia da semana'), 'Vale nos calendários, em «Esta semana» e no resumo da semana.') +
+      field('Formato da data', selI('dataFmt', c.formatos.data, [['dmy', '21/11/2026'], ['dmy-', '21-11-2026'], ['ymd', '2026-11-21']], 'Formato da data'), 'Só muda como as datas se leem. Escrever datas nos campos continua a seguir o seu navegador.') + '</div>' +
       '<h3 style="margin-top:14px">Aspeto</h3><div class="fields">' + field('Tamanho da letra', '<select data-ui="letra" aria-label="Tamanho da letra">' + ['pequena', 'normal', 'grande', 'muito grande'].map(x => '<option value="' + x + '"' + (x === c.aspeto.letra ? ' selected' : '') + '>' + x.charAt(0).toUpperCase() + x.slice(1) + '</option>').join('') + '</select>') +
       field('Modo compacto', '<label class="row"><input type="checkbox" data-ui="compacto"' + (c.aspeto.compacto ? ' checked' : '') + '> Menos espaço entre cartões (bom no telemóvel)</label>') +
       field('Cor principal', '<div class="comb"><input type="color" data-ui="cor" value="' + esc(c.aspeto.cor || '#0D6A73') + '" aria-label="Cor principal"><button type="button" class="btn" data-act="ui-cor-repor"' + (c.aspeto.cor ? '' : ' disabled') + '>Repor</button></div>') + '</div></section>';
@@ -4425,6 +4476,17 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     const alterna = (lista, item, mostrar) => uiSet(u => { const l = listaTxt(u[lista]).filter(x => x !== item); if (!mostrar) l.push(item); u[lista] = l; });
     if (k === 'inicio' && BLOCOS_INICIO.some(b => b[0] === a)) alterna('inicioOcultos', a, el.checked);
     else if (k === 'aba' && TABS.some(t => t[0] === a)) alterna('abasOcultas', a, el.checked);
+    else if (k === 'kpi' && KPIS_INICIO.some(x => x[0] === a)) alterna('kpiOcultos', a, el.checked);
+    else if ((k === 'acao' && ACOES_IDS.indexOf(a) >= 0) || (k === 'perIni' && PER_INI.some(p => p[0] === a))) {   // nas ações e nos períodos fica sempre pelo menos um
+      const todos = k === 'acao' ? ACOES_IDS : PER_INI.map(p => p[0]), lista = k === 'acao' ? 'acoesOcultas' : 'perIniOcultos', oc = uiCfg()[lista];
+      if (!el.checked && todos.filter(x => x !== a && oc.indexOf(x) < 0).length === 0) { aviso(k === 'acao' ? 'Fica pelo menos uma ação no «+».' : 'Fica pelo menos um período.'); renderKeep(); return; }
+      alterna(lista, a, el.checked);
+    }
+    else if (k === 'janelaTras' || k === 'janelaFrente') {
+      const n = parseFloat(v); if (v !== '' && (!isFinite(n) || n < 0 || n > 365)) { aviso('Escreva um número de dias de 0 a 365.'); renderKeep(); return; }
+      uiSet(u => { u.janela = Object.assign({}, u.janela); const c2 = k === 'janelaTras' ? 'tras' : 'frente'; if (v === '') delete u.janela[c2]; else u.janela[c2] = Math.round(n); });
+    }
+    else if (k === 'semana' || k === 'dataFmt') uiSet(u => { u.formatos = Object.assign({}, u.formatos); u.formatos[k === 'semana' ? 'semana' : 'data'] = String(v || ''); });
     else if (k === 'nomeConta' && CONTAS_APP.indexOf(a) >= 0) {
       const t = String(v || '').replace(/[\u0000-\u001F\u007F<>]/g, ' ').trim().slice(0, 30), outros = CONTAS_APP.filter(x => x !== a).map(x => nomeConta(x).toLowerCase()).concat(CONTAS_APP.filter(x => x !== a).map(x => x.toLowerCase()), E.contasExtra(S).map(c => c.nome.toLowerCase()));
       if (t && CONTAS_APP.filter(x => x !== a).some(x => new RegExp('(^|[^\\wÀ-ÿ])' + x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![\\wÀ-ÿ])', 'i').test(t))) { aviso('O nome não pode conter o nome original de outra conta (' + CONTAS_APP.filter(x => x !== a).join(', ') + '). Ficou o nome anterior.'); renderKeep(); return; }
@@ -4472,6 +4534,8 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
       field('Taxa Segurança Social', inp(pr + 'ss'), 'Taxa legal do trabalhador (0,11 = 11%).') +
       field('Manutenção do carro (€/km)', inp(pr + 'manut'), 'Pneus, óleo, travões.') +
       field('Dias de trabalho por mês (padrão)', inp(pr + 'dias'), 'Só para cenários e comparações.') +
+      field('Pagamentos do salário por ano', inp(pr + 'mesesSalario', { ph: '14' }), '14 com os subsídios, 12 sem eles. Só para os cenários de salário e as propostas.') +
+      field('Meses de trabalho por ano', inp(pr + 'mesesTrabalho', { ph: '11' }), 'Os meses em que gasta em deslocações e recebe subsídio de refeição (11 se tiver um mês de férias). Só para os cenários e as propostas.') +
       field('Mês inicial do plano', inp(pr + 'mesInicial', { t: 'date' })) +
       field('Duração do plano (meses)', '<input type="number" id="horiz-n3" data-horiz="1" min="6" max="240" step="1" inputmode="numeric" value="' + R.horizonte + '" aria-label="Duração do plano, em meses (de 6 a 240)">', 'De 6 a 240 meses (20 anos). Também se muda no Plano mensal.') +
       field('Dia em que recebe o salário', '<input type="number" inputmode="numeric" min="1" max="31" step="1" data-p="press.diaSalario" data-t="num" value="' + esc(S.press.diaSalario == null ? '' : S.press.diaSalario) + '" placeholder="ex.: 28" aria-label="Dia em que recebe o salário">', 'De 1 a 31. Usado no calendário de liquidez (Síntese).') +
@@ -4620,7 +4684,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
       return '<div class="dp-top">' + nav('dp-ano:-1', '‹', 'Ano anterior') + '<span class="dp-tit" aria-live="polite">' + y + '</span>' + nav('dp-ano:1', '›', 'Ano seguinte') + '</div>' +
         '<div class="dp-meses">' + MES_L.map((n, i) => { const ym = y + '-' + E.pad(i + 1); return '<button type="button" id="dpm-' + ym + '" class="dp-m' + (ym === dp.valor.slice(0, 7) ? ' sel' : '') + (ym === hi.slice(0, 7) ? ' hoje' : '') + '" data-act="dp-ym:' + ym + '">' + n.slice(0, 3) + '</button>'; }).join('') + '</div>';
     }
-    const off = (wdIso(E.ymd(y, m, 1)) + 6) % 7; let cel = ''; for (let i = 0; i < off; i++) cel += '<span></span>';
+    const off = wdSem(E.ymd(y, m, 1)); let cel = ''; for (let i = 0; i < off; i++) cel += '<span></span>';
     for (let n = 1; n <= diasNoMes(dp.ym); n++) {
       const iso = E.ymd(y, m, n), w = wdIso(iso), c = ['dp-d'], fora = iso < dp.min || iso > dp.max, feriado = dp.hol.has(iso), ferias = dp.fer.has(iso);
       if (w === 0 || w === 6) c.push('we'); if (iso === hi) c.push('hoje'); if (iso === dp.valor) c.push('sel'); if (feriado) c.push('hol'); else if (ferias) c.push('fer');
@@ -4629,7 +4693,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     }
     for (let i = off + diasNoMes(dp.ym); i < 42; i++) cel += '<span></span>';   // 6 filas sempre: o seletor não muda de altura de mês para mês
     return '<div class="dp-top">' + nav('dp-mes:-1', '‹', 'Mês anterior') + '<button type="button" class="dp-tit" data-act="dp-vista" aria-label="Escolher o mês e o ano">' + MES_L[m - 1].replace(/^./, c => c.toUpperCase()) + ' ' + y + ' ▾</button>' + nav('dp-mes:1', '›', 'Mês seguinte') + '</div>' +
-      '<div class="dp-sem" aria-hidden="true"><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span><span>D</span></div><div class="dp-grid">' + cel + '</div>' +
+      '<div class="dp-sem" aria-hidden="true">' + cabSemana() + '</div><div class="dp-grid">' + cel + '</div>' +
       '<div class="dp-pe"><button type="button" class="dp-link" data-act="dp-limpar">Limpar</button><span><button type="button" class="dp-link" data-act="dp-dia:ontem">Ontem</button><button type="button" class="dp-link" data-act="dp-dia:hoje">Hoje</button></span></div>';
   }
   function dpHoras() {
@@ -4647,6 +4711,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
 
   /* ---------- menus: botão "+" com ações rápidas e "Ir para…" (os separadores principais ficam como estão) ---------- */
   let menu = null;   // null | 'mais' | 'ir'
+  const acoesVis = () => { const c = uiCfg(), ids = ordenaIds(ACOES_IDS, c.acoesOrdem).filter(id => c.acoesOcultas.indexOf(id) < 0); return (ids.length ? ids : ACOES_IDS).map(id => ACOES[ACOES_IDS.indexOf(id)]); };   // as ações do «+» que a pessoa escolheu, pela ordem escolhida (nunca nenhuma: ficam todas)
   const ACOES = [['Novo gasto', '💸', 'despesas', 'g-valor', 'rapido:g'], ['Novo rendimento', '💰', 'rendimentos', 'r-valor', 'rapido:r'], ['Abastecimento', '⛽', 'combustivel', 'a-valor', 'rapido:a'], ['Registar um dia de trabalho', '⏰', 'horas', 'h-i1', 'rapido:h'], ['Marcar férias ou feriado', '📅', 'calendario', '', 'rapido:c'], ['Importar extrato do banco', '📥', 'importar', 'imp-texto']];
   const PAGINAS = [['inicio', 'Início', 'Visão geral, gráficos e próximos pagamentos'], ['despesas', 'Gastos', 'Registo do dia a dia, por mês e categoria'], ['rendimentos', 'Rendimentos', 'Subsídios, prendas, vendas e reembolsos'], ['importar', 'Importar', 'Extrato do banco em CSV, PDF ou texto'], ['orcamento', 'Orçamento', 'Limites por categoria e como vai cada uma'], ['recorrentes', 'Recorrentes', 'Pagamentos que se repetem e categorias'], ['combustivel', 'Combustível', 'Abastecimentos, consumo e preço médio'], ['horas', 'Horas', 'Registo, banco de horas e trabalhador-estudante'], ['calendario', 'Calendário', 'Férias, feriados, pontes e dias oferecidos'], ['plano', 'Plano mensal', 'De 6 meses a 10 anos, mês a mês'], ['poupanca', 'Poupança e contas', 'Objetivos e saldos reais'], ['propostas', 'Propostas', 'Comparar contratos e cenários de salário'], ['apoios', 'Apoios', 'Apoio à compra de um carro elétrico'], ['definicoes', 'Definições', 'Pressupostos, contratos, IRS, combustível e guia'], ['categorias', 'Categorias e ícones', 'Nomes, ícones e cores das categorias'], ['trabcfg', 'Regras do trabalho', 'Horas extra e trabalhador-estudante']];
   function lateralHtml() {
@@ -4674,6 +4739,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     v.combustivel.abast = []; v.importacao = { regras: [] };
     v.apoios.ledger = {}; v.apoios.outrosAdultos = ''; v.apoios.sims = [];
     v.press.saldoPrincipal = 0; v.press.revolut = 0; if (v.press.estudante) v.press.estudante.ativo = 'Não';
+    v.press.mesInicial = hojeYm + '-01';   // recomeçar é começar agora: o plano parte do mês de hoje, não do mês dos dados de origem
     v.orcamento = { geral: 0, geralMeses: {} };
     (v.categorias || []).forEach(c => { c.limite = ''; delete c.meses; });
     return v;
@@ -4698,7 +4764,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
       '<input type="search" id="ir-q" placeholder="Página, gasto, rendimento, recorrente…" aria-label="Procurar uma página ou um registo" maxlength="40" autocomplete="off"><div class="irlist">' + '<p class="empty" id="ir-vazio" hidden>Nenhuma página encontrada.</p>' +
       PAGINAS.map(x => '<button type="button" class="iritem' + (x[0] === tab ? ' atual' : '') + '" data-act="ir:' + x[0] + '" data-txt="' + esc((x[1] + ' ' + x[2]).toLowerCase()) + '">' + ic(x[0]) + '<span><b>' + esc(x[1]) + '</b><small>' + esc(x[2]) + '</small></span></button>').join('') + '<div id="ir-res"></div></div></div></div>';
     return '<div class="fab-wrap' + (menu === 'mais' ? ' aberto' : '') + '">' + (menu === 'mais' ? '<div class="fab-menu" role="group" aria-label="Ações rápidas">' +
-      ACOES.map(a => '<button type="button" data-act="' + (a[4] || 'ir:' + a[2] + ':' + a[3]) + '"><span class="cem" aria-hidden="true">' + a[1] + '</span>' + esc(a[0]) + '</button>').join('') + '</div>' : '') +
+      acoesVis().map(a => '<button type="button" data-act="' + (a[4] || 'ir:' + a[2] + ':' + a[3]) + '"><span class="cem" aria-hidden="true">' + a[1] + '</span>' + esc(a[0]) + '</button>').join('') + '</div>' : '') +
       '<button type="button" class="fab" data-act="fab" aria-label="Ações rápidas" title="Registo rápido (tecla N)" aria-keyshortcuts="n" aria-expanded="' + (menu === 'mais') + '">' + (menu === 'mais' ? '×' : '+') + '</button></div>';
   }
   const focaFab = () => { const b = document.querySelector('.fab-menu button'); if (b && b.focus) b.focus(); };   // com o «+» aberto pelo teclado, o foco vai para a primeira ação
@@ -4862,6 +4928,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     if (!Array.isArray(out.horas.registo)) out.horas.registo = [];
     if (!out.horas.meses) out.horas.meses = {};
     ['mesInicial'].forEach(k => { if (!/^\d{4}-\d{2}-\d{2}$/.test(String(out.press[k])) || !dataOk(String(out.press[k]))) out.press[k] = base.press[k]; });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(out.press.mesInicial)) || !dataOk(String(out.press.mesInicial))) out.press.mesInicial = hojeYm + '-01';   // dados sem mês inicial (a versão sem dados pessoais, na primeira abertura): o plano começa no mês em que a pessoa começa, qualquer que ele seja
     out.importacao = Object.assign({ regras: [] }, seguro(saved.importacao));   // versão 1.6: importar extratos
     if (!Array.isArray(out.importacao.regras)) out.importacao.regras = [];
     if ((saved.ver || 1) < 9) {   // versão 1.9.4: dia de pagamento dos recorrentes lido do extrato; só preenche os que estão em branco
@@ -5284,6 +5351,10 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     }
     else if (act === 'imp-texto') { impOp++; const v = (document.getElementById('imp-texto').value || ''); if (v.length > 2e6) aviso('O texto é demasiado grande.'); else if (v.trim()) impIniciar(v, 'texto colado'); }
     else if (act === 'exportar' && (a1 === 'g' || a1 === 'r')) exportarCsv(a1);
+    else if (act === 'ui-ord') {   // sobe ou desce um indicador ou uma ação do «+» (a1 = lista.id, a2 = -1 ou 1)
+      const [lst, id] = String(a1).split('.'), cfgs = { kpi: [KPIS_INICIO.map(x => x[0]), 'kpiOrdem'], acao: [ACOES_IDS, 'acoesOrdem'] }, c = cfgs[lst];
+      if (c && c[0].indexOf(id) >= 0) { const ord = ordenaIds(c[0], uiCfg()[c[1]]), i = ord.indexOf(id), j = i + (+a2); if (i >= 0 && j >= 0 && j < ord.length) { ord[i] = ord[j]; ord[j] = id; uiSet(u => { u[c[1]] = ord; }); renderKeep(); } }
+    }
     else if (act === 'ui-ordem') { const ks = BLOCOS_INICIO.map(b => b[0]), c = uiCfg(), ord = ks.slice().sort((x, y) => { const ix = c.inicioOrdem.indexOf(x), iy = c.inicioOrdem.indexOf(y); return (ix < 0 ? 100 + ks.indexOf(x) : ix) - (iy < 0 ? 100 + ks.indexOf(y) : iy); }), i = ord.indexOf(a1), j = i + (+a2); if (i >= 0 && j >= 0 && j < ord.length) { ord[i] = ord[j]; ord[j] = a1; uiSet(u => { u.inicioOrdem = ord; }); renderKeep(); } }
     else if (act === 'ui-vis' && (a1 === 'inicio' || a1 === 'aba')) {   // mostrar ou esconder todos os blocos do Início / separadores do Menu de uma vez
       const lista = a1 === 'inicio' ? 'inicioOcultos' : 'abasOcultas', ids = a1 === 'inicio' ? BLOCOS_INICIO.map(b => b[0]) : GRUPOS.filter(g => g[0] !== 'inicio').reduce((l, g) => l.concat(g[2]), []);
@@ -5321,7 +5392,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
       queueSave(); renderKeep();
     }
     else if (act === 'sim-usar') { const x = (S.apoios.sims || [])[+a1]; if (x) { S.apoios.sim = { preco: num(x.preco), abate: !!x.abate, posto: !!x.posto, custoPosto: num(x.custoPosto) }; queueSave(); renderKeep(); } }
-    else if (act === 'car') { if (iniPer[a1] !== undefined) { iniPer[a1] = (iniPer[a1] + (+a2 || 0) + PER_INI.length) % PER_INI.length; renderKeep(); } }
+    else if (act === 'car') { if (iniPer[a1] !== undefined) { const v = perIniVis(), i = v.indexOf(perIniAtual(a1)); iniPer[a1] = (i + (+a2 || 0) + v.length) % v.length; renderKeep(); } }
     else if (act === 'step') {
       const dir = +a2, vals = { gastoMes, orcSel, horaMes, calAno, calMes };
       const lst = { gastoMes: mesesGastos(), orcSel: R.months.map(m => m.key), horaMes: R.horas.banco.map(x => x.key), calAno: anosCalendario(), calMes: Array.from({ length: 12 }, (_, i) => E.pad(i + 1)) }[a1];
@@ -5426,7 +5497,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     }
     else if (act === 'reset') {
       if (!resetArm) { resetArm = true; apagarArm = false; render(); }
-      else { const antes = JSON.stringify(S); resetArm = false; menu = null; S = clone(DEFAULTS); queueSave(); render(); aviso('Valores iniciais repostos.', () => { S = merge(DEFAULTS, JSON.parse(antes)); queueSave(); render(); }); }
+      else { const antes = JSON.stringify(S); resetArm = false; menu = null; S = comecaHoje(clone(DEFAULTS)); queueSave(); render(); aviso('Valores iniciais repostos.', () => { S = merge(DEFAULTS, JSON.parse(antes)); queueSave(); render(); }); }
     }
     else if (act === 'reset-cancel') { resetArm = false; apagarArm = false; render(); }
     else if (act === 'apagar') {
