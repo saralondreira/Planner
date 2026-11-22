@@ -868,6 +868,10 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
 @media (max-width: 480px) { .pdet .seg.dias { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); } .pdet .seg.dias button { min-height: 44px; min-width: 0; } }
 .pdet .note { margin: 10px 0 0; }
 
+/* «Nova categoria»: o campo do ícone abre o seletor de ícones */
+.nc-ico-btn { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: flex-start; text-align: left; min-height: 44px; }
+.nc-ico-btn .ico { flex: none; }
+
 </style>
 </head>
 <body>
@@ -2545,6 +2549,8 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
   const icoBtn = (path, emoji, cor, label) => '<button class="ico btn-ico" style="--c:' + esc(corOk(cor)) + '" data-act="pick:' + path + '" aria-label="' + esc(label || 'Escolher ícone') + '" title="Escolher ícone">' + (emoji ? esc(emoji) : '＋') + '</button>';
   const EMOJIS = ['🏠', '🛒', '🚗', '⛽', '🚌', '🚆', '✈️', '📱', '💻', '🌐', '📺', '🎬', '🎮', '🎧', '📚', '🎓', '✏️', '💊', '🩺', '🦷', '❤️', '🏋️', '🧴', '💇', '👕', '👟', '🎁', '🎉', '🍽️', '☕', '🍕', '🍔', '🥗', '🍷', '🐶', '🐱', '🌱', '🔧', '🛠️', '💡', '🔥', '💧', '📡', '🧾', '🏦', '💳', '💶', '💰', '📈', '🪙', '🔁', '🔔', '🔒', '🛡️', '📦', '📮', '🧳', '🏖️', '⛰️', '🎫', '🧸', '🩹', '🅿️', '🛣️', '🚿', '🧹', '👶', '💍', '⭐', '🏷️'];
   let picker = null, corPick = null;
+  const PICK_NC = '@nc';   // o seletor de ícones aberto a partir da janela «Nova categoria»: o ícone fica em novaCat.ico, não num caminho dos dados
+  const focaNcIco = () => setTimeout(() => { const e = document.getElementById('nc-ico-btn'); if (e && e.focus) e.focus(); }, 0);
   const PALETA = [['Vermelho', '#E57373'], ['Rosa', '#F06292'], ['Roxo', '#BA68C8'], ['Violeta', '#9575CD'], ['Azul-índigo', '#7986CB'], ['Azul', '#64B5F6'], ['Azul-claro', '#4FC3F7'], ['Turquesa', '#4DD0E1'], ['Verde-água', '#4DB6AC'], ['Verde', '#81C784'],
     ['Verde-lima', '#AED581'], ['Amarelo', '#DCE775'], ['Âmbar', '#FFD54F'], ['Laranja', '#FFB74D'], ['Coral', '#FF8A65'], ['Castanho', '#A1887F'], ['Cinzento-azulado', '#90A4AE'], ['Cinzento', '#6B7C87'], ['Petróleo', '#0D6A73'], ['Rosa-claro', '#F48FB1']];
   function corPickerHtml() {
@@ -2728,12 +2734,12 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
   /* ---------- registo rápido: o "+" abre uma folha no próprio sítio, sem mudar de página ---------- */
   let rapido = null;   // { tipo: 'g' | 'r' | 'a' (abastecimento) | 'h' (dia de trabalho) | 'c' (férias ou feriado), valor, desc, data, cat, conta, novo, catEscolhida, f: campos dos tipos a, h e c }
   const rapidoDefaults = { g: { conta: 'Principal' }, r: { conta: 'Principal' } };
-  const RAP_EXTRA = { a: ['litros', 'preco', 'km', 'posto'], h: ['i1', 'b1', 'b2', 'f2', 'tar', 'obs', 'disc', 'disp'], c: ['ate', 'nome'] };   // ids q-… dos campos de texto de cada folha
+  const RAP_EXTRA = { a: ['litros', 'preco', 'desconto', 'km', 'posto'], h: ['i1', 'b1', 'b2', 'f2', 'tar', 'obs', 'disc', 'disp'], c: ['ate', 'nome'] };   // ids q-… dos campos de texto de cada folha
   const MARCAS = [['ferias', 'Férias'], ['feriado', 'Feriado'], ['oferecido', 'Dia oferecido'], ['ponte', 'Ponte']];
   const ultimoTrabalho = () => S.horas.registo.filter(r => r.tipo === 'Trabalho' && r.i1).sort((a, b) => a.data < b.data ? 1 : -1)[0] || {};
   function rapidoBase(t) {
     const q = { tipo: t, valor: '', desc: '', data: hojeIso(), cat: t === 'g' || t === 'r' ? ultimaCat(t) : '', conta: (rapidoDefaults[t] || {}).conta, novo: true, catEscolhida: false, f: {} };
-    if (t === 'a') q.f = { litros: '', preco: '', km: '', posto: '' };
+    if (t === 'a') q.f = { litros: '', preco: '', desconto: '', km: '', posto: '' };
     if (t === 'h') { const u = ultimoTrabalho(), sem = !u.i2; q.f = { tipo: 'Trabalho', i1: u.i1 || '', b1: sem ? '' : u.f1 || '', b2: sem ? '' : u.i2 || '', f2: sem ? u.f1 || '' : u.f2 || '', tar: '', obs: '', disc: '', disp: '' }; }   // os horários vêm do último dia de trabalho; sem almoço, a saída é o fim da manhã desse dia
     if (t === 'c') q.f = { tipo: 'ferias', ate: '', nome: '', repete: true };
     return q;
@@ -2821,7 +2827,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     return rapidoFolha('Novo abastecimento', '⛽',
       '<div class="valorbox"><span aria-hidden="true">€</span><input type="number" inputmode="decimal" step="any" id="q-valor" placeholder="0,00" aria-label="Valor pago em euros" value="' + esc(rapido.valor) + '"></div>' +
       '<p class="note">Preencha 2 dos 3: valor, litros e preço por litro. O terceiro calcula-se.</p>' +
-      qData('Data') + '<div class="fields fx-campos q-campos" style="margin-top:10px">' + n('litros', f.litros, 'Litros') + n('preco', f.preco, 'Preço no talão (€/L)') + n('km', f.km, 'Km no conta-quilómetros', ult ? 'Último registado: ' + f0.format(num(ult.kmConta)) : '') +
+      qData('Data') + '<div class="fields fx-campos q-campos" style="margin-top:10px">' + n('litros', f.litros, 'Litros') + n('preco', f.preco, 'Preço no talão (€/L)') + n('desconto', f.desconto, 'Desconto (€)', 'Opcional: o valor pago já o tem') + n('km', f.km, 'Km no conta-quilómetros', ult ? 'Último registado: ' + f0.format(num(ult.kmConta)) : '') +
       field('Posto / notas', qTxt('posto', f.posto, { extra: ' maxlength="200" autocomplete="off"' })) + '</div>',
       'Registar abastecimento', 'combustivel', 'Abrir o Combustível');
   }
@@ -2875,15 +2881,21 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     horaMes = data.slice(0, 7);
     return '';
   }
+  /* Desconto (€) de um abastecimento: o valor pago já o traz, mas o preço da bomba e os litros não. Os litros calculam-se sobre o valor antes do desconto: (valor + desconto) ÷ preço. */
+  const descontoAbast = x => { const d = parseFloat(x); return isFinite(d) && d > 0 && d <= 500 ? d : 0; };
   function registoAbast(v) {
     let valor = parseFloat(v.valor), litros = parseFloat(v.litros), preco = parseFloat(v.preco);
+    const dTxt = String(v.desconto == null ? '' : v.desconto).trim(), dNum = parseFloat(dTxt);
+    if (dTxt !== '' && (!isFinite(dNum) || dNum < 0 || dNum > 500)) return 'Desconto fora do normal: de 0 a 500 €.';
+    const desc = dTxt === '' ? 0 : dNum;
     const n = [valor, litros, preco].filter(isFinite).length;
     if (n < 2) return 'Preencha 2 dos 3: valor, litros, preço.';
     if ([valor, litros, preco].some(x => isFinite(x) && x <= 0) || valor > 5000 || litros > 500 || preco > 20) return 'Valores fora do normal: valor até 5000 €, litros até 500 e preço até 20 €/L.';
-    if (!isFinite(valor)) valor = Math.round(litros * preco * 100) / 100;
-    if (!isFinite(litros)) litros = Math.round(valor / preco * 100) / 100;
+    if (!isFinite(valor)) valor = Math.round((litros * preco - desc) * 100) / 100;
+    if (!isFinite(litros)) litros = Math.round((valor + desc) / preco * 100) / 100;
+    if (!(valor > 0)) return 'O desconto não pode ser igual ou maior do que o valor do abastecimento. Verifique os números.';
     if (valor > 5000 || litros > 500) return 'O valor calculado passa o máximo (5000 € ou 500 litros). Verifique os números.';
-    if (n === 3 && Math.abs(valor - litros * preco) > 0.05) return 'Atenção: valor ≠ litros × preço. Verifique o talão.';
+    if (n === 3 && Math.abs(valor + desc - litros * preco) > 0.05) return desc > 0 ? 'Atenção: valor + desconto ≠ litros × preço. Verifique o talão.' : 'Atenção: valor ≠ litros × preço. Verifique o talão.';
     const km = parseFloat(v.km), dataA = v.data;
     if (dataA && !dataOk(dataA)) return 'Data inválida.';
     if (isFinite(km) && (km < 0 || km > 5e6)) return 'Km fora do intervalo.';
@@ -2891,7 +2903,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     const depoisA = S.combustivel.abast.filter(a => a.data && a.data > dataA && isFinite(parseFloat(a.kmConta))).sort((x, y) => x.data < y.data ? -1 : 1)[0];
     if (isFinite(km) && depoisA && km >= parseFloat(depoisA.kmConta)) return 'O km tem de ser inferior ao do abastecimento seguinte (' + f0.format(parseFloat(depoisA.kmConta)) + ').';
     if (isFinite(km) && antes && km <= parseFloat(antes.kmConta)) return 'O km tem de ser superior ao do abastecimento anterior (' + f0.format(parseFloat(antes.kmConta)) + ').';
-    S.combustivel.abast.push({ data: v.data, valor, litros, kmConta: isFinite(km) ? km : '', posto: String(v.posto || '').trim() });
+    S.combustivel.abast.push(Object.assign({ data: v.data, valor, litros, kmConta: isFinite(km) ? km : '', posto: String(v.posto || '').trim() }, desc > 0 ? { desconto: desc } : {}));
     return '';
   }
   function rapidoGuardarOutros() {
@@ -2903,7 +2915,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
       if (erro === 'Esse dia já está registado.') erro += ' Use «Abrir as Horas» para o alterar.';
       texto = 'Dia ' + dd + ' registado' + (m.horas != null ? ' (' + hh(Math.round(m.horas * 100) / 100) + ')' : '') + '.';
     } else if (q.tipo === 'a') {
-      erro = !q.data ? 'Falta a data.' : registoAbast({ valor: q.valor, litros: f.litros, preco: f.preco, km: f.km, data: q.data, posto: f.posto });
+      erro = !q.data ? 'Falta a data.' : registoAbast({ valor: q.valor, litros: f.litros, preco: f.preco, desconto: f.desconto, km: f.km, data: q.data, posto: f.posto });
       texto = 'Abastecimento de ' + dd + ' registado.';
     } else {
       const d = q.data, ate = ateDe(q); let nd = 0; if (dataOk(d) && (!ate || dataOk(ate))) eachIso(d, ate || d, () => { nd++; });
@@ -3958,7 +3970,11 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     else if ((k === 'cat' || k === 'gcat') && el.value === NOVA_CAT) { novaCat = { alvo: k + ':' + a }; setTimeout(() => { const e = document.getElementById('nc-nome'); if (e && e.focus) e.focus(); }, 0); }
     else if (k === 'cat') imp.cat[a] = el.value;
 
-    else if (k === 'cprec' || k === 'ckm') { const c = imp.comb[a] = imp.comb[a] || { preco: '', km: '' }; c[k === 'cprec' ? 'preco' : 'km'] = String(el.value || '').replace(',', '.').trim(); }
+    else if (k === 'cprec' || k === 'ckm' || k === 'cdesc') {
+      const c = imp.comb[a] = imp.comb[a] || { preco: '', km: '', desc: '' }; c[k === 'cprec' ? 'preco' : k === 'ckm' ? 'km' : 'desc'] = String(el.value || '').replace(',', '.').trim();
+      const caixa = el.closest && el.closest('.comb-campos'), resumo = caixa && caixa.querySelector && caixa.querySelector('[data-comb-resumo]');
+      if (resumo && imp.movs[+a]) { resumo.textContent = combResumo(imp, +a); return; }   // só a linha «≈ N L» muda: nada é redesenhado, por isso o campo onde se clicou a seguir e o que se escreve nele não se perdem
+    }
 
     else if (k === 'gcat' || k === 'gsel') { const g = (imp.grupos || [])[+a]; if (g) g.idx.forEach(i => { if (k === 'gsel') { if (!imp.dup[i]) imp.sel[i] = el.checked; } else if (imp.movs[i].valor < 0 && !imp.fix[i]) imp.cat[i] = el.value; }); }
     else if (k === 'vista') imp.vista = el.value === 'lista' ? 'lista' : 'grupos';
@@ -3978,13 +3994,13 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     const abastDe = (m, cb) => {   // um gasto de combustível vira também um abastecimento, com litros (valor ÷ preço) e, se bater certo com os outros, os km
       const A = S.combustivel.abast, valor = Math.abs(m.valor);
       if (A.length >= 5000 || A.slice(0, nAbast0).some(a => a.data === m.data && Math.abs(num(a.valor) - valor) < 0.005)) return;   // só os que já existiam antes desta importação: dois abastecimentos iguais no mesmo extrato contam os dois
-      const preco = parseFloat(cb.preco) > 0 ? parseFloat(cb.preco) : refP, litros = preco > 0 ? Math.round(valor / preco * 100) / 100 : '';
+      const preco = parseFloat(cb.preco) > 0 ? parseFloat(cb.preco) : refP, desc = descontoAbast(cb.desc), litros = preco > 0 ? Math.round((valor + desc) / preco * 100) / 100 : '';   // com desconto, os litros saem do valor antes dele
       const km0 = Math.round(parseFloat(cb.km)), kmDe = a => parseFloat(a.kmConta);   // arredonda antes de comparar: 1000,4 passa a 1000 e já não pode ser igual ao anterior
       const anteriores = A.filter(a => a.data && a.data <= m.data && isFinite(kmDe(a))).map(kmDe), seguintes = A.filter(a => a.data && a.data > m.data && isFinite(kmDe(a))).map(kmDe);
       const maxAntes = anteriores.reduce((x, y) => Math.max(x, y), -Infinity), minDepois = seguintes.reduce((x, y) => Math.min(x, y), Infinity);   // vale o maior km até esta data e o menor depois dela, mesmo com vários abastecimentos no mesmo dia
       let km = '';
       if (isFinite(km0) && km0 > 0 && km0 <= 2e6 && km0 > maxAntes && km0 < minDepois) km = km0; else if (cb.km) nKmIgn++;
-      A.push({ data: m.data, valor, litros, kmConta: km, posto: limpaTexto(m.desc, 60) }); nComb++;
+      A.push(Object.assign({ data: m.data, valor, litros, kmConta: km, posto: limpaTexto(m.desc, 60) }, desc > 0 && preco > 0 ? { desconto: desc } : {})); nComb++;
     };
     I.movs.forEach((m, i) => {
       if (!I.sel[i]) return;
@@ -4051,10 +4067,11 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     aviso(feito.length ? 'Preenchido: ' + feito.join(', ') + '.' : 'Nada para aplicar.', feito.length ? () => { const o = JSON.parse(antes); S.fixas = o.fixas; S.extras = o.extras; S.press = o.press; if (imp && imp.sug) imp.sug.feito = false; queueSave(); render(); } : null, 'Desfazer', 12000);
   }
 
+  const ncIco = v => { if (!novaCat) return; novaCat.ico = v; const h = document.getElementById('nc-ico'); if (h) h.value = v; };   // o desenho seguinte lê o campo escondido: tem de ficar igual
   function novaCatHtml() {
     if (!novaCat) return '';
     return '<div class="modal baixo" data-act="nc-fechar"><div class="sheet" role="dialog" aria-modal="true" aria-label="Nova categoria"><div class="row sh-topo"><h2>Nova categoria</h2><button class="x" data-act="nc-fechar" aria-label="Fechar">×</button></div>' +
-      '<div class="fields"><div class="field"><label for="nc-nome">Nome</label><input type="text" id="nc-nome" maxlength="40" placeholder="ex.: Vending" autocomplete="off" value="' + esc(novaCat.nome || '') + '"></div><div class="field"><label for="nc-ico">Ícone (opcional)</label><input type="text" id="nc-ico" maxlength="8" placeholder="📦" autocomplete="off" value="' + esc(novaCat.ico || '') + '"></div></div>' +
+      '<div class="fields"><div class="field"><label for="nc-nome">Nome</label><input type="text" id="nc-nome" maxlength="40" placeholder="ex.: Vending" autocomplete="off" value="' + esc(novaCat.nome || '') + '"></div><div class="field"><label for="nc-ico-btn">Ícone (opcional)</label><input type="hidden" id="nc-ico" value="' + esc(novaCat.ico || '') + '"><button type="button" class="btn nc-ico-btn" id="nc-ico-btn" data-act="pick-nc" aria-haspopup="dialog">' + chipIco(novaCat.ico || '📦', PALETA[(S.categorias || []).length % PALETA.length][1]) + '<span>' + (novaCat.ico ? 'Mudar o ícone' : 'Escolher o ícone') + '</span></button></div></div>' +
       '<p class="note">Fica já escolhida' + (/^gcat/.test(novaCat.alvo) ? ' para todos os movimentos do grupo' : ' para este movimento') + '. A cor e o ícone podem mudar depois em Categorias.</p>' +
       '<div class="row" style="margin-top:12px"><button type="button" class="btn pri" data-act="nc-criar">Criar e escolher</button><button type="button" class="btn" data-act="nc-fechar">Cancelar</button></div></div></div>';
   }
@@ -4071,11 +4088,16 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     novaCat = null; queueSave(); renderKeep();
   }
   const refPrecoComb = () => (R && R.cb && R.cb.precoUsado) || 0;
+  function combResumo(I, i) {   // os litros calculados a partir do valor pago, do desconto e do preço por litro
+    const c = I.comb[i] || {}, val = Math.abs(I.movs[i].valor), p = parseFloat(c.preco) > 0 ? parseFloat(c.preco) : refPrecoComb(), desc = descontoAbast(c.desc);
+    return p > 0 ? '≈ ' + f2.format((val + desc) / p) + ' L' + (desc > 0 ? ' (sobre ' + f2.format(val + desc) + ' € antes do desconto)' : '') : 'Sem preço: escreva o €/litro para calcular os litros';
+  }
   function combCampos(I, i) {
-    const c = I.comb[i] || {}, val = Math.abs(I.movs[i].valor), p = parseFloat(c.preco) > 0 ? parseFloat(c.preco) : refPrecoComb(), ref = refPrecoComb();
+    const c = I.comb[i] || {}, ref = refPrecoComb();
     return '<div class="comb-campos"><span class="comb-tit">⛽ Entra também em Combustível (opcional)</span><label>€/litro <input type="number" step="any" min="0" inputmode="decimal" data-imp="cprec:' + i + '" value="' + esc(c.preco || '') + '" placeholder="' + (ref ? f2.format(ref) : '0,00') + '" aria-label="Preço por litro"></label>' +
+      '<label>Desconto (€) <input type="number" step="any" min="0" inputmode="decimal" data-imp="cdesc:' + i + '" value="' + esc(c.desc || '') + '" placeholder="se houve" aria-label="Desconto no abastecimento, em euros"></label>' +
       '<label>Km no conta-quilómetros <input type="number" step="1" min="0" inputmode="numeric" data-imp="ckm:' + i + '" value="' + esc(c.km || '') + '" placeholder="opcional" aria-label="Quilómetros do conta-quilómetros"></label>' +
-      '<span class="muted">' + (p > 0 ? '≈ ' + f2.format(val / p) + ' L' : 'Sem preço: escreva o €/litro para calcular os litros') + '</span></div>';
+      '<span class="muted" data-comb-resumo>' + esc(combResumo(I, i)) + '</span></div>';
   }
   /* Pesquisa nos movimentos lidos: procura na descrição, na data, no valor e na categoria (sem acentos nem maiúsculas) */
   const impNorm = s => E.normalizaDesc(s);
@@ -4498,7 +4520,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     const pI = E.periodoAt(S, S.press.mesInicial), pL = E.periodoAt(S, R.months[R.months.length - 1].ym);
     const rows = cb.rows.map(r => {
       const b = 'combustivel.abast.' + r._i + '.';
-      return '<tr><td>' + inp(b + 'data', { t: 'date', aria: 'Data' }) + '</td><td>' + inp(b + 'valor', { aria: 'Valor pago' }) + '</td><td>' + inp(b + 'litros', { aria: 'Litros' }) + '</td><td>' + inp(b + 'kmConta', { aria: 'Km do conta-quilómetros' }) + '</td><td>' + (r.preco == null ? '' : f2.format(r.preco) + ' €/L') + '</td><td>' + (r.km == null ? '—' : f0.format(r.km)) + '</td><td class="l">' + (r.origem === 'Estimado' ? '<span class="chip warn">Estimado</span>' : r.origem === 'Conta-km' ? '<span class="chip good">Conta-km</span>' : '—') + '</td><td>' + (r.cons == null ? '—' : f2.format(r.cons)) + '</td><td class="l">' + inp(b + 'posto', { t: 'text', aria: 'Posto ou notas' }) + '</td><td>' + delBtn('combustivel.abast', r._i) + '</td></tr>';
+      return '<tr><td>' + inp(b + 'data', { t: 'date', aria: 'Data' }) + '</td><td>' + inp(b + 'valor', { aria: 'Valor pago' }) + '</td><td>' + inp(b + 'litros', { aria: 'Litros' }) + '</td><td>' + inp(b + 'kmConta', { aria: 'Km do conta-quilómetros' }) + '</td><td>' + (r.preco == null ? '' : f2.format(r.preco) + ' €/L') + (num(r.desconto) > 0 ? '<div class="muted" style="font-size:12px">com desconto de ' + eur(num(r.desconto)) + '</div>' : '') + '</td><td>' + (r.km == null ? '—' : f0.format(r.km)) + '</td><td class="l">' + (r.origem === 'Estimado' ? '<span class="chip warn">Estimado</span>' : r.origem === 'Conta-km' ? '<span class="chip good">Conta-km</span>' : '—') + '</td><td>' + (r.cons == null ? '—' : f2.format(r.cons)) + '</td><td class="l">' + inp(b + 'posto', { t: 'text', aria: 'Posto ou notas' }) + '</td><td>' + delBtn('combustivel.abast', r._i) + '</td></tr>';
     }).join('');
     const mrows = R.months.slice(0, 12).map(m => {
       const x = cb.mes[m.key], real = x ? x.valor : 0;
@@ -4514,6 +4536,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
       field('Data', '<input type="date" id="a-data" value="' + E.ymd(hoje.getFullYear(), hoje.getMonth() + 1, hoje.getDate()) + '">') +
       field('Litros', '<input type="number" inputmode="decimal" step="any" id="a-litros">') +
       field('Preço no talão (€/L)', '<input type="number" inputmode="decimal" step="any" id="a-preco">') +
+      field('Desconto (€)', '<input type="number" inputmode="decimal" step="any" min="0" id="a-desconto">', 'Opcional. Se o valor pago já tem desconto, escreva-o: os litros calculam-se sobre o valor antes dele.') +
       field('Km no conta-quilómetros', '<input type="number" inputmode="decimal" step="any" id="a-km">', nova && nova.kmConta !== '' ? 'Último registado: ' + f0.format(num(nova.kmConta)) : '') +
       field('Posto / notas', '<input type="text" id="a-posto">') + '</div>' +
       '<div class="row" style="margin-top:12px"><button class="btn pri" data-act="abast-add">Registar abastecimento</button><span id="a-msg" class="muted" role="status"></span></div></section>' +
@@ -4712,7 +4735,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     if (detSheet && detSheet.tab !== tab) detSheet = null; if (simSheet && simSheet.tab !== tab) simSheet = null;
     const ovSel = '.drawer, .sheet', ovChave = e => (e.getAttribute && e.getAttribute('aria-label')) || '', ovAntes = {}, ovLista = Array.from(document.querySelectorAll(ovSel)), tinhaOv = ovLista.length > 0;   // uma gaveta ou folha já aberta não volta ao topo nem volta a deslizar quando se escolhe uma opção lá dentro
     ovLista.forEach(e => { const k = ovChave(e); if (!(k in ovAntes)) ovAntes[k] = e.scrollTop || 0; });   // o scroll guarda-se pelo nome da folha, e não pela posição: abrir um seletor por cima de uma folha não a manda para o topo
-    mainEl.innerHTML = renomeiaContas(corpo + fixaHtml() + rendHtml() + gastoHtml() + objHtml() + contaHtml() + planoHtml() + detHtml() + simHtml() + rapidoHtml() + boasHtml() + nuvemAskHtml() + pickerHtml() + corPickerHtml() + novaCatHtml() + calHtml() + menuHtml());
+    mainEl.innerHTML = renomeiaContas(corpo + fixaHtml() + rendHtml() + gastoHtml() + objHtml() + contaHtml() + planoHtml() + detHtml() + simHtml() + rapidoHtml() + boasHtml() + nuvemAskHtml() + novaCatHtml() + pickerHtml() + corPickerHtml() + calHtml() + menuHtml());
     if (tinhaOv) { Array.from(document.querySelectorAll('.drawer-bg, .modal, .drawer, .sheet')).forEach(e => { if (e.classList && e.classList.add) e.classList.add('sem-anim'); }); const usados = {}; Array.from(document.querySelectorAll(ovSel)).forEach(e => { const k = ovChave(e); if (usados[k] || !ovAntes[k]) return; usados[k] = true; e.scrollTop = ovAntes[k]; }); }
     if (tab === 'despesas') filtraLista('g'); else if (tab === 'rendimentos') filtraLista('r');
     Array.from(document.querySelectorAll('input[data-indet]')).forEach(e => { e.indeterminate = true; });   // "algumas marcadas": só se pode pôr por código, não no HTML
@@ -4726,7 +4749,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     desenharGraficos(anima);
   }
   function renderKeep() {
-    const ae = document.activeElement, key = ae && ae.dataset && (ae.dataset.p || ae.id), keyImp = !key && ae && ae.type === 'checkbox' && ae.dataset && ae.dataset.imp;   // as caixas da importação também não perdem o foco ao redesenhar
+    const ae = document.activeElement, key = ae && ae.dataset && (ae.dataset.p || ae.id), keyImp = !key && ae && ae.dataset && ae.dataset.imp && (ae.type === 'checkbox' || /^(cprec|cdesc|ckm):/.test(ae.dataset.imp)) && ae.dataset.imp;   // as caixas da importação e os campos do combustível (€/litro, desconto, km) também não perdem o foco ao redesenhar: quem passa de um para o outro continua a escrever
     const y = window.scrollY, sc = Array.from(document.querySelectorAll('.tablewrap')).map(e => [e.scrollLeft, e.scrollTop]);
     render();
     document.querySelectorAll('.tablewrap').forEach((e, i) => { if (sc[i]) { e.scrollLeft = sc[i][0]; e.scrollTop = sc[i][1]; } });
@@ -5051,7 +5074,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
       return;
     }
     if (ev.key === 'Escape' && (menu || picker || calSheet || fixaSheet != null || rendSheet != null || planoSheet || detSheet || simSheet || rapido || gastoSheet != null || objSheet != null || contaSheet || corPick || novaCat || nuvemAsk)) {   // com o seletor de ícones por cima de uma folha, fecha só o seletor
-      if (nuvemAsk) nuvemAsk = false; else if (novaCat) novaCat = null; else if (corPick) corPick = null; else if (picker && fixaSheet != null) picker = null; else { if (boas) boasFechar(); menu = null; picker = null; calSheet = null; fixaSheet = null; rendSheet = null; planoSheet = null; detSheet = null; simSheet = null; fechaRapido(); gastoSheet = null; objSheet = null; contaSheet = null; }
+      if (nuvemAsk) nuvemAsk = false; else if (picker === PICK_NC) { picker = null; focaNcIco(); } else if (novaCat) novaCat = null; else if (corPick) corPick = null; else if (picker && fixaSheet != null) picker = null; else { if (boas) boasFechar(); menu = null; picker = null; calSheet = null; fixaSheet = null; rendSheet = null; planoSheet = null; detSheet = null; simSheet = null; fechaRapido(); gastoSheet = null; objSheet = null; contaSheet = null; }
       resetArm = false; apagarArm = false; renderKeep(); return;
     }
     if (ev.key === '/' && !escreve && !ev.ctrlKey && !ev.metaKey && !ev.altKey) { ev.preventDefault(); menu = 'ir'; renderKeep(); setTimeout(() => { const q = document.getElementById('ir-q'); if (q && q.focus) q.focus(); }, 0); return; }
@@ -5328,6 +5351,7 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     }
     else if (act === 'g-data') { const d = document.getElementById('g-data'); if (d) d.value = addDiasIso(hojeIso(), -(+a1)); }
     else if (act === 'pick') { picker = a1; render(); const f1 = document.querySelector('.emojis button'); if (f1) f1.focus(); }
+    else if (act === 'pick-nc') { if (novaCat) { picker = PICK_NC; render(); const f1 = document.querySelector('.emojis button'); if (f1) f1.focus(); } }   // o campo do ícone da «Nova categoria» abre o seletor de ícones por cima da janela
     else if (act === 'cor') { corPick = a1; render(); const f1 = document.querySelector('.cor-op'); if (f1 && f1.focus) f1.focus(); }
     else if (act === 'nc-fechar') { if (ev.target === b || b.tagName === 'BUTTON') { novaCat = null; renderKeep(); } }
     else if (act === 'nask-fechar') { if (ev.target === b || b.tagName === 'BUTTON') { nuvemAsk = false; renderKeep(); } }
@@ -5338,15 +5362,23 @@ button.dp-tit:hover { background: var(--accent-soft); color: var(--accent); }
     else if (act === 'cor-fechar') { if (ev.target === b || (b.classList && b.classList.contains('x'))) { corPick = null; render(); } }
     else if (act === 'cor-set') { const c = PALETA[+a1]; if (corPick && c) { setP(corPick, c[1]); corPick = null; queueSave(); render(); } }
     else if (act === 'cor-custom') { const c = String((document.getElementById('cor-custom') || {}).value || ''); if (corPick && /^#[0-9a-fA-F]{6}$/.test(c)) { setP(corPick, c); corPick = null; queueSave(); render(); } }
-    else if (act === 'picker-close') { if (ev.target === b || b.classList.contains('x')) { picker = null; render(); } }
-    else if (act === 'setico') { const i = +a1; if (picker) { setP(picker, i < 0 ? '' : EMOJIS[i]); picker = null; queueSave(); render(); } }
-    else if (act === 'ico-custom') { const v = (document.getElementById('ico-custom').value || '').trim(); if (picker && v) { setP(picker, v); picker = null; queueSave(); render(); } }
+    else if (act === 'picker-close') { if (ev.target === b || b.classList.contains('x')) { const nc = picker === PICK_NC; picker = null; render(); if (nc) focaNcIco(); } }
+    else if (act === 'setico') {
+      const i = +a1;
+      if (picker === PICK_NC) { ncIco(i < 0 ? '' : (EMOJIS[i] || '')); picker = null; render(); focaNcIco(); }
+      else if (picker) { setP(picker, i < 0 ? '' : EMOJIS[i]); picker = null; queueSave(); render(); }
+    }
+    else if (act === 'ico-custom') {
+      const v = (document.getElementById('ico-custom').value || '').trim();
+      if (picker === PICK_NC && v) { ncIco(limpaTexto(v, 8)); picker = null; render(); focaNcIco(); }
+      else if (picker && picker !== PICK_NC && v) { setP(picker, v); picker = null; queueSave(); render(); }
+    }
     else if (act === 'pagar') { pagarOc(a1, a2); renderKeep(); }
     else if (act === 'saltar') { saltarOc(a1, a2); renderKeep(); }
     else if (act === 'desfazer') { desfazerOc(a1, a2); renderKeep(); }
     else if (act === 'abast-add') {
       const g = id => document.getElementById(id), msg = g('a-msg');
-      const er = registoAbast({ valor: g('a-valor').value, litros: g('a-litros').value, preco: g('a-preco').value, km: g('a-km').value, data: g('a-data').value, posto: g('a-posto').value });
+      const er = registoAbast({ valor: g('a-valor').value, litros: g('a-litros').value, preco: g('a-preco').value, desconto: g('a-desconto').value, km: g('a-km').value, data: g('a-data').value, posto: g('a-posto').value });
       if (er) { msg.textContent = er; return; }
       queueSave(); render(); document.getElementById('a-msg').textContent = 'Abastecimento registado.';
     }
